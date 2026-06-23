@@ -37,3 +37,6 @@ export type { ToastIntent, ToastProps } from "./toast";
 
 export { Modal, ModalClose } from "./modal";
 export type { ModalProps } from "./modal";
+
+export { Avatar } from "./avatar";
+export type { AvatarProps, AvatarSize } from "./avatar";

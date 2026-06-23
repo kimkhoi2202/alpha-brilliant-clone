@@ -5,6 +5,7 @@ import { Chrome } from "./sections/Chrome";
 import { CourseMapSection } from "./sections/CourseMapSection";
 import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
+import { Gamification } from "./sections/Gamification";
 import { Lesson } from "./sections/Lesson";
 import { Onboarding } from "./sections/Onboarding";
 import { Palette } from "./sections/Palette";
@@ -46,6 +47,7 @@ export function DesignSystem() {
         <Settings />
         <Auth />
         <Onboarding />
+        <Gamification />
         <Feedback />
       </main>
     </div>
