@@ -1,6 +1,8 @@
 export { Brand } from "./brand";
 export type { BrandProps } from "./brand";
 
+export { AppHeader } from "./app-header";
+
 export { FooterCtaBar } from "./footer-cta-bar";
 export type { FooterCtaBarProps } from "./footer-cta-bar";
 

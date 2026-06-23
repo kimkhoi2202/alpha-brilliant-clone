@@ -34,3 +34,13 @@ export type {
   ExpressionBankItem,
   TileExpressionQuestionProps,
 } from "./tile-expression-question";
+
+export { StepView } from "./step-view";
+export type { StepViewProps, StepPhase } from "./step-view";
+
+export { LessonRunner } from "./lesson-runner";
+export type {
+  LessonRunnerProps,
+  LessonResult,
+  StepResult,
+} from "./lesson-runner";
