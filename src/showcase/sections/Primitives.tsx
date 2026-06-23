@@ -1,4 +1,12 @@
-import { Badge, Chip, Counter, Divider, ProgressBar } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  Chip,
+  Counter,
+  Divider,
+  ProgressBar,
+  Tooltip,
+} from "../../components/ui";
 import { Row, Section, Subhead } from "../Section";
 
 export function Primitives() {
@@ -63,6 +71,16 @@ export function Primitives() {
         <Divider className="my-3" />
         <p className="text-sm text-muted">Below</p>
       </div>
+
+      <Subhead className="mt-6">Tooltip</Subhead>
+      <Row>
+        <Tooltip content="Brilliant-style hover hint">
+          <Button variant="secondary">Hover me</Button>
+        </Tooltip>
+        <Tooltip content="Shows on focus too" placement="bottom">
+          <Button variant="outline">Focus me</Button>
+        </Tooltip>
+      </Row>
     </Section>
   );
 }

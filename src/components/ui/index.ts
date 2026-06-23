@@ -19,3 +19,6 @@ export type {
   ProgressIntent,
   ProgressSize,
 } from "./progress-bar";
+
+export { Tooltip } from "./tooltip";
+export type { TooltipProps } from "./tooltip";

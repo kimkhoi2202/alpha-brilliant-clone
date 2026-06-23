@@ -1,4 +1,5 @@
 import { Buttons } from "./sections/Buttons";
+import { Chrome } from "./sections/Chrome";
 import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
 import { Palette } from "./sections/Palette";
@@ -30,6 +31,7 @@ export function DesignSystem() {
         <Typography />
         <Buttons />
         <Primitives />
+        <Chrome />
         <Surfaces />
         <Forms />
         <Feedback />
