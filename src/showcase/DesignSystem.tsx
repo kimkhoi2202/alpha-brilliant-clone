@@ -1,3 +1,4 @@
+import { Auth } from "./sections/Auth";
 import { Buttons } from "./sections/Buttons";
 import { Cards } from "./sections/Cards";
 import { Chrome } from "./sections/Chrome";
@@ -42,6 +43,7 @@ export function DesignSystem() {
         <Lesson />
         <Forms />
         <Settings />
+        <Auth />
         <Feedback />
       </main>
     </div>

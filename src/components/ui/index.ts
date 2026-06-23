@@ -34,3 +34,6 @@ export type { OptionRowProps } from "./option-row";
 
 export { Toast } from "./toast";
 export type { ToastIntent, ToastProps } from "./toast";
+
+export { Modal, ModalClose } from "./modal";
+export type { ModalProps } from "./modal";
