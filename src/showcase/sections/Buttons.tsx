@@ -36,7 +36,7 @@ export function Buttons() {
     <Section
       id="buttons"
       title="Buttons"
-      description="One accessible Button (HeroUI under the hood), pill-shaped by default, extended with success/warning to match Brilliant's full set of CTA colors."
+      description="One accessible Button (HeroUI under the hood). Defaults to Brilliant's ~12px rounded rectangle for in-app CTAs; `pill` switches to the full-pill marketing / nav shape. Extended with success/warning to match Brilliant's full set of CTA colors."
     >
       <Subhead>Variants</Subhead>
       <Row>
@@ -45,6 +45,15 @@ export function Buttons() {
             {label(v)}
           </Button>
         ))}
+      </Row>
+
+      <Subhead className="mt-6">Shape</Subhead>
+      <Row>
+        <Button>Rounded (default · in-app)</Button>
+        <Button pill>Pill (marketing / nav)</Button>
+        <Button pill variant="success">
+          I&apos;m a learner
+        </Button>
       </Row>
 
       <Subhead className="mt-6">Sizes</Subhead>

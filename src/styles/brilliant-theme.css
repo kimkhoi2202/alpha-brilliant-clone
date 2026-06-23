@@ -162,7 +162,9 @@
 
 .dark,
 [data-theme="dark"] {
-  /* Shape — Brilliant radii: lg 0.75rem, xl 1rem; buttons are pills */
+  /* Shape — base control radius. In-app CTAs (Check / Continue / Start) are
+     ~12px rounded rectangles; only marketing & nav buttons are full pills
+     (opt in via Button's `pill` prop). */
   --radius: 0.75rem;
 
   /* Canvas & text */
@@ -208,4 +210,32 @@
   --feedback-retryable-foreground: var(--bp-yellow-300);
   --feedback-incorrect: var(--bp-feedback-incorrect);
   --feedback-incorrect-foreground: var(--bp-white);
+}
+
+/*
+ * Button intents HeroUI v3 doesn't ship (success / warning).
+ *
+ * HeroUI's Button is token-driven: the base `.button` reads `--button-bg`,
+ * `--button-bg-hover`, `--button-bg-pressed`, `--button-fg`, and each color
+ * variant class only *sets* those four properties (see @heroui/styles
+ * button.css). We mirror that contract instead of overriding with utilities.
+ *
+ * These rules are UNLAYERED, so they beat HeroUI's `@layer components`
+ * `.button--primary` even when both classes land on the element (our wrapper
+ * rides the extra intents on the primary structure). The `*-hover` tokens are
+ * auto-derived by HeroUI from our `--success` / `--warning`, so they track the
+ * Brilliant palette automatically.
+ */
+.button--success {
+  --button-bg: var(--success);
+  --button-bg-hover: var(--success-hover);
+  --button-bg-pressed: var(--success-hover);
+  --button-fg: var(--success-foreground);
+}
+
+.button--warning {
+  --button-bg: var(--warning);
+  --button-bg-hover: var(--warning-hover);
+  --button-bg-pressed: var(--warning-hover);
+  --button-fg: var(--warning-foreground);
 }

@@ -9,23 +9,25 @@ import { cn } from "../../lib/cn";
 type NativeVariant = NonNullable<HeroButtonProps["variant"]>;
 type ExtraVariant = "success" | "warning";
 
-/** Brilliant's full button set: HeroUI's six variants plus success & warning. */
+/** Brilliant's full button set: HeroUI's variants plus success & warning. */
 export type ButtonVariant = NativeVariant | ExtraVariant;
 
 /**
- * The doc-canonical wrapper: extend HeroUI's `buttonVariants` (which emits the
- * `.button--*` BEM classes) and add the two intents HeroUI doesn't ship.
+ * Doc-canonical wrapper: extend HeroUI's `buttonVariants` (which emits the
+ * `.button--*` classes) with the two intents HeroUI doesn't ship.
  *
- * The success/warning fills are theme *utilities*, which live in a later
- * cascade layer than HeroUI's `.button--*` component styles, so they recolor
- * the base button cleanly — no `!important`.
+ * success/warning map to our own `.button--success` / `.button--warning`
+ * classes (defined unlayered in brilliant-theme.css). Those set the same
+ * `--button-*` custom properties HeroUI's native variants use, so they recolor
+ * the button through the theme seam — no utility override, no `!important`, and
+ * robust against HeroUI's cascade-layer ordering.
  */
 const appButton = tv({
   extend: buttonVariants,
   variants: {
     variant: {
-      success: "bg-success text-success-foreground hover:bg-success-hover",
-      warning: "bg-warning text-warning-foreground hover:bg-warning-hover",
+      success: "button--success",
+      warning: "button--warning",
     },
   },
 });
@@ -37,27 +39,32 @@ const isExtra = (v: ButtonVariant): v is ExtraVariant =>
 export interface ButtonProps
   extends Omit<HeroButtonProps, "variant" | "className"> {
   variant?: ButtonVariant;
-  /** Pill shape (Brilliant style). Defaults to `true`. */
+  /**
+   * Full-pill shape. Brilliant uses pills for marketing & nav CTAs; in-app
+   * actions (Check / Continue / Start) keep the default ~12px rounded rectangle.
+   */
   pill?: boolean;
   className?: string;
 }
 
 export function Button({
   variant = "primary",
-  pill = true,
+  pill = false,
   className,
   ...props
 }: ButtonProps) {
   return (
     <HeroButton
       {...props}
-      // Native variants render natively; the extra intents ride on the primary
-      // structure and are recolored by appButton's theme utilities.
+      // Extra intents ride on the primary structure and are recolored by their
+      // own `.button--*` class; native variants pass straight through.
       variant={isExtra(variant) ? "primary" : variant}
       className={appButton({
         variant,
         size: props.size,
-        className: cn(pill && "rounded-full", className),
+        // Default ~12px rounded rectangle (rounded-lg == --radius; overrides
+        // HeroUI's pill base). Opt into a full pill for marketing / nav.
+        className: cn(pill ? "rounded-full" : "rounded-lg", className),
       })}
     />
   );
