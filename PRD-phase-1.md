@@ -1,18 +1,6 @@
-# Product Requirements Document — AlphaBrilliant
+# Product Requirements Document — AlphaBrilliant (Phase 1: MVP)
 
 > A learn-by-doing geometry app that teaches the **Pythagorean Theorem** through hands-on, interactive problems — modeled on Brilliant, built deep for one chapter.
-
-| Field | Value |
-| --- | --- |
-| Document owner | Khoi |
-| Status | `v1.0` — finalized for the MVP build |
-| Last updated | 2026-06-23 |
-| Target | MVP (Phase 1) |
-| Platform | Responsive web (mobile-first) |
-| Tech stack | React + TypeScript + Vite + Firebase |
-| Subject | Geometry → the Pythagorean Theorem |
-| Repository | `github.com/kimkhoi2202/alpha-brilliant-clone` |
-| Deployed URL | _TBD (Firebase Hosting)_ |
 
 **Contents:** [1. MVP](#1-mvp) · [2. User Profile](#2-user-profile) · [3. User Story](#3-user-story) · [4. Tech Stack](#4-tech-stack) · [5. Appendix](#5-appendix)
 

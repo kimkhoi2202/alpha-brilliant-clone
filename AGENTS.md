@@ -4,7 +4,7 @@ Persistent context and conventions for AI agents and contributors working in thi
 
 ## Project
 
-AlphaBrilliant is a **learn-by-doing geometry app** (the Pythagorean Theorem), modeled on Brilliant, built deep for one chapter and one persona (a high-school student). See [`PRD.md`](./PRD.md) for the full spec.
+AlphaBrilliant is a **learn-by-doing geometry app** (the Pythagorean Theorem), modeled on Brilliant, built deep for one chapter and one persona (a high-school student). See [`PRD-phase-1.md`](./PRD-phase-1.md) for the full spec.
 
 - **Stack:** React 19 + TypeScript + Vite; Firebase (Auth: email/password + Google · Cloud Firestore · Hosting). Firebase project: `fir-94b95`.
 - **Build philosophy:** **platform first** — build and prove the content model, lesson renderer, interaction components, feedback engine, progress/path, streak, auth, and persistence with **placeholder lessons**; author real content later. **No AI in Phase 1.**
@@ -97,7 +97,7 @@ pnpm build && npx firebase deploy   # deploy to Firebase Hosting (from prod)
 
 ## Testing & QA
 
-- No automated test suite is required for the MVP; QA is manual against the **MVP Test Plan** in `PRD.md` §1.9.
+- No automated test suite is required for the MVP; QA is manual against the **MVP Test Plan** in `PRD-phase-1.md` §1.9.
 - Always sanity-check: complete a lesson, **get answers wrong on purpose** (feedback must help), leave mid-lesson and resume, confirm streak persists, and run it on a phone viewport.
 - **Performance budgets:** feedback `< 100ms` (validation is pure + client-side — never block on the network), interactive visuals `60fps`, first interaction `< 2s`.
 
