@@ -6,6 +6,7 @@ import { CourseMapSection } from "./sections/CourseMapSection";
 import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
 import { Gamification } from "./sections/Gamification";
+import { HomeCatalog } from "./sections/HomeCatalog";
 import { Lesson } from "./sections/Lesson";
 import { Onboarding } from "./sections/Onboarding";
 import { Palette } from "./sections/Palette";
@@ -48,6 +49,7 @@ export function DesignSystem() {
         <Auth />
         <Onboarding />
         <Gamification />
+        <HomeCatalog />
         <Feedback />
       </main>
     </div>

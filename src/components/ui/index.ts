@@ -40,3 +40,9 @@ export type { ModalProps } from "./modal";
 
 export { Avatar } from "./avatar";
 export type { AvatarProps, AvatarSize } from "./avatar";
+
+export { Disclosure } from "./disclosure";
+export type { DisclosureProps } from "./disclosure";
+
+export { GradientButton } from "./gradient-button";
+export type { GradientButtonProps } from "./gradient-button";
