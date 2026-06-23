@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "./brilliant-theme.css";
+
+/* Enables the `dark:` variant for the class-based dark theme. */
+@custom-variant dark (&:is(.dark *));
+
+/* Default to the Outfit variable font across the whole app. */
+@theme {
+  --font-sans: "Outfit Variable", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Expose Brilliant's lesson-feedback panel colors as utilities
+     (bg-feedback-correct, text-feedback-retryable-foreground, ...). */
+  --color-feedback-correct: var(--feedback-correct);
+  --color-feedback-correct-foreground: var(--feedback-correct-foreground);
+  --color-feedback-retryable: var(--feedback-retryable);
+  --color-feedback-retryable-foreground: var(--feedback-retryable-foreground);
+  --color-feedback-incorrect: var(--feedback-incorrect);
+  --color-feedback-incorrect-foreground: var(--feedback-incorrect-foreground);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
