@@ -11,6 +11,8 @@ export interface CelebrationScreenProps {
   children?: ReactNode;
   actionLabel?: string;
   onContinue?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
   className?: string;
 }
 
@@ -22,6 +24,8 @@ export function CelebrationScreen({
   children,
   actionLabel = "Continue",
   onContinue,
+  secondaryActionLabel,
+  onSecondaryAction,
   className,
 }: CelebrationScreenProps) {
   return (
@@ -43,9 +47,25 @@ export function CelebrationScreen({
         {subtitle ? <div className="text-base text-muted">{subtitle}</div> : null}
       </div>
       {children}
-      <Button size="lg" className="mt-2 min-w-48" onPress={onContinue}>
-        {actionLabel}
-      </Button>
+      <div className="mt-2 flex w-full items-center justify-center gap-3">
+        {secondaryActionLabel ? (
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-12 flex-1"
+            onPress={onSecondaryAction}
+          >
+            {secondaryActionLabel}
+          </Button>
+        ) : null}
+        <Button
+          size="lg"
+          className={cn("h-12", secondaryActionLabel ? "flex-1" : "min-w-48 px-8")}
+          onPress={onContinue}
+        >
+          {actionLabel}
+        </Button>
+      </div>
     </div>
   );
 }

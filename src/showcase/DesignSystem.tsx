@@ -1,5 +1,4 @@
-import { HeaderMenuButton, TopNav } from "../components/chrome";
-import { Counter } from "../components/ui";
+import { DevTopNav } from "./DevTopNav";
 import { Auth } from "./sections/Auth";
 import { Buttons } from "./sections/Buttons";
 import { Cards } from "./sections/Cards";
@@ -19,61 +18,10 @@ import { Settings } from "./sections/Settings";
 import { Surfaces } from "./sections/Surfaces";
 import { Typography } from "./sections/Typography";
 
-function HomeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
-      <path d="M3 11l9-8 9 8" />
-      <path d="M5 10v10h14V10" />
-    </svg>
-  );
-}
-function BookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
-      <path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z" />
-      <path d="M18 3v16" />
-    </svg>
-  );
-}
-/** Brilliant's "Gift Premium" nav button: iridescent gradient border, solid
- *  soft-white label, border dims to muted on hover (see .premium-button). */
-function PremiumPill() {
-  return (
-    <button
-      type="button"
-      aria-label="Gift Premium"
-      className="premium-button rounded-full px-4 py-2 text-sm font-medium text-[#fcfbf7]"
-    >
-      Gift Premium
-    </button>
-  );
-}
-
 export function DesignSystem() {
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <TopNav
-        tabs={[
-          { id: "home", label: "Home", icon: <HomeIcon /> },
-          {
-            id: "components",
-            label: "Components",
-            icon: <BookIcon />,
-            active: true,
-          },
-        ]}
-        endContent={
-          <>
-            <PremiumPill />
-            <Counter
-              value={1}
-              icon={<span aria-hidden>⚡</span>}
-              aria-label="1 energy"
-            />
-            <HeaderMenuButton />
-          </>
-        }
-      />
+      <DevTopNav active="components" />
 
       <main className="mx-auto max-w-5xl space-y-16 px-5 py-12">
         <header className="space-y-1">

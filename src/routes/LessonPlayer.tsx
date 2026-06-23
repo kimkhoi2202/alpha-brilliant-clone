@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 
-import { CelebrationScreen } from "../components/celebration";
-import { LessonRunner, type LessonResult } from "../components/lesson";
+import {
+  CelebrationScreen,
+  ConfettiBurst,
+  CongratsBadge,
+} from "../components/celebration";
+import { StreakBolt } from "../components/chrome";
+import {
+  LessonLoader,
+  LessonRunner,
+  type LessonResult,
+} from "../components/lesson";
 import { Button } from "../components/ui";
 import { getLesson, nextLessonId } from "../content";
 import { useStreak } from "../hooks/useStreak";
@@ -10,22 +19,26 @@ import { useLearner } from "../lib/learner";
 
 const routeApi = getRouteApi("/lesson/$lessonId");
 
-function Splash() {
-  return (
-    <div className="grid min-h-svh place-items-center bg-background">
-      <div
-        className="size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"
-        role="status"
-        aria-label="Loading"
-      />
-    </div>
-  );
-}
+/** Minimum time the branded lesson loader stays up on launch (ms). */
+const LOADER_MIN_MS = 2200;
 
 export function LessonPlayer() {
   const { lessonId } = routeApi.useParams();
   const navigate = useNavigate();
   const lesson = getLesson(lessonId);
+
+  // Always show the loader for a beat on each lesson (covers the data load too).
+  const [loaderReadyForLessonId, setLoaderReadyForLessonId] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    const t = setTimeout(
+      () => setLoaderReadyForLessonId(lessonId),
+      LOADER_MIN_MS,
+    );
+    return () => clearTimeout(t);
+  }, [lessonId]);
+  const minElapsed = loaderReadyForLessonId === lessonId;
   const {
     loading,
     resumeIndex,
@@ -63,19 +76,24 @@ export function LessonPlayer() {
     );
   }
 
-  if (loading) return <Splash />;
+  if (loading || !minElapsed) return <LessonLoader />;
 
   if (summary) {
     const next = nextLessonId(lesson.id);
+    // bg matches the confetti .riv's baked #313131 artboard background so its
+    // portrait shape blends in (no visible gray center column).
     return (
-      <div className="grid min-h-svh place-items-center bg-background">
-        <div className="w-full max-w-md">
+      <div className="relative grid min-h-svh place-items-center overflow-hidden bg-[#313131]">
+        <ConfettiBurst className="absolute inset-0 z-0" />
+        <div className="relative z-10 w-full max-w-md">
           <CelebrationScreen
-            art="🏆"
+            art={<CongratsBadge className="size-44" />}
             title="Lesson complete!"
             subtitle={`${summary.correct}/${summary.total} correct`}
             actionLabel={next ? "Next lesson" : "Back to course"}
             onContinue={() => (next ? openLesson(next) : goToCourse())}
+            secondaryActionLabel={next ? "Back to course" : undefined}
+            onSecondaryAction={goToCourse}
           >
             <div className="flex flex-col items-center gap-3">
               <div className="flex flex-col items-center">
@@ -86,18 +104,13 @@ export function LessonPlayer() {
                   {summary.xpEarned} ✦
                 </p>
               </div>
-              <p className="text-sm font-medium text-muted">
-                <span aria-hidden>🔥</span> {currentStreak}-day streak
-              </p>
-              {next ? (
-                <button
-                  type="button"
-                  onClick={goToCourse}
-                  className="text-sm text-muted underline-offset-2 transition-colors hover:text-foreground hover:underline"
-                >
-                  Back to course
-                </button>
-              ) : null}
+              <div
+                className="flex items-center gap-2 text-sm font-medium text-muted"
+                aria-label={`${currentStreak}-day streak`}
+              >
+                <StreakBolt completed className="h-8 w-6" />
+                <span aria-hidden>{currentStreak} day streak</span>
+              </div>
             </div>
           </CelebrationScreen>
         </div>

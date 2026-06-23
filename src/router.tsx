@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 
 import type { AuthContextValue } from "./lib/AuthContext";
+import { AnimationsScreen } from "./routes/AnimationsScreen";
 import { AuthScreen } from "./routes/AuthScreen";
 import { ComponentsScreen } from "./routes/ComponentsScreen";
 import { CourseMapScreen } from "./routes/CourseMapScreen";
@@ -66,12 +67,19 @@ const componentsRoute = createRoute({
   component: ComponentsScreen,
 });
 
+const devRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dev",
+  component: AnimationsScreen,
+});
+
 const routeTree = rootRoute.addChildren([
   authRoute,
   courseMapRoute,
   lessonRoute,
   profileRoute,
   componentsRoute,
+  devRoute,
 ]);
 
 export const router = createRouter({

@@ -41,15 +41,13 @@ function NavTab({ tab }: { tab: NavTabItem }) {
         </span>
       ) : null}
       {tab.label}
-      {/* Brilliant's underline: parked just below the bar, slides up on hover
-          (faint) and stays up when selected (solid). */}
+      {/* Active-tab underline only: parked below the bar, slides up to sit just
+          under the label when selected. No underline on hover. */}
       <span
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-x-0 top-full h-0.5 rounded-full transition-transform duration-150 ease-out",
-          tab.active
-            ? "-translate-y-0.5 bg-foreground"
-            : "bg-muted group-hover:-translate-y-0.5",
+          tab.active ? "-translate-y-3 bg-foreground" : "bg-transparent",
         )}
       />
     </button>
@@ -88,7 +86,7 @@ export function TopNav({
           ) : null}
         </div>
         {endContent ? (
-          <div className="ml-auto flex items-center gap-2">{endContent}</div>
+          <div className="ml-auto flex items-center gap-3 sm:gap-4">{endContent}</div>
         ) : null}
       </div>
     </header>

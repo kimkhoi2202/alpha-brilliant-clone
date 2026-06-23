@@ -7,6 +7,8 @@ export interface CourseMapNode {
   id: string;
   label: string;
   state?: LessonNodeState;
+  /** Selected node (drives the glow ring). */
+  selected?: boolean;
   icon?: ReactNode;
   onPress?: () => void;
 }
@@ -43,6 +45,7 @@ export function CourseMap({ header, nodes, footer, className }: CourseMapProps) 
             <LessonNode
               label={node.label}
               state={node.state}
+              selected={node.selected}
               icon={node.icon}
               onPress={node.onPress}
             />

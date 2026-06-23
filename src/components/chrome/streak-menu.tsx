@@ -1,0 +1,175 @@
+import { useEffect, useRef, useState } from "react";
+
+import { cn } from "../../lib/cn";
+import { Counter } from "../ui/counter";
+import { StreakBolt } from "./streak-bolt";
+
+export interface StreakMenuProps {
+  currentStreak: number;
+  longestStreak: number;
+  lessonsComplete: number;
+}
+
+const WEEKDAYS = ["M", "T", "W", "Th", "F"] as const;
+
+/** JS getDay() (0=Sun) → Mon–Fri index (0–4); weekend clamps to Fri. */
+function todayWeekday(): { idx: number; isWeekday: boolean } {
+  const mon0 = (new Date().getDay() + 6) % 7; // 0 Mon … 6 Sun
+  return mon0 <= 4 ? { idx: mon0, isWeekday: true } : { idx: 4, isWeekday: false };
+}
+
+/** One day in the streak week — a pear disc + bolt when done, else a faint ring. */
+function DayDisc({ done }: { done: boolean }) {
+  return (
+    <svg viewBox="0 0 32 32" className="size-10" aria-hidden>
+      {done ? (
+        <rect width="32" height="32" rx="16" fill="var(--streak)" />
+      ) : (
+        <rect
+          x="1"
+          y="1"
+          width="30"
+          height="30"
+          rx="15"
+          fill="none"
+          stroke="var(--foreground)"
+          strokeOpacity={0.08}
+          strokeWidth={1.5}
+        />
+      )}
+      <path
+        d="M10.2903 16.2252L16.5654 8.24794C16.9417 7.76964 17.7079 8.10483 17.612 8.70578L16.7061 14.3834H20.5934C21.3322 14.3834 21.7459 15.2351 21.2891 15.8159L15.014 23.7931C14.6378 24.2714 13.8716 23.9362 13.9674 23.3353L14.8734 17.6577H10.9861C10.2472 17.6577 9.83354 16.8059 10.2903 16.2252Z"
+        fill={done ? "var(--background)" : "var(--bp-wa-400)"}
+      />
+    </svg>
+  );
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="text-lg font-bold tabular-nums text-foreground">
+        {value}
+      </span>
+      <span className="text-xs text-muted">{label}</span>
+    </div>
+  );
+}
+
+/**
+ * The streak pill plus Brilliant's streak popover (current week, max streak,
+ * lessons complete). The pill itself carries the interactive hover.
+ */
+export function StreakMenu({
+  currentStreak,
+  longestStreak,
+  lessonsComplete,
+}: StreakMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const { idx: todayIdx, isWeekday } = todayWeekday();
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Brilliant-style pill: the day count next to the streak bolt. */}
+      <Counter
+        value={currentStreak}
+        icon={
+          <StreakBolt completed={currentStreak > 0} className="streak-bolt-pulse" />
+        }
+        onPress={() => setOpen((o) => !o)}
+        isActive={open}
+        aria-label={`${currentStreak} day streak`}
+      />
+
+      {open ? (
+        <div
+          role="dialog"
+          aria-label="Streak details"
+          className="streak-popover absolute right-0 top-full z-50 mt-3 w-[320px]"
+        >
+          <span
+            aria-hidden
+            style={{ color: "var(--overlay)" }}
+            className="pointer-events-none absolute -top-2 right-4 drop-shadow-[0_0_6px_rgba(0,0,0,0.35)]"
+          >
+            <svg width="20" height="10" viewBox="0 0 20 10" fill="none">
+              <path
+                d="M9.66437 2.60207L4.80758 6.97318C4.07308 7.63423 3.11989 8 2.13172 8H0V10H20V8H17.8683C16.8801 8 15.9269 7.63423 15.1924 6.97318L10.3356 2.60207C10.0708 2.3636 9.92918 2.3636 9.66437 2.60207Z"
+                fill="currentColor"
+              />
+            </svg>
+          </span>
+
+          <div className="overflow-hidden rounded-2xl bg-overlay p-5 shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center gap-1.5">
+              <span className="text-3xl font-bold tabular-nums text-foreground">
+                {currentStreak}
+              </span>
+              <StreakBolt completed={currentStreak > 0} className="h-8 w-6" />
+            </div>
+
+            <p className="mt-3 text-foreground">
+              {currentStreak > 0
+                ? `You're on a ${currentStreak}-day streak!`
+                : "Start a streak today!"}
+            </p>
+
+            <div className="mt-4 flex w-full justify-between">
+              {WEEKDAYS.map((label, i) => {
+                const done = i <= todayIdx && todayIdx - i < currentStreak;
+                const isToday = isWeekday && i === todayIdx;
+                return (
+                  <div
+                    key={label}
+                    className="streak-disc flex flex-col items-center gap-2"
+                    style={{ animationDelay: `${i * 45}ms` }}
+                  >
+                    <DayDisc done={done} />
+                    <span
+                      className={cn(
+                        "text-sm",
+                        isToday ? "font-bold text-foreground" : "text-muted",
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex items-center rounded-lg bg-default/50 py-4">
+              <div className="flex flex-1 justify-center">
+                <Stat value={longestStreak} label="Max streak" />
+              </div>
+              <div className="h-8 w-px bg-border" aria-hidden />
+              <div className="flex flex-1 justify-center">
+                <Stat value={lessonsComplete} label="Lessons complete" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

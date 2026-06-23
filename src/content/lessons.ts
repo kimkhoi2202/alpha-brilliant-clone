@@ -179,7 +179,14 @@ const squaresAndSides: Lesson = {
       prompt:
         "The squares on the legs have areas 9 and 16. What is the area of the square on the hypotenuse?",
       interaction: { kind: "numeric", answer: 25, unit: "sq units" },
-      visual: { kind: "right-triangle", a: 3, b: 4, showSquares: true, labels: true },
+      visual: {
+        kind: "right-triangle",
+        a: 3,
+        b: 4,
+        showSquares: true,
+        labels: true,
+        unknownHypotenuse: true,
+      },
       feedback: {
         correct: "Yes — 9 + 16 = 25. The big square equals the two small ones combined.",
         hints: [

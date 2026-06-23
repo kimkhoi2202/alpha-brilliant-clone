@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   increment,
@@ -66,6 +67,8 @@ export interface LearnerContextValue {
     record: StepRecord & { stepId: string },
   ) => Promise<void>;
   completeLesson: (id: LessonId, xpEarned: number) => Promise<void>;
+  /** Wipe all lesson progress so every lesson is available again (keeps XP/streak). */
+  resetProgress: () => Promise<void>;
 }
 
 const LearnerContext = createContext<LearnerContextValue | undefined>(undefined);
@@ -228,14 +231,21 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     [uid, markActiveToday],
   );
 
+  const resetProgress = useCallback(async () => {
+    if (!uid) return;
+    await Promise.all(
+      lessonOrder.map((id) =>
+        deleteDoc(doc(db, "users", uid, "progress", id)),
+      ),
+    );
+  }, [uid]);
+
   // --- derived selectors (read current `progress` state) ---
+  // Every lesson is freely accessible (no sequential locking) — a lesson is
+  // only ever completed, in progress, or available.
   function lessonStatus(id: LessonId): LessonStatus {
     const p = progress[id];
     if (p?.status === "completed") return "completed";
-    const index = lessonOrder.indexOf(id);
-    const unlocked =
-      index === 0 || progress[lessonOrder[index - 1]]?.status === "completed";
-    if (!unlocked) return "locked";
     return p?.status === "in_progress" ? "in_progress" : "available";
   }
 
@@ -283,6 +293,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     setStepIndex,
     recordStep,
     completeLesson,
+    resetProgress,
   };
 
   return (

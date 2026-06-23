@@ -117,20 +117,29 @@ export function CoordinateGrid({
         </g>
       ) : null}
 
-      {/* interactive lattice hit targets */}
+      {/* interactive lattice hit targets — on hover, preview a faint green dot
+          (a ghost of the point you'd lock in on click). */}
       {onPlace
         ? lines.flatMap((x) =>
             lines.map((y) => (
-              <circle
-                key={`hit-${x}-${y}`}
-                cx={sx(x)}
-                cy={sy(y)}
-                r={u * 0.42}
-                className="cursor-pointer fill-transparent transition-colors hover:fill-[var(--accent-soft)]"
-                onClick={() => onPlace({ x, y })}
-                role="button"
-                aria-label={`Place point at ${x}, ${y}`}
-              />
+              <g key={`hit-${x}-${y}`} className="group cursor-pointer">
+                <circle
+                  cx={sx(x)}
+                  cy={sy(y)}
+                  r={6}
+                  className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover:opacity-40"
+                  style={{ fill: "var(--success)" }}
+                />
+                <circle
+                  cx={sx(x)}
+                  cy={sy(y)}
+                  r={u * 0.42}
+                  className="fill-transparent"
+                  onClick={() => onPlace({ x, y })}
+                  role="button"
+                  aria-label={`Place point at ${x}, ${y}`}
+                />
+              </g>
             )),
           )
         : null}

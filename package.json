@@ -13,6 +13,7 @@
     "@fontsource-variable/outfit": "^5.2.8",
     "@heroui/react": "^3.2.1",
     "@heroui/styles": "^3.2.1",
+    "@rive-app/react-webgl2": "4.29.2",
     "@tanstack/react-router": "^1.170.16",
     "clsx": "^2.1.1",
     "firebase": "^12.15.0",

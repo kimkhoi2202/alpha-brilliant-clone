@@ -7,11 +7,16 @@ export type { AnswerChoiceProps, AnswerChoiceState } from "./answer-choice";
 export { ConceptSlide } from "./concept-slide";
 export type { ConceptSlideProps } from "./concept-slide";
 
+export { ExitLessonDialog } from "./exit-lesson-dialog";
+export type { ExitLessonDialogProps } from "./exit-lesson-dialog";
+
 export { FeedbackToast } from "./feedback-toast";
 export type { FeedbackStatus, FeedbackToastProps } from "./feedback-toast";
 
 export { LessonContainer } from "./lesson-container";
 export type { LessonContainerProps, LessonEvaluation } from "./lesson-container";
+
+export { LessonLoader } from "./lesson-loader";
 
 export { LessonShell } from "./lesson-shell";
 export type { LessonShellProps } from "./lesson-shell";

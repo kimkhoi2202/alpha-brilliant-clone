@@ -4,6 +4,7 @@ import type {
   Step,
   VisualSpec,
 } from "../../content/types";
+import { cn } from "../../lib/cn";
 import { CoordinateGrid, RightTriangleFigure } from "../visuals";
 import { NumericInput, PlotPointsGrid, SliderInput } from "../interactions";
 import { AnswerChoice, type AnswerChoiceState } from "./answer-choice";
@@ -36,6 +37,7 @@ function VisualView({ visual }: { visual: VisualSpec }) {
           b={visual.b}
           showSquares={visual.showSquares}
           labels={visual.labels}
+          unknownHypotenuse={visual.unknownHypotenuse}
         />
       );
     case "coordinate-grid":
@@ -82,12 +84,21 @@ function InteractionView({
   switch (interaction.kind) {
     case "multiple-choice": {
       const chosen = answer?.kind === "multiple-choice" ? answer.choiceId : null;
+      // Short labels (numbers, single words) → Brilliant's centered 2-col grid;
+      // longer prose answers stay full-width and left-aligned.
+      const compact = interaction.choices.every((c) => c.label.length <= 6);
       return (
-        <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+        <div
+          className={cn(
+            "mx-auto w-full gap-3",
+            compact ? "grid max-w-md grid-cols-2" : "flex max-w-md flex-col",
+          )}
+        >
           {interaction.choices.map((choice) => (
             <AnswerChoice
               key={choice.id}
               state={mcState(choice.id, chosen, interaction.correctChoiceId, phase)}
+              align={compact ? "center" : "left"}
               disabled={locked}
               onPress={() =>
                 onAnswer({ kind: "multiple-choice", choiceId: choice.id })

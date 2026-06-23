@@ -27,6 +27,8 @@ export type VisualSpec =
       showSquares?: boolean;
       /** Show side-length labels. */
       labels?: boolean;
+      /** Hide the hypotenuse square's area (show a "?") when it's the unknown. */
+      unknownHypotenuse?: boolean;
       unit?: string;
     }
   | {
@@ -160,6 +162,8 @@ export type CourseLevel = {
   id: string;
   label: string;
   title: string;
+  /** Learning objectives shown in the level's "view details" dialog. */
+  objectives?: string[];
   lessonIds: LessonId[];
 };
 

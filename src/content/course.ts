@@ -4,13 +4,18 @@ export const course: Course = {
   id: "pythagoras",
   title: "The Pythagorean Theorem",
   description:
-    "Learn right triangles by doing — drag, plot, and build your way to a² + b² = c².",
+    "Learn right triangles by dragging, plotting, and building your way to a² + b² = c².",
   accent: "accent",
   levels: [
     {
       id: "level-1",
       label: "LEVEL 1",
       title: "Pythagoras",
+      objectives: [
+        "Relate a right triangle's legs and hypotenuse with a² + b² = c²",
+        "Measure the straight-line distance between two points",
+        "Build the squares-on-each-side proof of the theorem",
+      ],
       lessonIds: [
         "pythagoras-intro",
         "direct-distance",

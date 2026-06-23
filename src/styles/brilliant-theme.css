@@ -192,6 +192,12 @@
   --accent: var(--bp-blue-500); /* #456DFF */
   --accent-foreground: var(--bp-white);
 
+  /* Streak / energy accent — Brilliant's "pear" (lime-gold streak bolt). */
+  --streak: #b5e853;
+  /* Streak fire — the flame that replaces the lightning bolt everywhere. */
+  --streak-flame: #f59e2e; /* amber flame body + completed-day disc */
+  --streak-flame-core: #fcd24d; /* inner flame highlight */
+
   /* Status — solid fills with near-black text (Brilliant) */
   --success: var(--bp-green-400); /* #5ED981 */
   --success-foreground: var(--bp-gray-950);
@@ -200,9 +206,14 @@
   --danger: var(--bp-red-400); /* #FF8585 */
   --danger-foreground: var(--bp-gray-950);
 
-  /* Lines & links */
-  --border: var(--bp-wa-200); /* whiteAlpha 0.1 */
+  /* Lines & links — Brilliant's hairline is whiteAlpha 0.2 (border.primary),
+     clearer than a 0.1 ghost line; the brighter hover edge is 0.4. */
+  --border: var(--bp-wa-300); /* whiteAlpha 0.2 */
+  --border-hover: var(--bp-wa-500); /* whiteAlpha 0.4 */
   --separator: var(--bp-wa-100); /* whiteAlpha 0.05 */
+  /* The lesson player's card frame — a touch more present than the hairline
+     border, since it carries a 2px stroke (tablet/desktop only). */
+  --lesson-frame: #2b2b31;
   --link: var(--bp-blue-400);
 
   /* Segmented controls (e.g. the lesson progress bar track) */
@@ -349,27 +360,6 @@
 .button--clicky:disabled,
 .button--clicky[aria-disabled="true"] {
   box-shadow: none;
-}
-
-/* Brilliant's "Gift Premium" nav button: an iridescent gradient *border* over
-   the canvas fill (the text is a solid soft white, not a gradient), and the
-   border dims to muted tones on hover. */
-.premium-button {
-  background:
-    linear-gradient(var(--background), var(--background)) padding-box,
-    linear-gradient(
-        86deg,
-        var(--bp-blue-400) 0%,
-        var(--bp-pink-400) 50%,
-        var(--bp-yellow-400) 100%
-      )
-      border-box;
-  border: 2px solid transparent;
-}
-.premium-button:hover {
-  background:
-    linear-gradient(var(--background), var(--background)) padding-box,
-    linear-gradient(86deg, #5d74cc 0%, #cc73b3 47%, #c69c1e 100%) border-box;
 }
 
 @media (prefers-reduced-motion: reduce) {

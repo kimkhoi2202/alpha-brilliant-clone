@@ -9,6 +9,9 @@ export interface RightTriangleFigureProps {
   showSquares?: boolean;
   /** Label the legs with their lengths and the hypotenuse as c. */
   labels?: boolean;
+  /** Hide the hypotenuse square's area, showing a gold "?" — for when that area
+   *  is the value the learner has to find (don't give the answer away). */
+  unknownHypotenuse?: boolean;
   className?: string;
 }
 
@@ -25,6 +28,7 @@ export function RightTriangleFigure({
   b,
   showSquares = false,
   labels = false,
+  unknownHypotenuse = false,
   className,
 }: RightTriangleFigureProps) {
   const A: Pt = { x: 0, y: 0 };
@@ -96,22 +100,29 @@ export function RightTriangleFigure({
             points={poly(squareAB)}
             style={{ fill: "var(--accent-soft)", stroke: "var(--accent)" }}
             strokeWidth={sw}
+            strokeLinejoin="round"
           />
           <polygon
             points={poly(squareAC)}
             style={{ fill: "var(--accent-soft)", stroke: "var(--accent)" }}
             strokeWidth={sw}
+            strokeLinejoin="round"
           />
           <polygon
             points={poly(squareBC)}
             style={{ fill: "var(--warning-soft)", stroke: "var(--warning)" }}
             strokeWidth={sw}
+            strokeLinejoin="round"
           />
           {[
-            { pts: squareAB, value: a * a },
-            { pts: squareAC, value: b * b },
-            { pts: squareBC, value: a * a + b * b },
-          ].map(({ pts, value }, i) => {
+            { pts: squareAB, label: a * a, gold: false },
+            { pts: squareAC, label: b * b, gold: false },
+            {
+              pts: squareBC,
+              label: unknownHypotenuse ? "?" : a * a + b * b,
+              gold: unknownHypotenuse,
+            },
+          ].map(({ pts, label, gold }, i) => {
             const c = map(centroid(pts));
             return (
               <text
@@ -120,11 +131,11 @@ export function RightTriangleFigure({
                 y={c.y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                style={{ fill: "var(--foreground)" }}
+                style={{ fill: gold ? "var(--warning)" : "var(--foreground)" }}
                 fontSize={fontSize}
                 fontWeight={700}
               >
-                {value}
+                {label}
               </text>
             );
           })}
@@ -135,12 +146,15 @@ export function RightTriangleFigure({
         points={poly([A, B, C])}
         style={{ fill: "var(--surface)", stroke: "var(--foreground)" }}
         strokeWidth={sw}
+        strokeLinejoin="round"
       />
       <polyline
         points={poly(rightAngle)}
         fill="none"
         style={{ stroke: "var(--muted)" }}
         strokeWidth={sw * 0.8}
+        strokeLinejoin="round"
+        strokeLinecap="round"
       />
 
       {labels ? (

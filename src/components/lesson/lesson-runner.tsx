@@ -11,8 +11,8 @@ import {
 import type { AnswerValue, Lesson, Step } from "../../content/types";
 import { Button } from "../ui";
 import { FooterCtaBar } from "../chrome";
+import { ExitLessonDialog } from "./exit-lesson-dialog";
 import { FeedbackToast } from "./feedback-toast";
-import type { LessonEvaluation } from "./lesson-container";
 import { LessonShell } from "./lesson-shell";
 import { StepView, type StepPhase } from "./step-view";
 
@@ -44,12 +44,8 @@ export interface LessonRunnerProps {
   onComplete: (result: LessonResult) => void;
 }
 
-const PHASE_TO_EVALUATION: Record<StepPhase, LessonEvaluation> = {
-  answering: "unsubmitted",
-  correct: "correct",
-  wrong: "retryable",
-  revealed: "revealed",
-};
+const LESSON_PRIMARY_CTA_CLASS = "h-12 min-h-12 text-base";
+const LESSON_SECONDARY_CTA_CLASS = "h-12 min-h-12 min-w-44 px-8 text-base";
 
 /** Drives one lesson end-to-end: renders each step, grades, and advances. */
 export function LessonRunner({
@@ -66,6 +62,7 @@ export function LessonRunner({
     lesson.steps.length - 1,
   );
   const [stepIndex, setStepIndex] = useState(clampedStart);
+  const [confirmExit, setConfirmExit] = useState(false);
   const xpRef = useRef(0);
   const correctRef = useRef(0);
 
@@ -97,14 +94,21 @@ export function LessonRunner({
   }
 
   return (
-    <StepScreen
-      key={step.id}
-      step={step}
-      progress={progress}
-      energy={energy}
-      onExit={onExit}
-      onAdvance={advance}
-    />
+    <>
+      <StepScreen
+        key={step.id}
+        step={step}
+        progress={progress}
+        energy={energy}
+        onExit={() => setConfirmExit(true)}
+        onAdvance={advance}
+      />
+      <ExitLessonDialog
+        isOpen={confirmExit}
+        onOpenChange={setConfirmExit}
+        onQuit={onExit}
+      />
+    </>
   );
 }
 
@@ -175,43 +179,75 @@ function StepScreen({ step, progress, energy, onExit, onAdvance }: StepScreenPro
   let footer: ReactNode;
   if (step.kind === "concept") {
     footer = (
-      <FooterCtaBar divider={false}>
-        <Button fullWidth onPress={continueStep}>
+      <FooterCtaBar sticky={false} divider={false}>
+        <Button
+          fullWidth
+          size="lg"
+          className={LESSON_PRIMARY_CTA_CLASS}
+          onPress={continueStep}
+        >
           {step.continueLabel ?? "Continue"}
         </Button>
       </FooterCtaBar>
     );
   } else if (phase === "answering") {
     footer = (
-      <FooterCtaBar divider={false}>
-        <Button fullWidth isDisabled={!provided} onPress={check}>
+      <FooterCtaBar sticky={false} divider={false}>
+        <Button
+          fullWidth
+          size="lg"
+          className={LESSON_PRIMARY_CTA_CLASS}
+          isDisabled={!provided}
+          onPress={check}
+        >
           Check
         </Button>
       </FooterCtaBar>
     );
   } else if (phase === "correct") {
     footer = (
-      <FooterCtaBar divider={false}>
-        <Button fullWidth variant="success" onPress={continueStep}>
+      <FooterCtaBar sticky={false} divider={false}>
+        <Button
+          fullWidth
+          size="lg"
+          variant="success"
+          className={LESSON_PRIMARY_CTA_CLASS}
+          onPress={continueStep}
+        >
           Continue
         </Button>
       </FooterCtaBar>
     );
   } else if (phase === "wrong") {
     footer = (
-      <FooterCtaBar constrain={false} divider={false}>
-        <Button variant="secondary" onPress={seeAnswer}>
+      <FooterCtaBar sticky={false} constrain={false} divider={false}>
+        <Button
+          size="lg"
+          variant="secondary"
+          className={LESSON_SECONDARY_CTA_CLASS}
+          onPress={seeAnswer}
+        >
           See answer
         </Button>
-        <Button variant="warning" onPress={tryAgain}>
+        <Button
+          size="lg"
+          variant="warning"
+          className={LESSON_SECONDARY_CTA_CLASS}
+          onPress={tryAgain}
+        >
           Try again
         </Button>
       </FooterCtaBar>
     );
   } else {
     footer = (
-      <FooterCtaBar divider={false}>
-        <Button fullWidth onPress={continueStep}>
+      <FooterCtaBar sticky={false} divider={false}>
+        <Button
+          fullWidth
+          size="lg"
+          className={LESSON_PRIMARY_CTA_CLASS}
+          onPress={continueStep}
+        >
           Continue
         </Button>
       </FooterCtaBar>
@@ -239,7 +275,7 @@ function StepScreen({ step, progress, energy, onExit, onAdvance }: StepScreenPro
       progress={progress}
       onClose={onExit}
       energy={energy}
-      evaluation={PHASE_TO_EVALUATION[phase]}
+      correct={phase === "correct"}
       toast={toast}
       footer={footer}
     >
