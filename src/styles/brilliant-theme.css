@@ -162,31 +162,35 @@
 
 .dark,
 [data-theme="dark"] {
-  /* Shape — base control radius. In-app CTAs (Check / Continue / Start) are
-     ~12px rounded rectangles; only marketing & nav buttons are full pills
-     (opt in via Button's `pill` prop). */
-  --radius: 0.75rem;
+  /* Shape — Brilliant buttons are pills; cards ~16px, inputs ~12px. This 0.5rem
+     base drives HeroUI's radius scale (lg 8 · xl 12 · 2xl 16 · 3xl 24px). */
+  --radius: 0.5rem;
 
-  /* Canvas & text */
-  --background: var(--bp-gray-950); /* #141414 */
+  /* Canvas & text — near-black like Brilliant dark; surfaces split by hairlines */
+  --background: #0a0a0b;
   --foreground: var(--bp-white);
   --muted: var(--bp-wa-700); /* text-secondary */
 
-  /* Surfaces */
-  --surface: var(--bp-dark-gray); /* #1E1E1E */
-  --surface-secondary: #242427;
-  --surface-tertiary: #2c2c30;
-  --overlay: #232327;
+  /* Surfaces — only marginally lighter than the canvas; the border does the work */
+  --surface: #161618;
+  --surface-secondary: #1d1d20;
+  --surface-tertiary: #242428;
+  --overlay: #1c1c1f;
 
-  /* Neutral controls */
-  --default: #2b2b2f;
+  /* Neutral controls (grey "Why?" pill, disabled fills, hamburger) */
+  --default: #29292d;
   --default-foreground: var(--bp-white);
 
-  /* Brand accent (blue) */
+  /* High-contrast primary CTA — Brilliant's white Check / Continue / Sign in */
+  --primary: var(--bp-white);
+  --primary-foreground: #0a0a0b;
+  --primary-hover: #e9e9eb;
+
+  /* Brand / course accent (blue for math; the "Start" button) */
   --accent: var(--bp-blue-500); /* #456DFF */
   --accent-foreground: var(--bp-white);
 
-  /* Status — dark-theme *button* fills with near-black text (Brilliant) */
+  /* Status — solid fills with near-black text (Brilliant) */
   --success: var(--bp-green-400); /* #5ED981 */
   --success-foreground: var(--bp-gray-950);
   --warning: var(--bp-yellow-400); /* #F9D25C */
@@ -197,13 +201,13 @@
   /* Lines & links */
   --border: var(--bp-wa-200); /* whiteAlpha 0.1 */
   --separator: var(--bp-wa-100); /* whiteAlpha 0.05 */
-  --link: var(--bp-blue-500);
+  --link: var(--bp-blue-400);
 
   /* Segmented controls (e.g. the lesson progress bar track) */
-  --segment: #2b2b2f;
+  --segment: #29292d;
   --segment-foreground: var(--bp-white);
 
-  /* Lesson feedback panels (semantic aliases for the raw fills above) */
+  /* Lesson feedback (correct green / retryable gold rings + panels) */
   --feedback-correct: var(--bp-feedback-correct);
   --feedback-correct-foreground: var(--bp-green-300);
   --feedback-retryable: var(--bp-feedback-retryable);
@@ -213,19 +217,34 @@
 }
 
 /*
- * Button intents HeroUI v3 doesn't ship (success / warning).
+ * Brilliant button intents + the 3D "press-down."
  *
  * HeroUI's Button is token-driven: the base `.button` reads `--button-bg`,
- * `--button-bg-hover`, `--button-bg-pressed`, `--button-fg`, and each color
- * variant class only *sets* those four properties (see @heroui/styles
- * button.css). We mirror that contract instead of overriding with utilities.
- *
- * These rules are UNLAYERED, so they beat HeroUI's `@layer components`
- * `.button--primary` even when both classes land on the element (our wrapper
- * rides the extra intents on the primary structure). The `*-hover` tokens are
- * auto-derived by HeroUI from our `--success` / `--warning`, so they track the
- * Brilliant palette automatically.
+ * `--button-bg-hover`, `--button-bg-pressed`, `--button-fg`; each color variant
+ * only sets those four. We (1) redefine `primary` as Brilliant's high-contrast
+ * inverse (white on dark), (2) add `accent` (the course/brand blue "Start") plus
+ * `success` / `warning`, and (3) give solid CTAs a bottom lip + soft shadow that
+ * compresses on press. All rules are UNLAYERED so they beat @heroui's
+ * `@layer components` defaults; `accent`/`success`/`warning` are declared after
+ * `primary` so they win when both classes land on the element.
  */
+
+/* primary = high-contrast inverse (Brilliant's white Check / Continue / Sign in) */
+.button--primary {
+  --button-bg: var(--primary);
+  --button-bg-hover: var(--primary-hover);
+  --button-bg-pressed: var(--primary-hover);
+  --button-fg: var(--primary-foreground);
+}
+
+/* accent = course/brand blue (Brilliant's "Start") */
+.button--accent {
+  --button-bg: var(--accent);
+  --button-bg-hover: var(--accent-hover);
+  --button-bg-pressed: var(--accent-hover);
+  --button-fg: var(--accent-foreground);
+}
+
 .button--success {
   --button-bg: var(--success);
   --button-bg-hover: var(--success-hover);
@@ -238,4 +257,70 @@
   --button-bg-hover: var(--warning-hover);
   --button-bg-pressed: var(--warning-hover);
   --button-fg: var(--warning-foreground);
+}
+
+/* 3D press-down: a bottom lip + soft shadow on solid CTAs, compressed on
+   :active. Transform-only motion (Emil); the shadow swap is cheap. */
+.button--primary,
+.button--accent,
+.button--success,
+.button--warning,
+.button--danger {
+  box-shadow:
+    0 3px 0 0 rgba(0, 0, 0, 0.22),
+    0 7px 14px -5px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 120ms var(--ease-out-quad, ease),
+    box-shadow 120ms var(--ease-out-quad, ease),
+    background-color 100ms ease;
+}
+
+.button--primary:not(:disabled):not([aria-disabled="true"]):active,
+.button--accent:not(:disabled):not([aria-disabled="true"]):active,
+.button--success:not(:disabled):not([aria-disabled="true"]):active,
+.button--warning:not(:disabled):not([aria-disabled="true"]):active,
+.button--danger:not(:disabled):not([aria-disabled="true"]):active,
+.button--primary[data-pressed="true"],
+.button--accent[data-pressed="true"],
+.button--success[data-pressed="true"],
+.button--warning[data-pressed="true"],
+.button--danger[data-pressed="true"] {
+  transform: translateY(3px);
+  box-shadow:
+    0 0 0 0 transparent,
+    0 2px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* Disabled CTAs render as Brilliant's flat dark-grey (not a faded fill). */
+.button--primary:disabled,
+.button--accent:disabled,
+.button--success:disabled,
+.button--warning:disabled,
+.button--danger:disabled,
+.button--primary[aria-disabled="true"],
+.button--accent[aria-disabled="true"],
+.button--success[aria-disabled="true"],
+.button--warning[aria-disabled="true"],
+.button--danger[aria-disabled="true"] {
+  --button-bg: var(--default);
+  --button-fg: var(--muted);
+  box-shadow: none;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button--primary,
+  .button--accent,
+  .button--success,
+  .button--warning,
+  .button--danger {
+    transition: background-color 100ms ease;
+  }
+  .button--primary:active,
+  .button--accent:active,
+  .button--success:active,
+  .button--warning:active,
+  .button--danger:active {
+    transform: none;
+  }
 }

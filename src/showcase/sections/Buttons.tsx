@@ -1,8 +1,9 @@
 import { Button, type ButtonVariant } from "../../components/ui";
-import { Section, Subhead, Row } from "../Section";
+import { Row, Section, Subhead } from "../Section";
 
 const VARIANTS: ButtonVariant[] = [
   "primary",
+  "accent",
   "secondary",
   "tertiary",
   "outline",
@@ -36,7 +37,7 @@ export function Buttons() {
     <Section
       id="buttons"
       title="Buttons"
-      description="One accessible Button (HeroUI under the hood). Defaults to Brilliant's ~12px rounded rectangle for in-app CTAs; `pill` switches to the full-pill marketing / nav shape. Extended with success/warning to match Brilliant's full set of CTA colors."
+      description="One accessible Button (HeroUI under the hood). Pill-shaped like Brilliant, with a 3D press-down on the solid intents. `primary` is the high-contrast white CTA (Check / Continue / Sign in), `accent` is the blue ‘Start’, plus success / warning / danger."
     >
       <Subhead>Variants</Subhead>
       <Row>
@@ -49,11 +50,9 @@ export function Buttons() {
 
       <Subhead className="mt-6">Shape</Subhead>
       <Row>
-        <Button>Rounded (default · in-app)</Button>
-        <Button pill>Pill (marketing / nav)</Button>
-        <Button pill variant="success">
-          I&apos;m a learner
-        </Button>
+        <Button>Pill (default)</Button>
+        <Button pill={false}>Rounded</Button>
+        <Button variant="accent">Start</Button>
       </Row>
 
       <Subhead className="mt-6">Sizes</Subhead>
@@ -63,7 +62,7 @@ export function Buttons() {
         <Button size="lg">Large</Button>
       </Row>
 
-      <Subhead className="mt-6">States</Subhead>
+      <Subhead className="mt-6">States (press them to feel the lip)</Subhead>
       <Row>
         <Button>Default</Button>
         <Button isDisabled>Disabled</Button>
@@ -74,8 +73,11 @@ export function Buttons() {
       </Row>
 
       <Subhead className="mt-6">Full width (lesson CTA)</Subhead>
-      <div className="max-w-sm">
-        <Button fullWidth variant="success" size="lg">
+      <div className="max-w-sm space-y-3">
+        <Button fullWidth size="lg">
+          Check
+        </Button>
+        <Button fullWidth size="lg" variant="success">
           Continue
         </Button>
       </div>

@@ -12,8 +12,32 @@ const STATE: Record<AnswerChoiceState, string> = {
   default: "border-border bg-surface hover:bg-surface-hover",
   selected: "border-accent bg-accent-soft ring-1 ring-accent",
   correct: "border-success bg-success-soft",
-  incorrect: "border-danger bg-danger-soft",
+  incorrect: "border-warning bg-warning-soft",
 };
+
+function StateBadge({ state }: { state: AnswerChoiceState }) {
+  if (state === "correct") {
+    return (
+      <span
+        className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-success text-[0.7rem] font-bold text-success-foreground"
+        aria-hidden
+      >
+        ✓
+      </span>
+    );
+  }
+  if (state === "incorrect") {
+    return (
+      <span
+        className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-warning text-[0.7rem] font-bold text-warning-foreground"
+        aria-hidden
+      >
+        ✕
+      </span>
+    );
+  }
+  return null;
+}
 
 export interface AnswerChoiceProps {
   children: ReactNode;
@@ -41,7 +65,7 @@ export function AnswerChoice({
       disabled={disabled}
       aria-pressed={state === "selected"}
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left font-medium text-foreground transition-colors disabled:cursor-not-allowed",
+        "relative flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left font-medium text-foreground transition-colors disabled:cursor-not-allowed",
         STATE[state],
         className,
       )}
@@ -52,6 +76,7 @@ export function AnswerChoice({
         </span>
       ) : null}
       <span className="flex-1">{children}</span>
+      <StateBadge state={state} />
     </button>
   );
 }
