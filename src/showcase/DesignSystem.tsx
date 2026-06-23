@@ -6,6 +6,7 @@ import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
 import { Lesson } from "./sections/Lesson";
 import { Palette } from "./sections/Palette";
+import { Settings } from "./sections/Settings";
 import { Primitives } from "./sections/Primitives";
 import { Surfaces } from "./sections/Surfaces";
 import { Typography } from "./sections/Typography";
@@ -40,6 +41,7 @@ export function DesignSystem() {
         <CourseMapSection />
         <Lesson />
         <Forms />
+        <Settings />
         <Feedback />
       </main>
     </div>

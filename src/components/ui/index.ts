@@ -25,3 +25,12 @@ export type {
 
 export { Tooltip } from "./tooltip";
 export type { TooltipProps } from "./tooltip";
+
+export { Callout } from "./callout";
+export type { CalloutIntent, CalloutProps } from "./callout";
+
+export { OptionRow } from "./option-row";
+export type { OptionRowProps } from "./option-row";
+
+export { Toast } from "./toast";
+export type { ToastIntent, ToastProps } from "./toast";
