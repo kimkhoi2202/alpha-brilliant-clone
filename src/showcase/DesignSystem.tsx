@@ -2,6 +2,7 @@ import { Buttons } from "./sections/Buttons";
 import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
 import { Palette } from "./sections/Palette";
+import { Primitives } from "./sections/Primitives";
 import { Surfaces } from "./sections/Surfaces";
 import { Typography } from "./sections/Typography";
 
@@ -28,6 +29,7 @@ export function DesignSystem() {
         <Palette />
         <Typography />
         <Buttons />
+        <Primitives />
         <Surfaces />
         <Forms />
         <Feedback />
