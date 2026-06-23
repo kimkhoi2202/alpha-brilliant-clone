@@ -7,7 +7,12 @@ type ContainerProps = ComponentProps<typeof HeroModal.Container>;
 export interface ModalProps {
   /** Trigger element (uncontrolled open). */
   trigger?: ReactNode;
-  children: ReactNode;
+  /**
+   * Dialog content. Pass a render function to receive `close()` so action
+   * buttons can dismiss the modal — this is the correct way to close from a
+   * custom button (don't use `ModalClose`, which is the corner "X" affordance).
+   */
+  children: ReactNode | ((opts: { close: () => void }) => ReactNode);
   isOpen?: RootProps["isOpen"];
   onOpenChange?: RootProps["onOpenChange"];
   size?: ContainerProps["size"];

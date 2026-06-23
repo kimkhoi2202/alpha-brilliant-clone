@@ -29,8 +29,10 @@ function NavTab({ tab }: { tab: NavTabItem }) {
       onClick={tab.onPress}
       aria-current={tab.active ? "page" : undefined}
       className={cn(
-        "relative inline-flex h-14 items-center gap-1.5 text-sm font-medium transition-colors",
-        tab.active ? "text-foreground" : "text-muted hover:text-foreground",
+        "group relative inline-flex h-full items-center gap-1.5 overflow-hidden text-sm transition-colors",
+        tab.active
+          ? "font-medium text-foreground"
+          : "text-muted hover:text-foreground",
       )}
     >
       {tab.icon ? (
@@ -39,9 +41,17 @@ function NavTab({ tab }: { tab: NavTabItem }) {
         </span>
       ) : null}
       {tab.label}
-      {tab.active ? (
-        <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-foreground" />
-      ) : null}
+      {/* Brilliant's underline: parked just below the bar, slides up on hover
+          (faint) and stays up when selected (solid). */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-full h-0.5 rounded-full transition-transform duration-150 ease-out",
+          tab.active
+            ? "-translate-y-0.5 bg-foreground"
+            : "bg-muted group-hover:-translate-y-0.5",
+        )}
+      />
     </button>
   );
 }
@@ -61,16 +71,16 @@ export function TopNav({
   return (
     <header
       className={cn(
-        "z-40 w-full border-b border-border bg-background/80 backdrop-blur",
+        "z-50 w-full border-b border-border bg-[var(--nav-background)] shadow-[0_1px_10px_rgba(0,0,0,0.18)]",
         sticky && "sticky top-0",
         className,
       )}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <div className="flex items-center gap-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
+        <div className="flex h-full items-center gap-6">
           {brand}
           {tabs && tabs.length > 0 ? (
-            <nav className="hidden items-center gap-5 sm:flex">
+            <nav className="hidden h-full items-center gap-6 sm:flex">
               {tabs.map((tab) => (
                 <NavTab key={tab.id} tab={tab} />
               ))}

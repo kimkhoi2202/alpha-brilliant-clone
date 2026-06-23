@@ -1,4 +1,5 @@
 import {
+  CourseCard,
   CourseMap,
   CurrentLessonCard,
   LevelHeader,
@@ -10,25 +11,52 @@ export function CourseMapSection() {
     <Section
       id="course-map"
       title="Course map"
-      description="The learning path: level header, lesson nodes (completed / active / locked), connectors, and the anchored current-lesson card. Medallions are placeholders."
+      description="Brilliant's learning path: the course summary card, a level banner, a meandering column of 3D lesson pucks (completed / active / locked) with the current step pinned, and the anchored start card. Art is placeholder."
     >
-      <div className="mx-auto max-w-sm">
-        <CourseMap
-          header={<LevelHeader level={1} title="Visualize Fractions" />}
-          nodes={[
-            { id: "intro", label: "Introduction", state: "completed", onPress: () => {} },
-            { id: "half", label: "Finding Half", state: "active", onPress: () => {} },
-            { id: "combine", label: "Combining Parts", state: "locked" },
-            { id: "split", label: "Splitting Parts", state: "locked" },
-          ]}
-          footer={
-            <CurrentLessonCard
-              subtitle="Continue"
-              title="Finding Half"
-              onStart={() => {}}
-            />
-          }
-        />
+      <div className="grid gap-8 md:grid-cols-[minmax(0,260px)_1fr]">
+        <div className="h-fit md:sticky md:top-24">
+          <CourseCard
+            icon="📐"
+            title="Geometry and Measurement"
+            description="Start exploring geometry with an intuitive introduction to the essentials."
+            lessons={25}
+            exercises={100}
+          />
+        </div>
+
+        <div className="mx-auto w-full max-w-md">
+          <CourseMap
+            header={<LevelHeader level={6} title="Pythagoras' Geometry" />}
+            nodes={[
+              {
+                id: "thm",
+                label: "The Pythagorean Theorem",
+                state: "completed",
+                onPress: () => {},
+              },
+              {
+                id: "triples",
+                label: "Pythagorean Triples",
+                state: "active",
+                onPress: () => {},
+              },
+              { id: "squares", label: "Squares and Roots", state: "locked" },
+              {
+                id: "special",
+                label: "Special Right Triangles",
+                state: "locked",
+              },
+              { id: "apps", label: "Applications", state: "locked" },
+            ]}
+            footer={
+              <CurrentLessonCard
+                subtitle="Continue"
+                title="Pythagorean Triples"
+                onStart={() => {}}
+              />
+            }
+          />
+        </div>
       </div>
     </Section>
   );

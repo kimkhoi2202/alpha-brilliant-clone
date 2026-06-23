@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "../../lib/cn";
 
@@ -17,7 +17,8 @@ const STATE: Record<AnswerChipState, string> = {
   blank: "border-dashed border-border bg-transparent text-muted",
 };
 
-export interface AnswerChipProps {
+export interface AnswerChipProps
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   children: ReactNode;
   state?: AnswerChipState;
   onPress?: () => void;
@@ -32,9 +33,11 @@ export function AnswerChip({
   onPress,
   disabled,
   className,
+  ...props
 }: AnswerChipProps) {
   return (
     <button
+      {...props}
       type="button"
       onClick={onPress}
       disabled={disabled}

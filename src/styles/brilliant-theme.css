@@ -166,16 +166,18 @@
      base drives HeroUI's radius scale (lg 8 · xl 12 · 2xl 16 · 3xl 24px). */
   --radius: 0.5rem;
 
-  /* Canvas & text — near-black like Brilliant dark; surfaces split by hairlines */
-  --background: #0a0a0b;
+  /* Canvas & text — Brilliant's charcoal (#141414 = gray-950), not pure black. */
+  --background: var(--bp-gray-950); /* #141414 */
   --foreground: var(--bp-white);
   --muted: var(--bp-wa-700); /* text-secondary */
 
-  /* Surfaces — only marginally lighter than the canvas; the border does the work */
-  --surface: #161618;
-  --surface-secondary: #1d1d20;
-  --surface-tertiary: #242428;
-  --overlay: #1c1c1f;
+  /* Surfaces — stepped subtly above the charcoal canvas (Brilliant's nav/cards
+     sit ~#1c–#1e); the hairline border still does most of the separation. */
+  --nav-background: var(--bp-dark-gray); /* #1e1e1e */
+  --surface: #1c1c1e;
+  --surface-secondary: #232326;
+  --surface-tertiary: #2a2a2e;
+  --overlay: #232326;
 
   /* Neutral controls (grey "Why?" pill, disabled fills, hamburger) */
   --default: #29292d;
@@ -229,55 +231,101 @@
  * `primary` so they win when both classes land on the element.
  */
 
-/* primary = high-contrast inverse (Brilliant's white Check / Continue / Sign in) */
+/* Solid intents — color only. Brilliant dims the fill on hover/press rather
+   than shifting its hue, so we pin hover/pressed to the base color and let the
+   shared opacity rule below do the work (this also fixes the previously
+   undefined --accent/--success/--warning-hover tokens). */
 .button--primary {
   --button-bg: var(--primary);
-  --button-bg-hover: var(--primary-hover);
-  --button-bg-pressed: var(--primary-hover);
+  --button-bg-hover: var(--primary);
+  --button-bg-pressed: var(--primary);
   --button-fg: var(--primary-foreground);
 }
 
 /* accent = course/brand blue (Brilliant's "Start") */
 .button--accent {
   --button-bg: var(--accent);
-  --button-bg-hover: var(--accent-hover);
-  --button-bg-pressed: var(--accent-hover);
+  --button-bg-hover: var(--accent);
+  --button-bg-pressed: var(--accent);
   --button-fg: var(--accent-foreground);
 }
 
 .button--success {
   --button-bg: var(--success);
-  --button-bg-hover: var(--success-hover);
-  --button-bg-pressed: var(--success-hover);
+  --button-bg-hover: var(--success);
+  --button-bg-pressed: var(--success);
   --button-fg: var(--success-foreground);
 }
 
 .button--warning {
   --button-bg: var(--warning);
-  --button-bg-hover: var(--warning-hover);
-  --button-bg-pressed: var(--warning-hover);
+  --button-bg-hover: var(--warning);
+  --button-bg-pressed: var(--warning);
   --button-fg: var(--warning-foreground);
 }
 
+.button--danger {
+  --button-bg: var(--danger);
+  --button-bg-hover: var(--danger);
+  --button-bg-pressed: var(--danger);
+  --button-fg: var(--danger-foreground);
+}
+
+/* Brilliant's hover/active feel: dim the whole control, uniformly, no hue shift. */
+.button--primary,
+.button--accent,
+.button--success,
+.button--warning,
+.button--danger {
+  transition:
+    opacity 130ms ease,
+    transform 90ms var(--ease-out-quad, ease),
+    box-shadow 90ms var(--ease-out-quad, ease);
+}
+.button--primary:not(:disabled):not([aria-disabled="true"]):hover,
+.button--accent:not(:disabled):not([aria-disabled="true"]):hover,
+.button--success:not(:disabled):not([aria-disabled="true"]):hover,
+.button--warning:not(:disabled):not([aria-disabled="true"]):hover,
+.button--danger:not(:disabled):not([aria-disabled="true"]):hover {
+  opacity: 0.85;
+}
+.button--primary:not(:disabled):not([aria-disabled="true"]):active,
+.button--accent:not(:disabled):not([aria-disabled="true"]):active,
+.button--success:not(:disabled):not([aria-disabled="true"]):active,
+.button--warning:not(:disabled):not([aria-disabled="true"]):active,
+.button--danger:not(:disabled):not([aria-disabled="true"]):active,
+.button--primary[data-pressed="true"],
+.button--accent[data-pressed="true"],
+.button--success[data-pressed="true"],
+.button--warning[data-pressed="true"],
+.button--danger[data-pressed="true"] {
+  opacity: 0.7;
+}
+
 /* The "clicky" 3D press-down — opt in via the Button `clicky` prop, which adds
-   `.button--clicky`. So every variant has two modes: clicky (this lip) or flat
-   (omit it). The lip is a darker shade of the button's OWN fill (grey under
-   white, dark-green under green), so it shows on the near-black canvas. Filled
-   variants get a visible lip; outline/ghost have a transparent fill so theirs
-   collapses to nothing (effectively flat). */
+   `.button--clicky`. Filled CTAs enable it by default; outline/ghost/secondary
+   controls stay flatter so they don't get a heavy black cast shadow. */
 .button--clicky {
-  box-shadow: 0 4px 0 0 color-mix(in srgb, var(--button-bg), #000 26%);
+  /* Two layers, both derived from the button fill so they show on the dark
+     canvas: (1) a light crisp lip right under the edge, (2) a softer, deeper
+     diffuse shadow grounding it — Brilliant's floating elevation, not a hard
+     ledge. */
+  box-shadow:
+    0 3px 0 0 color-mix(in srgb, var(--button-bg), #000 14%),
+    0 5px 8px -5px rgba(0, 0, 0, 0.5);
   transition:
     transform 90ms var(--ease-out-quad, ease),
     box-shadow 90ms var(--ease-out-quad, ease),
-    background-color 100ms ease;
+    opacity 130ms ease;
 }
 
 .button--clicky:not(:disabled):not([aria-disabled="true"]):active,
 .button--clicky[data-pressed="true"] {
-  /* Press into the lip: drop 4px and collapse the shadow to 0. */
-  transform: translateY(4px);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--button-bg), #000 26%);
+  /* Press down: drop and collapse the elevation. */
+  transform: translateY(3px);
+  box-shadow:
+    0 0 0 0 color-mix(in srgb, var(--button-bg), #000 14%),
+    0 2px 4px -4px rgba(0, 0, 0, 0.5);
 }
 
 /* Disabled CTAs render as Brilliant's flat dark-grey (not a faded fill). */
@@ -301,6 +349,27 @@
 .button--clicky:disabled,
 .button--clicky[aria-disabled="true"] {
   box-shadow: none;
+}
+
+/* Brilliant's "Gift Premium" nav button: an iridescent gradient *border* over
+   the canvas fill (the text is a solid soft white, not a gradient), and the
+   border dims to muted tones on hover. */
+.premium-button {
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    linear-gradient(
+        86deg,
+        var(--bp-blue-400) 0%,
+        var(--bp-pink-400) 50%,
+        var(--bp-yellow-400) 100%
+      )
+      border-box;
+  border: 2px solid transparent;
+}
+.premium-button:hover {
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    linear-gradient(86deg, #5d74cc 0%, #cc73b3 47%, #c69c1e 100%) border-box;
 }
 
 @media (prefers-reduced-motion: reduce) {

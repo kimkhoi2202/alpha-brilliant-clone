@@ -34,6 +34,14 @@ const EXTRA_VARIANTS = new Set<ExtraVariant>(["accent", "success", "warning"]);
 const isExtra = (v: ButtonVariant): v is ExtraVariant =>
   EXTRA_VARIANTS.has(v as ExtraVariant);
 
+const DEFAULT_CLICKY_VARIANTS = new Set<ButtonVariant>([
+  "primary",
+  "accent",
+  "success",
+  "warning",
+  "danger",
+]);
+
 export interface ButtonProps
   extends Omit<HeroButtonProps, "variant" | "className"> {
   variant?: ButtonVariant;
@@ -43,8 +51,8 @@ export interface ButtonProps
    */
   pill?: boolean;
   /**
-   * "Clicky" mode: the 3D press-down lip. Defaults to `true` for normal buttons
-   * and `false` for icon-only buttons. Set explicitly to force either mode.
+   * "Clicky" mode: the 3D press-down lip. Defaults to filled CTAs only.
+   * Set explicitly to force secondary/outline controls into either mode.
    */
   clicky?: boolean;
   className?: string;
@@ -57,7 +65,8 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const isClicky = clicky ?? !props.isIconOnly;
+  const isClicky =
+    clicky ?? (!props.isIconOnly && DEFAULT_CLICKY_VARIANTS.has(variant));
   return (
     <HeroButton
       {...props}

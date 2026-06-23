@@ -32,6 +32,9 @@ export type { CalloutIntent, CalloutProps } from "./callout";
 export { OptionRow } from "./option-row";
 export type { OptionRowProps } from "./option-row";
 
+export { Search } from "./search";
+export type { SearchProps, SearchResult } from "./search";
+
 export { Toast } from "./toast";
 export type { ToastIntent, ToastProps } from "./toast";
 

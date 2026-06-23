@@ -37,9 +37,9 @@ export function Buttons() {
     <Section
       id="buttons"
       title="Buttons"
-      description="One accessible Button (HeroUI under the hood). Pill-shaped like Brilliant, with two modes via `clicky`: the 3D press-down lip (default) or flat. `primary` is the high-contrast white CTA (Check / Continue / Sign in), `accent` is the blue ‘Start’, plus success / warning / danger."
+      description="One accessible Button (HeroUI under the hood). Pill-shaped like Brilliant, with filled CTAs using the 3D press-down lip and secondary controls staying flatter. `primary` is the high-contrast white CTA (Check / Continue / Sign in), `accent` is the blue ‘Start’, plus success / warning / danger."
     >
-      <Subhead>Variants (clicky)</Subhead>
+      <Subhead>Variants</Subhead>
       <Row>
         {VARIANTS.map((v) => (
           <Button key={v} variant={v}>

@@ -62,7 +62,7 @@ export function Onboarding() {
                 ))}
               </div>
             </div>
-            <FooterCtaBar>
+            <FooterCtaBar sticky={false} divider={false}>
               <Button fullWidth isDisabled={goal === null}>
                 Continue
               </Button>
@@ -91,7 +91,7 @@ export function Onboarding() {
                 ))}
               </div>
             </div>
-            <FooterCtaBar>
+            <FooterCtaBar sticky={false} divider={false}>
               <Button fullWidth>Continue</Button>
             </FooterCtaBar>
           </Frame>
@@ -107,7 +107,7 @@ export function Onboarding() {
             fun.
           </ConceptSlide>
         </div>
-        <FooterCtaBar>
+        <FooterCtaBar sticky={false} divider={false}>
           <Button fullWidth>Continue</Button>
         </FooterCtaBar>
       </Frame>

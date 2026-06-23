@@ -1,5 +1,5 @@
-import { TopNav } from "../components/chrome";
-import { Button, Counter } from "../components/ui";
+import { HeaderMenuButton, TopNav } from "../components/chrome";
+import { Counter } from "../components/ui";
 import { Auth } from "./sections/Auth";
 import { Buttons } from "./sections/Buttons";
 import { Cards } from "./sections/Cards";
@@ -35,25 +35,17 @@ function BookIcon() {
     </svg>
   );
 }
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="size-5" aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-}
-
-/** Gradient-border "Premium" pill — Brilliant's nav upsell treatment. */
+/** Brilliant's "Gift Premium" nav button: iridescent gradient border, solid
+ *  soft-white label, border dims to muted on hover (see .premium-button). */
 function PremiumPill() {
   return (
-    <span
-      className="inline-block rounded-full p-px"
-      style={{ backgroundImage: "var(--bp-gradient-iridescent)" }}
+    <button
+      type="button"
+      aria-label="Gift Premium"
+      className="premium-button rounded-full px-4 py-2 text-sm font-medium text-[#fcfbf7]"
     >
-      <span className="block rounded-full bg-background px-4 py-1.5 text-xs font-semibold text-foreground">
-        Premium
-      </span>
-    </span>
+      Gift Premium
+    </button>
   );
 }
 
@@ -78,9 +70,7 @@ export function DesignSystem() {
               icon={<span aria-hidden>⚡</span>}
               aria-label="1 energy"
             />
-            <Button variant="secondary" isIconOnly pill={false} aria-label="Menu">
-              <MenuIcon />
-            </Button>
+            <HeaderMenuButton />
           </>
         }
       />

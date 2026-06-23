@@ -8,11 +8,15 @@ export type AnswerChoiceState =
   | "correct"
   | "incorrect";
 
+// Brilliant's MCQ choices are outlined, not filled: an unselected choice is
+// transparent (same as the surface) with a hairline border; the selected one
+// keeps a clean blue edge (border + an *inset* ring → ~2px, no outer glow) over
+// a barely-there blue tint. correct/incorrect mirror that with green/gold.
 const STATE: Record<AnswerChoiceState, string> = {
-  default: "border-border bg-surface hover:bg-surface-hover",
-  selected: "border-accent bg-accent-soft ring-1 ring-accent",
-  correct: "border-success bg-success-soft",
-  incorrect: "border-warning bg-warning-soft",
+  default: "border-border bg-transparent hover:bg-surface",
+  selected: "border-accent bg-accent-soft ring-1 ring-inset ring-accent",
+  correct: "border-success bg-success-soft ring-1 ring-inset ring-success",
+  incorrect: "border-warning bg-warning-soft ring-1 ring-inset ring-warning",
 };
 
 function StateBadge({ state }: { state: AnswerChoiceState }) {

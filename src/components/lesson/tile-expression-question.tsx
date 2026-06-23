@@ -1,3 +1,6 @@
+import { useState } from "react";
+import type { DragEvent } from "react";
+
 import { cn } from "../../lib/cn";
 import { AnswerChip } from "./answer-chip";
 
@@ -15,6 +18,7 @@ export interface TileExpressionQuestionProps {
   bank: ExpressionBankItem[];
   onBlankPress?: (blankIndex: number) => void;
   onBankPress?: (id: string) => void;
+  onDropToBlank?: (id: string, blankIndex: number) => void;
   className?: string;
 }
 
@@ -31,9 +35,29 @@ export function TileExpressionQuestion({
   bank,
   onBlankPress,
   onBankPress,
+  onDropToBlank,
   className,
 }: TileExpressionQuestionProps) {
   const slotIndices = blankSlotIndices(parts);
+  const [dragOverBlank, setDragOverBlank] = useState<number | null>(null);
+
+  const handleDragStart =
+    (id: string) => (event: DragEvent<HTMLButtonElement>) => {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", id);
+      event.dataTransfer.setData("application/x-alpha-brilliant-tile", id);
+    };
+
+  const handleDrop =
+    (blankIndex: number) => (event: DragEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      setDragOverBlank(null);
+      const id =
+        event.dataTransfer.getData("application/x-alpha-brilliant-tile") ||
+        event.dataTransfer.getData("text/plain");
+      if (!id) return;
+      onDropToBlank?.(id, blankIndex);
+    };
 
   return (
     <div className={cn("flex flex-col items-center gap-6", className)}>
@@ -49,8 +73,25 @@ export function TileExpressionQuestion({
               key={i}
               state={value ? "selected" : "blank"}
               onPress={() => onBlankPress?.(blankIndex)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+                setDragOverBlank(blankIndex);
+              }}
+              onDragLeave={() => setDragOverBlank(null)}
+              onDrop={handleDrop(blankIndex)}
+              aria-label={
+                value
+                  ? `Blank ${blankIndex + 1}, ${value}. Click to clear or drop another tile to replace.`
+                  : `Blank ${blankIndex + 1}. Drop a tile here.`
+              }
+              className={cn(
+                "min-h-11 min-w-16 transition-colors",
+                dragOverBlank === blankIndex &&
+                  "border-accent bg-accent-soft text-foreground",
+              )}
             >
-              {value ?? "▢"}
+              {value ?? ""}
             </AnswerChip>
           );
         })}
@@ -61,8 +102,18 @@ export function TileExpressionQuestion({
             key={item.id}
             state="default"
             disabled={item.used}
+            draggable={!item.used}
+            onDragStart={handleDragStart(item.id)}
             onPress={() => onBankPress?.(item.id)}
-            className={item.used ? "opacity-40" : undefined}
+            aria-label={
+              item.used
+                ? `${item.label} already placed`
+                : `Drag or click ${item.label}`
+            }
+            className={cn(
+              "touch-none active:cursor-grabbing",
+              item.used ? "opacity-40" : "cursor-grab",
+            )}
           >
             {item.label}
           </AnswerChip>

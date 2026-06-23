@@ -1,5 +1,6 @@
 import { Checkbox, Input, Switch } from "@heroui/react";
 
+import { Search } from "../../components/ui";
 import { Section, Subhead } from "../Section";
 
 export function Forms() {
@@ -15,8 +16,12 @@ export function Forms() {
           <label htmlFor="ds-name" className="block text-sm font-medium">
             Display name
           </label>
-          <Input id="ds-name" placeholder="Ada Lovelace" />
-          <Input placeholder="Lower-emphasis (secondary)" variant="secondary" />
+          <Input id="ds-name" fullWidth placeholder="Ada Lovelace" />
+          <Input
+            fullWidth
+            placeholder="Lower-emphasis (secondary)"
+            variant="secondary"
+          />
         </div>
 
         <div className="space-y-4">
@@ -46,6 +51,19 @@ export function Forms() {
             </Switch.Content>
           </Switch>
         </div>
+      </div>
+
+      <div className="mt-10 max-w-lg">
+        <Subhead>Search (expands to a query panel)</Subhead>
+        <Search
+          results={[
+            { id: "1", label: "Pythagorean Theorem" },
+            { id: "2", label: "Pythagorean Triples" },
+            { id: "3", label: "How do large language models work?" },
+            { id: "4", label: "Visualize fractions" },
+            { id: "5", label: "Special right triangles" },
+          ]}
+        />
       </div>
     </Section>
   );

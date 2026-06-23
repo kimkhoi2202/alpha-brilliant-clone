@@ -11,6 +11,18 @@ export interface FooterCtaBarProps {
   centered?: boolean;
   /** Constrain a single CTA to a comfortable width (Brilliant's Check). Default true. */
   constrain?: boolean;
+  /**
+   * Pin to the viewport bottom. Default `true` for the real lesson player. Set
+   * `false` in static previews/catalogs so the bar stays in flow instead of
+   * floating over other content.
+   */
+  sticky?: boolean;
+  /**
+   * Top divider line. Default `true` (separates the bar from content above it,
+   * as in a real lesson screen). Set `false` when the bar sits directly under a
+   * separate bordered card, where a full-width line reads as a stray rule.
+   */
+  divider?: boolean;
   className?: string;
 }
 
@@ -20,12 +32,16 @@ export function FooterCtaBar({
   startContent,
   centered = true,
   constrain = true,
+  sticky = true,
+  divider = true,
   className,
 }: FooterCtaBarProps) {
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-40 w-full border-t border-border bg-background",
+        "w-full bg-background",
+        divider && "border-t border-border",
+        sticky ? "sticky bottom-0 z-30" : "relative",
         className,
       )}
     >

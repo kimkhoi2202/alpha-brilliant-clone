@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import {
   FooterCtaBar,
+  HeaderMenuButton,
   LessonTopBar,
   TopNav,
   type NavTabItem,
@@ -23,13 +24,6 @@ function BookIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
       <path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z" />
       <path d="M18 3v16" />
-    </svg>
-  );
-}
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="size-5" aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
@@ -74,9 +68,7 @@ export function Chrome() {
               </Button>
               <Counter value={2} icon={<Flame />} aria-label="2 day streak" />
               <Counter value={0} icon={<Bolt />} aria-label="0 energy" />
-              <Button variant="ghost" isIconOnly aria-label="Open menu">
-                <MenuIcon />
-              </Button>
+              <HeaderMenuButton />
             </>
           }
         />
@@ -105,7 +97,7 @@ export function Chrome() {
         <div className="grid h-24 place-items-center text-sm text-muted">
           lesson content…
         </div>
-        <FooterCtaBar>
+        <FooterCtaBar sticky={false}>
           <Button fullWidth>Check</Button>
         </FooterCtaBar>
       </Frame>
@@ -115,6 +107,7 @@ export function Chrome() {
           lesson content…
         </div>
         <FooterCtaBar
+          sticky={false}
           startContent={
             <button
               type="button"

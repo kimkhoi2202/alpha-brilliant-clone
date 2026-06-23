@@ -32,4 +32,20 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+
+  /*
+   * Tailwind v4's Preflight no longer sets `cursor: pointer` on buttons, so
+   * every custom control (nav items, tabs, menu items, triggers, the Button
+   * component, …) would otherwise show the default arrow. Restore it once, here,
+   * for all interactive elements — fixing the whole app rather than per-component.
+   * Disabled controls are excluded so `cursor-not-allowed` still wins for them.
+   */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"],
+  [role="option"],
+  summary {
+    cursor: pointer;
+  }
 }

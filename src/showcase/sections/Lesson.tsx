@@ -62,27 +62,27 @@ function BarChartFlow() {
       </LessonContainer>
 
       {!checked ? (
-        <FooterCtaBar>
+        <FooterCtaBar sticky={false} divider={false}>
           <Button fullWidth isDisabled={sel === null} onPress={() => setChecked(true)}>
             Check
           </Button>
         </FooterCtaBar>
       ) : isCorrect ? (
-        <FooterCtaBar constrain={false}>
+        <FooterCtaBar sticky={false} divider={false} constrain={false}>
           <Button variant="secondary">Why?</Button>
           <Button variant="success" onPress={reset}>
             Continue
           </Button>
         </FooterCtaBar>
       ) : seeAnswer ? (
-        <FooterCtaBar constrain={false}>
+        <FooterCtaBar sticky={false} divider={false} constrain={false}>
           <Button variant="secondary">Why?</Button>
           <Button variant="outline" onPress={reset}>
             Skip explanation
           </Button>
         </FooterCtaBar>
       ) : (
-        <FooterCtaBar constrain={false}>
+        <FooterCtaBar sticky={false} divider={false} constrain={false}>
           <Button variant="secondary" onPress={() => setSeeAnswer(true)}>
             See answer
           </Button>
@@ -109,7 +109,7 @@ function RegionShadeDemo() {
           </div>
         </div>
       </LessonContainer>
-      <FooterCtaBar>
+      <FooterCtaBar sticky={false} divider={false}>
         <Button fullWidth isDisabled={shaded.length === 0}>
           Check
         </Button>
@@ -133,6 +133,18 @@ function TileExpressionDemo() {
     if (next === -1) return;
     setBlanks(blanks.map((x, i) => (i === next ? item.label : x)));
   };
+  const placeInBlank = (id: string, blankIndex: number) => {
+    const item = bank.find((b) => b.id === id);
+    if (!item) return;
+    setBlanks((current) =>
+      current.map((value, index) => {
+        if (index === blankIndex) return item.label;
+        // Prevent duplicate tiles if the same chip was already placed elsewhere.
+        if (value === item.label) return null;
+        return value;
+      }),
+    );
+  };
   const clear = (i: number) =>
     setBlanks(blanks.map((x, j) => (j === i ? null : x)));
   const bankItems = bank.map((b) => ({ ...b, used: blanks.includes(b.label) }));
@@ -148,10 +160,11 @@ function TileExpressionDemo() {
             bank={bankItems}
             onBankPress={place}
             onBlankPress={clear}
+            onDropToBlank={placeInBlank}
           />
         </div>
       </LessonContainer>
-      <FooterCtaBar>
+      <FooterCtaBar sticky={false} divider={false}>
         <Button fullWidth isDisabled={blanks.some((b) => b === null)}>
           Check
         </Button>
@@ -175,7 +188,7 @@ function FeedbackStateDemo({
         </div>
         <FeedbackToast status={evaluation} className="absolute bottom-3 left-3" />
       </LessonContainer>
-      <FooterCtaBar constrain={false}>{children}</FooterCtaBar>
+      <FooterCtaBar sticky={false} divider={false} constrain={false}>{children}</FooterCtaBar>
     </div>
   );
 }
