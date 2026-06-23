@@ -1,6 +1,7 @@
 import { Auth } from "./sections/Auth";
 import { Buttons } from "./sections/Buttons";
 import { Cards } from "./sections/Cards";
+import { Celebration } from "./sections/Celebration";
 import { Chrome } from "./sections/Chrome";
 import { CourseMapSection } from "./sections/CourseMapSection";
 import { Feedback } from "./sections/Feedback";
@@ -52,6 +53,7 @@ export function DesignSystem() {
         <Gamification />
         <HomeCatalog />
         <MarketingPremium />
+        <Celebration />
         <Feedback />
       </main>
     </div>
