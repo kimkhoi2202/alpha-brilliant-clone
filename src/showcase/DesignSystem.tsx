@@ -8,6 +8,7 @@ import { Forms } from "./sections/Forms";
 import { Gamification } from "./sections/Gamification";
 import { HomeCatalog } from "./sections/HomeCatalog";
 import { Lesson } from "./sections/Lesson";
+import { MarketingPremium } from "./sections/MarketingPremium";
 import { Onboarding } from "./sections/Onboarding";
 import { Palette } from "./sections/Palette";
 import { Settings } from "./sections/Settings";
@@ -50,6 +51,7 @@ export function DesignSystem() {
         <Onboarding />
         <Gamification />
         <HomeCatalog />
+        <MarketingPremium />
         <Feedback />
       </main>
     </div>
