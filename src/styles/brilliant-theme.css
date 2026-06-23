@@ -266,12 +266,13 @@
 .button--success,
 .button--warning,
 .button--danger {
-  box-shadow:
-    0 3px 0 0 rgba(0, 0, 0, 0.22),
-    0 7px 14px -5px rgba(0, 0, 0, 0.5);
+  /* The lip is a darker shade of the button's OWN fill (grey under white,
+     dark-green under green), so it's visible on the near-black canvas — a black
+     shadow would vanish. This is Brilliant's "elevation". */
+  box-shadow: 0 4px 0 0 color-mix(in srgb, var(--button-bg), #000 26%);
   transition:
-    transform 120ms var(--ease-out-quad, ease),
-    box-shadow 120ms var(--ease-out-quad, ease),
+    transform 90ms var(--ease-out-quad, ease),
+    box-shadow 90ms var(--ease-out-quad, ease),
     background-color 100ms ease;
 }
 
@@ -285,10 +286,9 @@
 .button--success[data-pressed="true"],
 .button--warning[data-pressed="true"],
 .button--danger[data-pressed="true"] {
-  transform: translateY(3px);
-  box-shadow:
-    0 0 0 0 transparent,
-    0 2px 6px -4px rgba(0, 0, 0, 0.4);
+  /* Press into the lip: drop 4px and collapse the shadow to 0. */
+  transform: translateY(4px);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--button-bg), #000 26%);
 }
 
 /* Disabled CTAs render as Brilliant's flat dark-grey (not a faded fill). */
