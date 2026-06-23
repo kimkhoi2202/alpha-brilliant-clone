@@ -5,14 +5,16 @@
 | Field | Value |
 | --- | --- |
 | Document owner | Khoi |
-| Status | Draft `v0.2` |
-| Last updated | 2026-06-22 |
+| Status | `v1.0` — finalized for the MVP build |
+| Last updated | 2026-06-23 |
 | Target | MVP (Phase 1) |
 | Platform | Responsive web (mobile-first) |
 | Tech stack | React + TypeScript + Vite + Firebase |
 | Subject | Geometry → the Pythagorean Theorem |
+| Repository | `github.com/kimkhoi2202/alpha-brilliant-clone` |
+| Deployed URL | _TBD (Firebase Hosting)_ |
 
-**Contents:** [1. MVP](#1-mvp) · [2. User Profile](#2-user-profile) · [3. User Story](#3-user-story) · [4. Tech Stack](#4-tech-stack)
+**Contents:** [1. MVP](#1-mvp) · [2. User Profile](#2-user-profile) · [3. User Story](#3-user-story) · [4. Tech Stack](#4-tech-stack) · [5. Appendix](#5-appendix)
 
 ---
 
@@ -43,7 +45,7 @@ Existing options fall into two traps: video-first apps (you watch someone else s
 - Provide a **visual element the learner manipulates** and watches respond.
 - Give **instant (< 100ms), specific, hand-written feedback**; wrong answers get a targeted hint, not just a red X.
 - **Persist progress**: leave mid-lesson, return on any device, pick up where you stopped.
-- Provide a **course path** that unlocks lessons and **recommends a sensible next step** (basic completion-based progression for the MVP; richer mastery logic deferred — see [Decisions & Deferred](#decisions--deferred-items)).
+- Provide a **course path** that unlocks lessons and **recommends a sensible next step** (basic completion-based progression for the MVP; richer mastery logic deferred — see [Appendix](#5-appendix)).
 - Include a **basic, persisted daily streak** (the MVP test verifies the streak survives sessions); milestones are a light add-on.
 - **Accounts with names** via **email/password and Google**.
 - **Mobile-first**, touch-friendly, 60fps visuals, < 2s to first interaction.
@@ -161,6 +163,36 @@ Intentionally excluded from the MVP (revisited in later phases):
 - Learners use modern mobile and desktop browsers.
 - Firestore's free tier is sufficient for the test load (multiple concurrent learners).
 - Email/password + Google are sufficient auth methods; no SSO/enterprise needs.
+
+### 1.9 Acceptance Criteria & Test Plan
+
+The MVP passes when all of the following hold (these map to how the project is graded).
+
+**Pass gate (must all be true)**
+- [ ] Subject is stated clearly and the whole app is built for the chosen persona.
+- [ ] At least one interactive lesson teaches a real concept (not a video or a wall of text).
+- [ ] At least one problem the learner manipulates directly (drag / tap / slider / plot / reorder).
+- [ ] An interactive visual that responds to input.
+- [ ] Instant, specific feedback on every answer, right or wrong, hand-written.
+- [ ] Progress persists — leave mid-lesson, return, and resume.
+- [ ] Accounts with names (auth).
+- [ ] Works on mobile screen sizes.
+- [ ] Deployed and public.
+- [ ] Teaches with **AI turned off** (no AI in the MVP at all).
+
+**Test scenarios (graders will run these)**
+- [ ] Complete a lesson end-to-end, **get problems wrong on purpose**, and use the feedback to recover.
+- [ ] Manipulate the interactive element and watch the visual respond in **real time**.
+- [ ] Leave **mid-lesson** and return to confirm **progress and streak persist**.
+- [ ] Finish a lesson and see the path recommend a **sensible next step**.
+- [ ] Do all of the above on a **phone-sized screen**.
+
+**Performance targets**
+- [ ] Feedback on an answer appears in **< 100ms**.
+- [ ] Interactive visuals stay smooth at **60 FPS** during manipulation.
+- [ ] Lessons load in **< 2s** to first interaction.
+- [ ] Touch input works on mobile.
+- [ ] Multiple concurrent learners with no slowdown (tested on the deployed app).
 
 ---
 
@@ -280,7 +312,25 @@ users/{uid}/progress/{lessonId}
 
 > Security: `users/{uid}` and everything beneath it are readable/writable **only** by the owner (`request.auth.uid == uid`); all other paths are denied. See `firestore.rules`.
 
-### 4.3 Repository & Branching
+### 4.3 Application Structure (intended)
+
+```
+src/
+  main.tsx                 # entry; mounts providers + router
+  App.tsx                  # top-level routes / shell
+  lib/                     # firebase.ts, AuthContext.tsx, helpers
+  content/                 # content model: types + lesson definitions + course path
+  components/
+    interactions/          # mc, numeric, tap, slider, plot-points, drag-arrange
+    visuals/               # SVG figures: right triangle, squares-on-sides, grid, proof
+    ui/                    # shared UI (buttons, cards, layout, feedback banner)
+  routes/                  # AuthScreen, CourseMap, LessonPlayer, Profile
+  hooks/ (or state/)       # useProgress, useStreak, useAuth
+```
+
+> Renderer-vs-content separation: `routes/LessonPlayer` reads a `Lesson` from `content/` and renders each `Step` via the matching `interactions/` + `visuals/` components. Adding a lesson = adding data, not UI.
+
+### 4.4 Repository & Branching
 - The app lives in `alpha-brilliant-clone/main` (the `main` worktree); phase work happens in sibling worktrees.
 - **Environment branches:** `dev → staging → main → prod` (one-way promotion).
 - **Phase branches:** `phase-1/mvp`, `phase-2/ai-features`, `phase-3/learning-science`.
@@ -288,15 +338,51 @@ users/{uid}/progress/{lessonId}
 
 ---
 
-## Decisions & Deferred Items
+## 5. Appendix
+
+### 5.1 Phasing & Roadmap
+
+The project is built in three strict phases (each must stand on its own before the next begins).
+
+**Phase 1 — MVP (no AI).** This document. The core learn-by-doing app; deployed and teaching with zero AI.
+
+**Phase 2 — AI features (decide, then build).** Pick the AI features that genuinely help, then build them grounded in the lesson's structured state (not raw text), with math verified by an engine (e.g. `math.js`). The MVP must keep working with AI off. Candidate features (final selection decided at the start of Phase 2):
+- Generate new practice problems at the right difficulty so the course never runs dry.
+- Targeted hints when a learner is stuck, without handing over the answer.
+- Adaptive path — pick the next lesson based on what the learner struggles with.
+- Plain-language explanations of a wrong answer, tuned to what the learner actually did.
+
+**Phase 3 — Learning science.** Layer evidence-based techniques on the working app. Candidates (final selection decided at the start of Phase 3): retrieval practice, spaced repetition (resurface missed concepts sooner), interleaving, mastery learning, scaffolding / desirable difficulty, and sharper explanatory feedback. Pick a few, implement for real, and measure the effect.
+
+### 5.2 Milestones
+
+| Phase | Deliverable | Target |
+| --- | --- | --- |
+| 1 | MVP — core app, deployed, teaches without AI | Wed |
+| 2 | Chosen AI features, grounded in lesson state | Fri |
+| 3 | Learning-science techniques layered on top | Sun |
+| — | Repo + demo video + Brainlift + deployed app | Sun 10:59 PM CT |
+
+### 5.3 Risks & Mitigations
+
+| Risk | Mitigation |
+| --- | --- |
+| Interactive components are the hard part and can slip the timeline | Build the platform + one interaction end-to-end first; placeholder lessons prove the engine before content. |
+| 60fps drag on mobile | SVG with transform-based updates; avoid per-frame layout/Firestore writes; throttle persistence. |
+| Firebase bundle size hurts first-interaction time | Code-split Firebase / lazy-load; bundle lesson content (no network for content). |
+| Scope creep into AI / learning-science early | Hard phase gates; those features are explicit non-goals for the MVP. |
+| Progress/streak inconsistency across devices | Single source of truth in Firestore (`users/{uid}/**`); write on step completion; reconcile on load. |
+
+### 5.4 Decision Log
 
 **Locked**
 - **Name:** AlphaBrilliant (repo `alpha-brilliant-clone`).
-- **Subject / persona:** Pythagorean theorem; high-school student.
+- **Subject / persona:** Pythagorean theorem; high-school student (9th/10th grade).
 - **Auth:** email/password **and** Google; no email verification; capture a display name.
 - **Streak:** in scope for the MVP (basic, persisted); milestones are a light add-on.
 - **Approach:** platform-first with placeholder lessons; real content authored later.
 - **Branching:** `dev/staging/main/prod` + phase branches (see `AGENTS.md`).
+- **Deploy target:** Firebase Hosting (`fir-94b95`).
 
 **Deferred (decide later, not blocking the MVP build)**
 - Final lesson **order and content**.
