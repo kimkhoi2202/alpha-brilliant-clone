@@ -259,16 +259,13 @@
   --button-fg: var(--warning-foreground);
 }
 
-/* 3D press-down: a bottom lip + soft shadow on solid CTAs, compressed on
-   :active. Transform-only motion (Emil); the shadow swap is cheap. */
-.button--primary,
-.button--accent,
-.button--success,
-.button--warning,
-.button--danger {
-  /* The lip is a darker shade of the button's OWN fill (grey under white,
-     dark-green under green), so it's visible on the near-black canvas — a black
-     shadow would vanish. This is Brilliant's "elevation". */
+/* The "clicky" 3D press-down — opt in via the Button `clicky` prop, which adds
+   `.button--clicky`. So every variant has two modes: clicky (this lip) or flat
+   (omit it). The lip is a darker shade of the button's OWN fill (grey under
+   white, dark-green under green), so it shows on the near-black canvas. Filled
+   variants get a visible lip; outline/ghost have a transparent fill so theirs
+   collapses to nothing (effectively flat). */
+.button--clicky {
   box-shadow: 0 4px 0 0 color-mix(in srgb, var(--button-bg), #000 26%);
   transition:
     transform 90ms var(--ease-out-quad, ease),
@@ -276,16 +273,8 @@
     background-color 100ms ease;
 }
 
-.button--primary:not(:disabled):not([aria-disabled="true"]):active,
-.button--accent:not(:disabled):not([aria-disabled="true"]):active,
-.button--success:not(:disabled):not([aria-disabled="true"]):active,
-.button--warning:not(:disabled):not([aria-disabled="true"]):active,
-.button--danger:not(:disabled):not([aria-disabled="true"]):active,
-.button--primary[data-pressed="true"],
-.button--accent[data-pressed="true"],
-.button--success[data-pressed="true"],
-.button--warning[data-pressed="true"],
-.button--danger[data-pressed="true"] {
+.button--clicky:not(:disabled):not([aria-disabled="true"]):active,
+.button--clicky[data-pressed="true"] {
   /* Press into the lip: drop 4px and collapse the shadow to 0. */
   transform: translateY(4px);
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--button-bg), #000 26%);
@@ -308,19 +297,17 @@
   opacity: 1;
 }
 
+/* No lip on a disabled clicky button. */
+.button--clicky:disabled,
+.button--clicky[aria-disabled="true"] {
+  box-shadow: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .button--primary,
-  .button--accent,
-  .button--success,
-  .button--warning,
-  .button--danger {
+  .button--clicky {
     transition: background-color 100ms ease;
   }
-  .button--primary:active,
-  .button--accent:active,
-  .button--success:active,
-  .button--warning:active,
-  .button--danger:active {
+  .button--clicky:active {
     transform: none;
   }
 }

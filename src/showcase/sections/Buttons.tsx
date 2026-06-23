@@ -37,9 +37,9 @@ export function Buttons() {
     <Section
       id="buttons"
       title="Buttons"
-      description="One accessible Button (HeroUI under the hood). Pill-shaped like Brilliant, with a 3D press-down on the solid intents. `primary` is the high-contrast white CTA (Check / Continue / Sign in), `accent` is the blue ‘Start’, plus success / warning / danger."
+      description="One accessible Button (HeroUI under the hood). Pill-shaped like Brilliant, with two modes via `clicky`: the 3D press-down lip (default) or flat. `primary` is the high-contrast white CTA (Check / Continue / Sign in), `accent` is the blue ‘Start’, plus success / warning / danger."
     >
-      <Subhead>Variants</Subhead>
+      <Subhead>Variants (clicky)</Subhead>
       <Row>
         {VARIANTS.map((v) => (
           <Button key={v} variant={v}>
@@ -47,6 +47,26 @@ export function Buttons() {
           </Button>
         ))}
       </Row>
+
+      <Subhead className="mt-6">Modes — clicky (3D) vs flat</Subhead>
+      <div className="space-y-3">
+        <Row>
+          {(["primary", "accent", "success", "warning"] as const).map((v) => (
+            <Button key={v} variant={v}>
+              {label(v)}
+            </Button>
+          ))}
+          <span className="text-xs font-medium text-muted">← clicky</span>
+        </Row>
+        <Row>
+          {(["primary", "accent", "success", "warning"] as const).map((v) => (
+            <Button key={v} variant={v} clicky={false}>
+              {label(v)}
+            </Button>
+          ))}
+          <span className="text-xs font-medium text-muted">← flat</span>
+        </Row>
+      </div>
 
       <Subhead className="mt-6">Shape</Subhead>
       <Row>

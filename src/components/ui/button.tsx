@@ -42,15 +42,22 @@ export interface ButtonProps
    * controls like icon buttons.
    */
   pill?: boolean;
+  /**
+   * "Clicky" mode: the 3D press-down lip. Defaults to `true` for normal buttons
+   * and `false` for icon-only buttons. Set explicitly to force either mode.
+   */
+  clicky?: boolean;
   className?: string;
 }
 
 export function Button({
   variant = "primary",
   pill = true,
+  clicky,
   className,
   ...props
 }: ButtonProps) {
+  const isClicky = clicky ?? !props.isIconOnly;
   return (
     <HeroButton
       {...props}
@@ -60,7 +67,11 @@ export function Button({
       className={appButton({
         variant,
         size: props.size,
-        className: cn(pill ? "rounded-full" : "rounded-lg", className),
+        className: cn(
+          pill ? "rounded-full" : "rounded-lg",
+          isClicky && "button--clicky",
+          className,
+        ),
       })}
     />
   );
