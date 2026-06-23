@@ -6,21 +6,15 @@ import {
   AnswerChoice,
   BarChartQuestion,
   ConceptSlide,
-  FeedbackBar,
+  FeedbackToast,
+  LessonContainer,
   Prompt,
   RegionShadeQuestion,
   TileExpressionQuestion,
+  type LessonEvaluation,
 } from "../../components/lesson";
 import { Button } from "../../components/ui";
 import { Section, Subhead } from "../Section";
-
-function Frame({ children }: { children: ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-background">
-      {children}
-    </div>
-  );
-}
 
 const chartData = [
   { label: "CT", value: 120 },
@@ -36,6 +30,13 @@ function BarChartFlow() {
   const [checked, setChecked] = useState(false);
   const [seeAnswer, setSeeAnswer] = useState(false);
   const isCorrect = sel === CORRECT;
+  const evaluation: LessonEvaluation = !checked
+    ? "unsubmitted"
+    : seeAnswer
+      ? "revealed"
+      : isCorrect
+        ? "correct"
+        : "retryable";
   const reset = () => {
     setSel(null);
     setChecked(false);
@@ -43,52 +44,54 @@ function BarChartFlow() {
   };
 
   return (
-    <Frame>
-      <div className="space-y-6 px-4 py-6">
-        <Prompt>What state has about 125 cafes?</Prompt>
-        <BarChartQuestion
-          data={chartData}
-          selectedIndex={sel}
-          correctIndex={CORRECT}
-          revealed={checked}
-          onSelect={setSel}
-        />
-      </div>
+    <div className="mx-auto max-w-2xl">
+      <LessonContainer evaluation={evaluation}>
+        <div className="space-y-6 px-5 py-6">
+          <Prompt>What state has about 125 cafes?</Prompt>
+          <BarChartQuestion
+            data={chartData}
+            selectedIndex={sel}
+            correctIndex={CORRECT}
+            revealed={checked}
+            onSelect={setSel}
+          />
+        </div>
+        {evaluation !== "unsubmitted" ? (
+          <FeedbackToast status={evaluation} className="absolute bottom-4 left-4" />
+        ) : null}
+      </LessonContainer>
+
       {!checked ? (
         <FooterCtaBar>
           <Button fullWidth isDisabled={sel === null} onPress={() => setChecked(true)}>
             Check
           </Button>
         </FooterCtaBar>
-      ) : seeAnswer ? (
-        <FeedbackBar status="revealed" onFlag={() => {}}>
-          <Button variant="secondary" size="sm">
-            Why?
-          </Button>
-          <Button variant="outline" size="sm" onPress={reset}>
-            Skip explanation
-          </Button>
-        </FeedbackBar>
       ) : isCorrect ? (
-        <FeedbackBar status="correct" xp={15} onFlag={() => {}}>
-          <Button variant="secondary" size="sm">
-            Why?
-          </Button>
-          <Button variant="success" size="sm" onPress={reset}>
+        <FooterCtaBar constrain={false}>
+          <Button variant="secondary">Why?</Button>
+          <Button variant="success" onPress={reset}>
             Continue
           </Button>
-        </FeedbackBar>
-      ) : (
-        <FeedbackBar status="retryable" onFlag={() => {}}>
-          <Button variant="secondary" size="sm" onPress={() => setChecked(false)}>
-            Try again
+        </FooterCtaBar>
+      ) : seeAnswer ? (
+        <FooterCtaBar constrain={false}>
+          <Button variant="secondary">Why?</Button>
+          <Button variant="outline" onPress={reset}>
+            Skip explanation
           </Button>
-          <Button variant="outline" size="sm" onPress={() => setSeeAnswer(true)}>
+        </FooterCtaBar>
+      ) : (
+        <FooterCtaBar constrain={false}>
+          <Button variant="secondary" onPress={() => setSeeAnswer(true)}>
             See answer
           </Button>
-        </FeedbackBar>
+          <Button variant="warning" onPress={() => setChecked(false)}>
+            Try again
+          </Button>
+        </FooterCtaBar>
       )}
-    </Frame>
+    </div>
   );
 }
 
@@ -97,19 +100,21 @@ function RegionShadeDemo() {
   const toggle = (i: number) =>
     setShaded((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]));
   return (
-    <Frame>
-      <div className="space-y-5 px-4 py-6">
-        <Prompt>Color ½ of the shape.</Prompt>
-        <div className="flex justify-center">
-          <RegionShadeQuestion rows={2} cols={2} shaded={shaded} onToggle={toggle} />
+    <div>
+      <LessonContainer>
+        <div className="space-y-5 px-5 py-6">
+          <Prompt>Color ½ of the shape.</Prompt>
+          <div className="flex justify-center">
+            <RegionShadeQuestion rows={2} cols={2} shaded={shaded} onToggle={toggle} />
+          </div>
         </div>
-      </div>
+      </LessonContainer>
       <FooterCtaBar>
         <Button fullWidth isDisabled={shaded.length === 0}>
           Check
         </Button>
       </FooterCtaBar>
-    </Frame>
+    </div>
   );
 }
 
@@ -133,23 +138,45 @@ function TileExpressionDemo() {
   const bankItems = bank.map((b) => ({ ...b, used: blanks.includes(b.label) }));
 
   return (
-    <Frame>
-      <div className="space-y-5 px-4 py-6">
-        <Prompt align="center">Factor the expression.</Prompt>
-        <TileExpressionQuestion
-          parts={["(x +", null, ")(x +", null, ")"]}
-          blanks={blanks}
-          bank={bankItems}
-          onBankPress={place}
-          onBlankPress={clear}
-        />
-      </div>
+    <div>
+      <LessonContainer>
+        <div className="space-y-5 px-5 py-6">
+          <Prompt align="center">Factor the expression.</Prompt>
+          <TileExpressionQuestion
+            parts={["(x +", null, ")(x +", null, ")"]}
+            blanks={blanks}
+            bank={bankItems}
+            onBankPress={place}
+            onBlankPress={clear}
+          />
+        </div>
+      </LessonContainer>
       <FooterCtaBar>
         <Button fullWidth isDisabled={blanks.some((b) => b === null)}>
           Check
         </Button>
       </FooterCtaBar>
-    </Frame>
+    </div>
+  );
+}
+
+function FeedbackStateDemo({
+  evaluation,
+  children,
+}: {
+  evaluation: "correct" | "retryable" | "revealed";
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <LessonContainer evaluation={evaluation}>
+        <div className="grid h-24 place-items-center px-4 text-sm text-muted">
+          graded answer
+        </div>
+        <FeedbackToast status={evaluation} className="absolute bottom-3 left-3" />
+      </LessonContainer>
+      <FooterCtaBar constrain={false}>{children}</FooterCtaBar>
+    </div>
   );
 }
 
@@ -158,7 +185,7 @@ export function Lesson() {
     <Section
       id="lesson"
       title="Lesson player"
-      description="The graded-step shell (prompt + figure + Check → feedback bar) and the interaction types present in the screenshots. Built to extend to Brilliant's wider problem set."
+      description="The graded-step shell (prompt + figure + Check → container ring + feedback toast + colored footer) and the interaction types present in the screenshots. Built to extend to Brilliant's wider problem set."
     >
       <Subhead>Tap-a-bar question + grading flow (interactive)</Subhead>
       <BarChartFlow />
@@ -175,14 +202,14 @@ export function Lesson() {
       </div>
 
       <Subhead className="mt-6">Concept slide</Subhead>
-      <Frame>
-        <div className="px-4 py-10">
+      <LessonContainer>
+        <div className="px-5 py-10">
           <ConceptSlide icon="📐" title="Every fraction is a part of a whole">
             Splitting a shape into equal pieces lets us name each piece as a
             fraction of the whole.
           </ConceptSlide>
         </div>
-      </Frame>
+      </LessonContainer>
 
       <Subhead className="mt-6">Multiple choice (answer states)</Subhead>
       <div className="grid max-w-md gap-2">
@@ -200,32 +227,34 @@ export function Lesson() {
         </AnswerChoice>
       </div>
 
-      <Subhead className="mt-6">Feedback bar states</Subhead>
-      <div className="space-y-3">
-        <FeedbackBar status="correct" xp={15} onFlag={() => {}}>
+      <Subhead className="mt-6">
+        Feedback states (container ring + toast + colored footer)
+      </Subhead>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <FeedbackStateDemo evaluation="correct">
           <Button variant="secondary" size="sm">
             Why?
           </Button>
           <Button variant="success" size="sm">
             Continue
           </Button>
-        </FeedbackBar>
-        <FeedbackBar status="retryable" onFlag={() => {}}>
+        </FeedbackStateDemo>
+        <FeedbackStateDemo evaluation="retryable">
           <Button variant="secondary" size="sm">
-            Try again
-          </Button>
-          <Button variant="outline" size="sm">
             See answer
           </Button>
-        </FeedbackBar>
-        <FeedbackBar status="revealed" onFlag={() => {}}>
+          <Button variant="warning" size="sm">
+            Try again
+          </Button>
+        </FeedbackStateDemo>
+        <FeedbackStateDemo evaluation="revealed">
           <Button variant="secondary" size="sm">
             Why?
           </Button>
           <Button variant="outline" size="sm">
-            Skip explanation
+            Skip
           </Button>
-        </FeedbackBar>
+        </FeedbackStateDemo>
       </div>
     </Section>
   );

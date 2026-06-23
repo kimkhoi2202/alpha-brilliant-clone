@@ -7,8 +7,11 @@ export type { AnswerChoiceProps, AnswerChoiceState } from "./answer-choice";
 export { ConceptSlide } from "./concept-slide";
 export type { ConceptSlideProps } from "./concept-slide";
 
-export { FeedbackBar } from "./feedback-bar";
-export type { FeedbackBarProps, FeedbackStatus } from "./feedback-bar";
+export { FeedbackToast } from "./feedback-toast";
+export type { FeedbackStatus, FeedbackToastProps } from "./feedback-toast";
+
+export { LessonContainer } from "./lesson-container";
+export type { LessonContainerProps, LessonEvaluation } from "./lesson-container";
 
 export { LessonShell } from "./lesson-shell";
 export type { LessonShellProps } from "./lesson-shell";

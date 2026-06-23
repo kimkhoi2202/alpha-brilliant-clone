@@ -3,12 +3,14 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
 export interface FooterCtaBarProps {
-  /** Primary action(s) — typically a single full-width Button. */
+  /** Primary action(s) — a single Check, or colored feedback buttons. */
   children: ReactNode;
   /** Secondary content pinned to the start (e.g. a "Start over" link). */
   startContent?: ReactNode;
-  /** Center + constrain the action to a comfortable width (Brilliant default). */
+  /** Center the action(s). Default true. */
   centered?: boolean;
+  /** Constrain a single CTA to a comfortable width (Brilliant's Check). Default true. */
+  constrain?: boolean;
   className?: string;
 }
 
@@ -17,6 +19,7 @@ export function FooterCtaBar({
   children,
   startContent,
   centered = true,
+  constrain = true,
   className,
 }: FooterCtaBarProps) {
   return (
@@ -39,7 +42,13 @@ export function FooterCtaBar({
         {startContent ? (
           <div className="flex items-center">{startContent}</div>
         ) : null}
-        <div className={cn(centered && !startContent && "w-full max-w-xs")}>
+        <div
+          className={cn(
+            !startContent && constrain
+              ? "w-full max-w-xs"
+              : "flex items-center justify-center gap-2",
+          )}
+        >
           {children}
         </div>
       </div>
