@@ -1,0 +1,24 @@
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "AlphaBrilliant",
+        "supportEmail": "kim.lam@alphaaiengineering.com"
+      }
+    },
+    "authorizedDomains": [
+      "localhost",
+      "fir-94b95.firebaseapp.com",
+      "fir-94b95.web.app"
+    ]
+  }
+}
