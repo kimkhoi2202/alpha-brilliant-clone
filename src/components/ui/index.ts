@@ -13,6 +13,9 @@ export type { CounterProps } from "./counter";
 export { Divider } from "./divider";
 export type { DividerProps } from "./divider";
 
+export { OptionCard } from "./option-card";
+export type { OptionCardProps } from "./option-card";
+
 export { ProgressBar } from "./progress-bar";
 export type {
   ProgressBarProps,

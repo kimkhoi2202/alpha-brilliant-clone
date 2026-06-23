@@ -1,4 +1,5 @@
 import { Buttons } from "./sections/Buttons";
+import { Cards } from "./sections/Cards";
 import { Chrome } from "./sections/Chrome";
 import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
@@ -33,6 +34,7 @@ export function DesignSystem() {
         <Primitives />
         <Chrome />
         <Surfaces />
+        <Cards />
         <Forms />
         <Feedback />
       </main>
