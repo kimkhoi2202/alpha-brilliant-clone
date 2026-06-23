@@ -4,6 +4,7 @@ import { Chrome } from "./sections/Chrome";
 import { CourseMapSection } from "./sections/CourseMapSection";
 import { Feedback } from "./sections/Feedback";
 import { Forms } from "./sections/Forms";
+import { Lesson } from "./sections/Lesson";
 import { Palette } from "./sections/Palette";
 import { Primitives } from "./sections/Primitives";
 import { Surfaces } from "./sections/Surfaces";
@@ -37,6 +38,7 @@ export function DesignSystem() {
         <Surfaces />
         <Cards />
         <CourseMapSection />
+        <Lesson />
         <Forms />
         <Feedback />
       </main>
