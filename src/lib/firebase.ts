@@ -7,7 +7,7 @@ import {
 } from "firebase/firestore";
 
 // Firebase web config for project "fir-94b95".
-// The apiKey is a public client identifier, not a secret — access is controlled
+// The apiKey is a public client identifier, not a secret: access is controlled
 // by Firebase Security Rules, not by hiding this value.
 const firebaseConfig = {
   apiKey: "AIzaSyCP53Sh2WfS2rrm1teeQSzfmnrpoziHve4",

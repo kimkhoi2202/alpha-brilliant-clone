@@ -1,5 +1,5 @@
 /*
- * AlphaBrilliant — design tokens, a faithful clone of Brilliant's palette.
+ * AlphaBrilliant: design tokens, a faithful clone of Brilliant's palette.
  *
  * `:root` holds Brilliant's raw color ramps (the theme-agnostic source of truth).
  * The `.dark` block maps HeroUI's semantic tokens onto those ramps; HeroUI then
@@ -162,16 +162,16 @@
 
 .dark,
 [data-theme="dark"] {
-  /* Shape — Brilliant buttons are pills; cards ~16px, inputs ~12px. This 0.5rem
+  /* Shape: Brilliant buttons are pills; cards ~16px, inputs ~12px. This 0.5rem
      base drives HeroUI's radius scale (lg 8 · xl 12 · 2xl 16 · 3xl 24px). */
   --radius: 0.5rem;
 
-  /* Canvas & text — Brilliant's charcoal (#141414 = gray-950), not pure black. */
+  /* Canvas & text: Brilliant's charcoal (#141414 = gray-950), not pure black. */
   --background: var(--bp-gray-950); /* #141414 */
   --foreground: var(--bp-white);
   --muted: var(--bp-wa-700); /* text-secondary */
 
-  /* Surfaces — stepped subtly above the charcoal canvas (Brilliant's nav/cards
+  /* Surfaces: stepped subtly above the charcoal canvas (Brilliant's nav/cards
      sit ~#1c–#1e); the hairline border still does most of the separation. */
   --nav-background: var(--bp-dark-gray); /* #1e1e1e */
   --surface: #1c1c1e;
@@ -183,7 +183,7 @@
   --default: #29292d;
   --default-foreground: var(--bp-white);
 
-  /* High-contrast primary CTA — Brilliant's white Check / Continue / Sign in */
+  /* High-contrast primary CTA: Brilliant's white Check / Continue / Sign in */
   --primary: var(--bp-white);
   --primary-foreground: #0a0a0b;
   --primary-hover: #e9e9eb;
@@ -192,7 +192,13 @@
   --accent: var(--bp-blue-500); /* #456DFF */
   --accent-foreground: var(--bp-white);
 
-  /* Status — solid fills with near-black text (Brilliant) */
+  /* Streak / energy accent: Brilliant's "pear" (lime-gold streak bolt). */
+  --streak: #b5e853;
+  /* Streak fire: the flame that replaces the lightning bolt everywhere. */
+  --streak-flame: #f59e2e; /* amber flame body + completed-day disc */
+  --streak-flame-core: #fcd24d; /* inner flame highlight */
+
+  /* Status: solid fills with near-black text (Brilliant) */
   --success: var(--bp-green-400); /* #5ED981 */
   --success-foreground: var(--bp-gray-950);
   --warning: var(--bp-yellow-400); /* #F9D25C */
@@ -200,9 +206,14 @@
   --danger: var(--bp-red-400); /* #FF8585 */
   --danger-foreground: var(--bp-gray-950);
 
-  /* Lines & links */
-  --border: var(--bp-wa-200); /* whiteAlpha 0.1 */
+  /* Lines & links: Brilliant's hairline is whiteAlpha 0.2 (border.primary),
+     clearer than a 0.1 ghost line; the brighter hover edge is 0.4. */
+  --border: var(--bp-wa-300); /* whiteAlpha 0.2 */
+  --border-hover: var(--bp-wa-500); /* whiteAlpha 0.4 */
   --separator: var(--bp-wa-100); /* whiteAlpha 0.05 */
+  /* The lesson player's card frame: a touch more present than the hairline
+     border, since it carries a 2px stroke (tablet/desktop only). */
+  --lesson-frame: #2b2b31;
   --link: var(--bp-blue-400);
 
   /* Segmented controls (e.g. the lesson progress bar track) */
@@ -231,7 +242,7 @@
  * `primary` so they win when both classes land on the element.
  */
 
-/* Solid intents — color only. Brilliant dims the fill on hover/press rather
+/* Solid intents: color only. Brilliant dims the fill on hover/press rather
    than shifting its hue, so we pin hover/pressed to the base color and let the
    shared opacity rule below do the work (this also fixes the previously
    undefined --accent/--success/--warning-hover tokens). */
@@ -302,13 +313,13 @@
   opacity: 0.7;
 }
 
-/* The "clicky" 3D press-down — opt in via the Button `clicky` prop, which adds
+/* The "clicky" 3D press-down: opt in via the Button `clicky` prop, which adds
    `.button--clicky`. Filled CTAs enable it by default; outline/ghost/secondary
    controls stay flatter so they don't get a heavy black cast shadow. */
 .button--clicky {
   /* Two layers, both derived from the button fill so they show on the dark
      canvas: (1) a light crisp lip right under the edge, (2) a softer, deeper
-     diffuse shadow grounding it — Brilliant's floating elevation, not a hard
+     diffuse shadow grounding it, Brilliant's floating elevation, not a hard
      ledge. */
   box-shadow:
     0 3px 0 0 color-mix(in srgb, var(--button-bg), #000 14%),
@@ -349,27 +360,6 @@
 .button--clicky:disabled,
 .button--clicky[aria-disabled="true"] {
   box-shadow: none;
-}
-
-/* Brilliant's "Gift Premium" nav button: an iridescent gradient *border* over
-   the canvas fill (the text is a solid soft white, not a gradient), and the
-   border dims to muted tones on hover. */
-.premium-button {
-  background:
-    linear-gradient(var(--background), var(--background)) padding-box,
-    linear-gradient(
-        86deg,
-        var(--bp-blue-400) 0%,
-        var(--bp-pink-400) 50%,
-        var(--bp-yellow-400) 100%
-      )
-      border-box;
-  border: 2px solid transparent;
-}
-.premium-button:hover {
-  background:
-    linear-gradient(var(--background), var(--background)) padding-box,
-    linear-gradient(86deg, #5d74cc 0%, #cc73b3 47%, #c69c1e 100%) border-box;
 }
 
 @media (prefers-reduced-motion: reduce) {

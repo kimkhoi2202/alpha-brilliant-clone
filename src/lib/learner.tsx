@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   increment,
@@ -19,6 +20,7 @@ import {
 import { getLesson, lessonOrder, problemCount } from "../content";
 import type { LessonId } from "../content/types";
 import { useAuth } from "./AuthContext";
+import { today, yesterday } from "./date";
 import { db } from "./firebase";
 
 export type LessonStatus = "locked" | "available" | "in_progress" | "completed";
@@ -66,6 +68,8 @@ export interface LearnerContextValue {
     record: StepRecord & { stepId: string },
   ) => Promise<void>;
   completeLesson: (id: LessonId, xpEarned: number) => Promise<void>;
+  /** Wipe all lesson progress so every lesson is available again (keeps XP/streak). */
+  resetProgress: () => Promise<void>;
 }
 
 const LearnerContext = createContext<LearnerContextValue | undefined>(undefined);
@@ -75,19 +79,6 @@ const asStr = (v: unknown, fallback = ""): string =>
   typeof v === "string" ? v : fallback;
 const asNum = (v: unknown, fallback = 0): number =>
   typeof v === "number" ? v : fallback;
-
-function dateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-const today = () => dateStr(new Date());
-function yesterday(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return dateStr(d);
-}
 
 export function LearnerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -228,14 +219,21 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     [uid, markActiveToday],
   );
 
+  const resetProgress = useCallback(async () => {
+    if (!uid) return;
+    await Promise.all(
+      lessonOrder.map((id) =>
+        deleteDoc(doc(db, "users", uid, "progress", id)),
+      ),
+    );
+  }, [uid]);
+
   // --- derived selectors (read current `progress` state) ---
+  // Every lesson is freely accessible (no sequential locking): a lesson is
+  // only ever completed, in progress, or available.
   function lessonStatus(id: LessonId): LessonStatus {
     const p = progress[id];
     if (p?.status === "completed") return "completed";
-    const index = lessonOrder.indexOf(id);
-    const unlocked =
-      index === 0 || progress[lessonOrder[index - 1]]?.status === "completed";
-    if (!unlocked) return "locked";
     return p?.status === "in_progress" ? "in_progress" : "available";
   }
 
@@ -283,6 +281,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     setStepIndex,
     recordStep,
     completeLesson,
+    resetProgress,
   };
 
   return (

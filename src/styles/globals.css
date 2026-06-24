@@ -34,10 +34,26 @@
   }
 
   /*
+   * Reading content (prose, headings, lists, dialog copy, lesson text) stays
+   * selectable so people can highlight/copy it. Only interactive chrome opts
+   * out, so tapping or dragging a control never leaves a stray text highlight,
+   * without blocking selection of real content.
+   */
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  summary {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /*
    * Tailwind v4's Preflight no longer sets `cursor: pointer` on buttons, so
    * every custom control (nav items, tabs, menu items, triggers, the Button
    * component, …) would otherwise show the default arrow. Restore it once, here,
-   * for all interactive elements — fixing the whole app rather than per-component.
+   * for all interactive elements, fixing the whole app rather than per-component.
    * Disabled controls are excluded so `cursor-not-allowed` still wins for them.
    */
   button:not(:disabled),
@@ -47,5 +63,118 @@
   [role="option"],
   summary {
     cursor: pointer;
+  }
+}
+
+@layer components {
+  /*
+   * Render a Lottie icon as a single-colour outline that inherits the current
+   * text colour (so an animated icon matches the static ones around it and
+   * themes for free). `!important` is needed to win over lottie-web's per-frame
+   * inline stroke/fill styles.
+   */
+  .lottie-icon-mono svg path {
+    stroke: currentColor !important;
+    fill: transparent !important;
+  }
+
+  .lesson-progress-medallion {
+    isolation: isolate;
+  }
+
+  .lesson-progress-medallion__segment {
+    fill: none;
+    stroke: color-mix(in srgb, var(--foreground), transparent 78%);
+    stroke-linecap: round;
+    stroke-width: 12;
+    opacity: 0.74;
+    transition:
+      stroke 220ms var(--ease-out-cubic, cubic-bezier(0.215, 0.61, 0.355, 1)),
+      opacity 220ms var(--ease-out-cubic, cubic-bezier(0.215, 0.61, 0.355, 1));
+  }
+
+  /* In progress → yellow; the `--complete` modifier turns every arc green. */
+  .lesson-progress-medallion__segment--filled {
+    stroke: var(--warning);
+    opacity: 1;
+    animation: lesson-progress-segment-in 260ms
+      var(--ease-out-cubic, cubic-bezier(0.215, 0.61, 0.355, 1)) both;
+  }
+
+  .lesson-progress-medallion--complete .lesson-progress-medallion__segment--filled {
+    stroke: var(--success);
+  }
+
+  @keyframes lesson-progress-segment-in {
+    0% {
+      opacity: 0.56;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lesson-progress-medallion__segment,
+    .lesson-progress-medallion__segment--filled {
+      animation: none;
+      transition: none;
+    }
+  }
+
+  /* --- Streak menu motion --- */
+
+  /* The always-visible bolt gently pulses so the streak feels alive. */
+  .streak-bolt-pulse {
+    animation: streak-bolt-pulse 2.4s ease-in-out infinite;
+    transform-origin: center;
+  }
+  @keyframes streak-bolt-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.12);
+    }
+  }
+
+  /* The popover drops in (fade + slide) when opened. */
+  .streak-popover {
+    animation: streak-popover-in 180ms
+      var(--ease-out-cubic, cubic-bezier(0.215, 0.61, 0.355, 1)) both;
+  }
+  @keyframes streak-popover-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* The weekday discs cascade in (staggered via inline animation-delay). */
+  .streak-disc {
+    animation: streak-disc-in 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes streak-disc-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.55);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .streak-bolt-pulse,
+    .streak-popover,
+    .streak-disc {
+      animation: none;
+    }
   }
 }

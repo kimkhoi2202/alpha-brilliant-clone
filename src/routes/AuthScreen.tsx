@@ -19,7 +19,7 @@ function friendlyError(err: unknown): string {
       case "auth/user-not-found":
         return "Email or password is incorrect.";
       case "auth/email-already-in-use":
-        return "That email is already registered — try signing in.";
+        return "That email is already registered. Try signing in.";
       case "auth/weak-password":
         return "Password should be at least 6 characters.";
       case "auth/popup-closed-by-user":
@@ -29,9 +29,9 @@ function friendlyError(err: unknown): string {
       case "auth/unauthorized-domain":
         return "This domain isn't authorized for sign-in (Firebase console → Authentication → Settings → Authorized domains).";
       case "auth/popup-blocked":
-        return "Your browser blocked the sign-in popup — allow popups and try again.";
+        return "Your browser blocked the sign-in popup. Allow popups and try again.";
       case "auth/network-request-failed":
-        return "Network error — check your connection and try again.";
+        return "Network error. Check your connection and try again.";
       default:
         return "Something went wrong. Please try again.";
     }
@@ -166,7 +166,7 @@ export function AuthScreen() {
   }
 
   function unavailable(provider: string) {
-    setError(`${provider} sign-in is coming soon — use Google or email.`);
+    setError(`${provider} sign-in is coming soon. Use Google or email.`);
   }
 
   const canSubmit =
@@ -194,7 +194,7 @@ export function AuthScreen() {
             <AuthButton icon={<AppleIcon />} onClick={() => unavailable("Apple")}>
               Continue with Apple
             </AuthButton>
-            <AuthButton tone="inverse" onClick={() => { setError(null); setMode("email"); }}>
+            <AuthButton onClick={() => { setError(null); setMode("email"); }}>
               Sign in with email
             </AuthButton>
             {error ? (
