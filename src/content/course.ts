@@ -4,25 +4,32 @@ export const course: Course = {
   id: "pythagoras",
   title: "The Pythagorean Theorem",
   description:
-    "Learn right triangles by doing — drag, plot, and build your way to a² + b² = c².",
+    "Discover and prove $a^2 + b^2 = c^2$ by counting and rearranging areas, then use it to measure triangles and distances.",
   accent: "accent",
   levels: [
     {
       id: "level-1",
       label: "LEVEL 1",
-      title: "Pythagoras",
+      title: "The Pythagorean Theorem",
+      objectives: [
+        "Name the legs, hypotenuse, and right angle of a right triangle",
+        "Discover and prove $a^2 + b^2 = c^2$ by counting and rearranging areas",
+        "Find the hypotenuse, and rearrange to find a missing leg",
+        "Measure the straight-line distance between two points",
+      ],
       lessonIds: [
         "pythagoras-intro",
+        "discover-theorem",
+        "use-the-theorem",
+        "find-a-missing-leg",
         "direct-distance",
-        "squares-and-sides",
-        "proving-pythagoras",
         "level-review",
       ],
     },
   ],
 };
 
-/** Flat lesson order across all levels — drives sequential unlocking. */
+/** Flat lesson order across all levels, drives sequential unlocking. */
 export const lessonOrder: LessonId[] = course.levels.flatMap(
   (level) => level.lessonIds,
 );

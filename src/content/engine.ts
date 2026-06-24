@@ -1,5 +1,5 @@
 /**
- * Feedback engine — pure, synchronous, client-side (PRD §4.1).
+ * Feedback engine: pure, synchronous, client-side (PRD §4.1).
  * Correctness is derived from the interaction config + the learner's answer,
  * so feedback is instant (< 100ms) and never hits the network.
  */
@@ -20,6 +20,15 @@ export function defaultAnswer(interaction: Interaction): AnswerValue {
   switch (interaction.kind) {
     case "multiple-choice":
       return { kind: "multiple-choice", choiceId: null };
+    case "multi-select":
+      return { kind: "multi-select", choiceIds: [] };
+    case "categorize":
+      return {
+        kind: "categorize",
+        placement: Object.fromEntries(
+          interaction.items.map((item) => [item.id, null]),
+        ),
+      };
     case "numeric":
       return { kind: "numeric", value: null };
     case "slider":
@@ -36,6 +45,14 @@ export function defaultAnswer(interaction: Interaction): AnswerValue {
           () => null,
         ),
       };
+    case "pick-side":
+      return { kind: "pick-side", side: null };
+    case "pick-sides":
+      return { kind: "pick-sides", sides: [] };
+    case "pick-angle":
+      return { kind: "pick-angle", vertex: null };
+    case "count-squares":
+      return { kind: "count-squares", value: null };
   }
 }
 
@@ -47,6 +64,13 @@ export function isAnswerProvided(
   switch (interaction.kind) {
     case "multiple-choice":
       return answer.kind === "multiple-choice" && answer.choiceId !== null;
+    case "multi-select":
+      return answer.kind === "multi-select" && answer.choiceIds.length > 0;
+    case "categorize":
+      return (
+        answer.kind === "categorize" &&
+        interaction.items.every((item) => answer.placement[item.id] != null)
+      );
     case "numeric":
       return answer.kind === "numeric" && answer.value !== null;
     case "slider":
@@ -63,6 +87,14 @@ export function isAnswerProvided(
         answer.kind === "tile-expression" &&
         answer.filled.every((t) => t !== null)
       );
+    case "pick-side":
+      return answer.kind === "pick-side" && answer.side !== null;
+    case "pick-sides":
+      return answer.kind === "pick-sides" && answer.sides.length > 0;
+    case "pick-angle":
+      return answer.kind === "pick-angle" && answer.vertex !== null;
+    case "count-squares":
+      return answer.kind === "count-squares" && answer.value !== null;
   }
 }
 
@@ -76,12 +108,40 @@ function pointsMatch(
   return targets.every((t) => placedSet.has(key(t)));
 }
 
+/** Unit-cell count of the counted square: a² for leg a, b² for leg b, a²+b² for the hypotenuse. */
+function squareCellCount(
+  i: Extract<Interaction, { kind: "count-squares" }>,
+): number {
+  if (i.countSide === "a") return i.a * i.a;
+  if (i.countSide === "b") return i.b * i.b;
+  return i.a * i.a + i.b * i.b;
+}
+
+/** Unordered set equality over string ids (for select-all-that-apply). */
+function sameIdSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((id) => set.has(id));
+}
+
 function isCorrect(interaction: Interaction, answer: AnswerValue): boolean {
   switch (interaction.kind) {
     case "multiple-choice":
       return (
         answer.kind === "multiple-choice" &&
         answer.choiceId === interaction.correctChoiceId
+      );
+    case "multi-select":
+      return (
+        answer.kind === "multi-select" &&
+        sameIdSet(answer.choiceIds, interaction.correctChoiceIds)
+      );
+    case "categorize":
+      return (
+        answer.kind === "categorize" &&
+        interaction.items.every(
+          (item) => answer.placement[item.id] === item.binId,
+        )
       );
     case "numeric":
       return (
@@ -107,6 +167,25 @@ function isCorrect(interaction: Interaction, answer: AnswerValue): boolean {
         answer.filled.length === interaction.solution.length &&
         answer.filled.every((t, i) => t === interaction.solution[i])
       );
+    case "pick-side":
+      return (
+        answer.kind === "pick-side" && answer.side === interaction.correctSide
+      );
+    case "pick-sides":
+      return (
+        answer.kind === "pick-sides" &&
+        sameIdSet(answer.sides, interaction.correctSides)
+      );
+    case "pick-angle":
+      return (
+        answer.kind === "pick-angle" && answer.vertex === interaction.correctVertex
+      );
+    case "count-squares":
+      return (
+        answer.kind === "count-squares" &&
+        answer.value !== null &&
+        answer.value === squareCellCount(interaction)
+      );
   }
 }
 
@@ -122,6 +201,15 @@ function pickHint(step: ProblemStep, answer: AnswerValue): string {
         return rule.hint;
       if (answer.kind === "tap-bar" && answer.barId === rule.selectionId)
         return rule.hint;
+      // For select-all, a hint fires when its target id is among the chosen set.
+      if (answer.kind === "multi-select" && answer.choiceIds.includes(rule.selectionId))
+        return rule.hint;
+      if (answer.kind === "pick-side" && answer.side === rule.selectionId)
+        return rule.hint;
+      if (answer.kind === "pick-sides" && answer.sides.some((s) => s === rule.selectionId))
+        return rule.hint;
+      if (answer.kind === "pick-angle" && answer.vertex === rule.selectionId)
+        return rule.hint;
     }
     if (rule.equals !== undefined) {
       const tol =
@@ -131,6 +219,12 @@ function pickHint(step: ProblemStep, answer: AnswerValue): string {
       if (answer.kind === "numeric" && answer.value !== null && withinTolerance(answer.value, rule.equals, tol))
         return rule.hint;
       if (answer.kind === "slider" && withinTolerance(answer.value, rule.equals, tol))
+        return rule.hint;
+      if (
+        answer.kind === "count-squares" &&
+        answer.value !== null &&
+        withinTolerance(answer.value, rule.equals, 0)
+      )
         return rule.hint;
     }
   }
@@ -142,6 +236,15 @@ export function correctAnswer(interaction: Interaction): AnswerValue {
   switch (interaction.kind) {
     case "multiple-choice":
       return { kind: "multiple-choice", choiceId: interaction.correctChoiceId };
+    case "multi-select":
+      return { kind: "multi-select", choiceIds: interaction.correctChoiceIds.slice() };
+    case "categorize":
+      return {
+        kind: "categorize",
+        placement: Object.fromEntries(
+          interaction.items.map((item) => [item.id, item.binId]),
+        ),
+      };
     case "numeric":
       return { kind: "numeric", value: interaction.answer };
     case "slider":
@@ -152,6 +255,14 @@ export function correctAnswer(interaction: Interaction): AnswerValue {
       return { kind: "tap-bar", barId: interaction.correctBarId };
     case "tile-expression":
       return { kind: "tile-expression", filled: interaction.solution.slice() };
+    case "pick-side":
+      return { kind: "pick-side", side: interaction.correctSide };
+    case "pick-sides":
+      return { kind: "pick-sides", sides: interaction.correctSides.slice() };
+    case "pick-angle":
+      return { kind: "pick-angle", vertex: interaction.correctVertex };
+    case "count-squares":
+      return { kind: "count-squares", value: squareCellCount(interaction) };
   }
 }
 
