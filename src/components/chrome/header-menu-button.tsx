@@ -40,7 +40,7 @@ export function HeaderMenuButton({
       aria-expanded={isOpen ?? props["aria-expanded"]}
       data-open={isOpen ? "true" : undefined}
       className={cn(
-        "mx-0 flex items-center justify-center rounded-md p-2 text-foreground transition-[background-color,color] duration-100 ease-linear sm:-mx-2 sm:p-3",
+        "flex items-center justify-center rounded-md p-2 text-foreground transition-[background-color,color] duration-100 ease-linear sm:p-3",
         "hover:bg-default focus-visible:bg-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15",
         "active:bg-surface-tertiary data-[open=true]:bg-default",
         className,

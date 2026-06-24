@@ -8,7 +8,7 @@ export interface BrandProps {
   className?: string;
 }
 
-/** AlphaBrilliant wordmark + mark — a clickable home link (placeholder art). */
+/** AlphaBrilliant wordmark + mark: a clickable home link (placeholder art). */
 export function Brand({ markOnly = false, onPress, className }: BrandProps) {
   return (
     <button

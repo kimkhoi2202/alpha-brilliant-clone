@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
 export interface FooterCtaBarProps {
-  /** Primary action(s) — a single Check, or colored feedback buttons. */
+  /** Primary action(s): a single Check, or colored feedback buttons. */
   children: ReactNode;
   /** Secondary content pinned to the start (e.g. a "Start over" link). */
   startContent?: ReactNode;
@@ -26,7 +26,7 @@ export interface FooterCtaBarProps {
   className?: string;
 }
 
-/** The sticky bottom action bar of the lesson player (Check / Continue …). */
+/** Bottom action row for lesson flows (Check / Continue / Try again …). */
 export function FooterCtaBar({
   children,
   startContent,
@@ -39,15 +39,16 @@ export function FooterCtaBar({
   return (
     <div
       className={cn(
-        "w-full bg-background",
+        "w-full",
         divider && "border-t border-border",
-        sticky ? "sticky bottom-0 z-30" : "relative",
+        sticky ? "sticky bottom-0 z-30 bg-background" : "relative bg-transparent",
         className,
       )}
     >
       <div
         className={cn(
-          "mx-auto flex max-w-3xl items-center gap-3 px-4 py-3",
+          "mx-auto flex max-w-3xl items-center gap-3 px-4",
+          sticky ? "py-3" : "pb-7 pt-3 sm:pb-8",
           startContent
             ? "justify-between"
             : centered
@@ -61,7 +62,7 @@ export function FooterCtaBar({
         <div
           className={cn(
             !startContent && constrain
-              ? "w-full max-w-xs"
+              ? "w-full max-w-[420px]"
               : "flex items-center justify-center gap-2",
           )}
         >

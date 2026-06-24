@@ -1,12 +1,20 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { cn } from "../../lib/cn";
 import { Brand } from "./brand";
 
+/**
+ * A tab icon. Pass a node for a static icon, or a render function to react to
+ * hover/keyboard focus (e.g. an animated icon that plays while `active`).
+ */
+export type NavTabIcon =
+  | ReactNode
+  | ((state: { active: boolean }) => ReactNode);
+
 export interface NavTabItem {
   id: string;
   label: string;
-  icon?: ReactNode;
+  icon?: NavTabIcon;
   active?: boolean;
   onPress?: () => void;
 }
@@ -23,10 +31,19 @@ export interface TopNavProps {
 }
 
 function NavTab({ tab }: { tab: NavTabItem }) {
+  // Drive hover/focus-aware icons (e.g. an animated Lottie) off the whole tab,
+  // not just the small icon box, so hovering "Home" plays the animation.
+  const [active, setActive] = useState(false);
+  const icon =
+    typeof tab.icon === "function" ? tab.icon({ active }) : tab.icon;
   return (
     <button
       type="button"
       onClick={tab.onPress}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+      onFocus={() => setActive(true)}
+      onBlur={() => setActive(false)}
       aria-current={tab.active ? "page" : undefined}
       className={cn(
         "group relative inline-flex h-full items-center gap-1.5 overflow-hidden text-sm transition-colors",
@@ -35,21 +52,19 @@ function NavTab({ tab }: { tab: NavTabItem }) {
           : "text-muted hover:text-foreground",
       )}
     >
-      {tab.icon ? (
-        <span className="grid size-4 place-items-center" aria-hidden>
-          {tab.icon}
+      {icon ? (
+        <span className="inline-flex items-center justify-center" aria-hidden>
+          {icon}
         </span>
       ) : null}
       {tab.label}
-      {/* Brilliant's underline: parked just below the bar, slides up on hover
-          (faint) and stays up when selected (solid). */}
+      {/* Active-tab underline only: parked below the bar, slides up to sit just
+          under the label when selected. No underline on hover. */}
       <span
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-x-0 top-full h-0.5 rounded-full transition-transform duration-150 ease-out",
-          tab.active
-            ? "-translate-y-0.5 bg-foreground"
-            : "bg-muted group-hover:-translate-y-0.5",
+          tab.active ? "-translate-y-3 bg-foreground" : "bg-transparent",
         )}
       />
     </button>
@@ -88,7 +103,7 @@ export function TopNav({
           ) : null}
         </div>
         {endContent ? (
-          <div className="ml-auto flex items-center gap-2">{endContent}</div>
+          <div className="ml-auto flex items-center gap-3 sm:gap-4">{endContent}</div>
         ) : null}
       </div>
     </header>

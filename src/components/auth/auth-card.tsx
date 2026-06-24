@@ -19,7 +19,7 @@ export interface AuthCardProps {
   className?: string;
 }
 
-/** Centered auth card (sign in / sign up) — drop into a Modal or use inline. */
+/** Centered auth card (sign in / sign up): drop into a Modal or use inline. */
 export function AuthCard({
   title,
   logo,

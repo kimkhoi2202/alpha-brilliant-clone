@@ -1,6 +1,12 @@
 export { CelebrationScreen } from "./celebration-screen";
 export type { CelebrationScreenProps } from "./celebration-screen";
 
+export { CongratsBadge } from "./congrats-badge";
+export type { CongratsBadgeProps } from "./congrats-badge";
+
+export { ConfettiBurst } from "./confetti-burst";
+export type { ConfettiBurstProps } from "./confetti-burst";
+
 export { LessonComplete } from "./lesson-complete";
 export type { LessonCompleteProps } from "./lesson-complete";
 

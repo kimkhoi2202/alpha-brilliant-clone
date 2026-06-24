@@ -1,11 +1,13 @@
 import { cn } from "../../lib/cn";
-import { Button } from "../ui";
+import { Button, type ButtonVariant } from "../ui";
 
 export interface CurrentLessonCardProps {
   title: string;
   /** Small eyebrow above the title (e.g. "Up next"). */
   subtitle?: string;
   actionLabel?: string;
+  /** Button intent: accent for the current lesson, secondary for a jump. */
+  variant?: ButtonVariant;
   onStart?: () => void;
   className?: string;
 }
@@ -15,6 +17,7 @@ export function CurrentLessonCard({
   title,
   subtitle,
   actionLabel = "Start",
+  variant = "primary",
   onStart,
   className,
 }: CurrentLessonCardProps) {
@@ -31,7 +34,7 @@ export function CurrentLessonCard({
         </p>
       ) : null}
       <p className="mb-3 mt-0.5 text-base font-bold text-foreground">{title}</p>
-      <Button fullWidth onPress={onStart}>
+      <Button fullWidth variant={variant} onPress={onStart}>
         {actionLabel}
       </Button>
     </div>

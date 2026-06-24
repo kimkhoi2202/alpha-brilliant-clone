@@ -49,3 +49,6 @@ export type { DisclosureProps } from "./disclosure";
 
 export { GradientButton } from "./gradient-button";
 export type { GradientButtonProps } from "./gradient-button";
+
+export { StateBadge } from "./state-badge";
+export type { FeedbackState, StateBadgeProps } from "./state-badge";

@@ -7,6 +7,8 @@ export interface CourseMapNode {
   id: string;
   label: string;
   state?: LessonNodeState;
+  /** Selected node (drives the glow ring). */
+  selected?: boolean;
   icon?: ReactNode;
   onPress?: () => void;
 }
@@ -20,7 +22,7 @@ export interface CourseMapProps {
   className?: string;
 }
 
-/** Horizontal meander amount (px) per node — a gentle wave, like Brilliant's
+/** Horizontal meander amount (px) per node: a gentle wave, like Brilliant's
  *  path, instead of a straight line. The pucks stay a column; only the offset
  *  shifts. Labels sit to the right, so we bias the wave rightward. */
 function meander(i: number): number {
@@ -43,6 +45,7 @@ export function CourseMap({ header, nodes, footer, className }: CourseMapProps) 
             <LessonNode
               label={node.label}
               state={node.state}
+              selected={node.selected}
               icon={node.icon}
               onPress={node.onPress}
             />

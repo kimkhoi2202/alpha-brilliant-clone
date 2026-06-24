@@ -1,11 +1,16 @@
 export { CourseCard } from "./course-card";
 export type { CourseCardProps } from "./course-card";
 
+export { PythagorasArt } from "./course-art";
+
 export { CourseMap } from "./course-map";
 export type { CourseMapNode, CourseMapProps } from "./course-map";
 
 export { CourseCategoryCard } from "./course-category-card";
 export type { CourseCategoryCardProps } from "./course-category-card";
+
+export { LessonProgressMedallion } from "./lesson-progress-medallion";
+export type { LessonProgressMedallionProps } from "./lesson-progress-medallion";
 
 export { CurrentLessonCard } from "./current-lesson-card";
 export type { CurrentLessonCardProps } from "./current-lesson-card";

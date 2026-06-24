@@ -41,32 +41,43 @@ export function LessonTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 w-full border-b border-border bg-background",
+        "sticky top-0 z-40 w-full bg-background",
         className,
       )}
     >
-      <div className="mx-auto flex h-14 max-w-3xl items-center gap-4 px-4">
+      <div className="relative h-20 w-full">
         <button
           type="button"
           onClick={onClose}
           aria-label="Exit lesson"
-          className="-ml-1.5 grid size-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-default hover:text-foreground"
+          // Resting: a circle (size-10 → 20px radius reads as a full circle, but
+          // is a concrete value so border-radius can animate). On hover it morphs
+          // into the dialog/modal close button's shape: HeroUI's .close-button
+          // (rounded-xl = 12px) filled with bg-default. motion-reduce makes the
+          // morph instant.
+          className="absolute left-4 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-[20px] text-muted transition-[color,background-color,border-radius] duration-200 ease-out hover:rounded-xl hover:bg-default hover:text-foreground motion-reduce:transition-none sm:left-8 lg:left-16 xl:left-20"
         >
           <CloseIcon />
         </button>
-        <ProgressBar
-          value={progress}
-          aria-label="Lesson progress"
-          className="flex-1"
-        />
-        {checkpoints > 0 ? (
-          <div className="flex items-center gap-1.5" aria-hidden>
-            {Array.from({ length: checkpoints }).map((_, i) => (
-              <span key={i} className="size-1.5 rounded-full bg-default" />
-            ))}
+        <div className="mx-auto flex h-full w-[min(52rem,calc(100%-8rem))] items-center gap-4 sm:w-[min(54rem,calc(100%-14rem))]">
+          <ProgressBar
+            value={progress}
+            aria-label="Lesson progress"
+            className="flex-1"
+          />
+          {checkpoints > 0 ? (
+            <div className="flex shrink-0 items-center gap-1.5" aria-hidden>
+              {Array.from({ length: checkpoints }).map((_, i) => (
+                <span key={i} className="size-1.5 rounded-full bg-default" />
+              ))}
+            </div>
+          ) : null}
+        </div>
+        {endContent ? (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 sm:right-8 lg:right-16 xl:right-20">
+            {endContent}
           </div>
         ) : null}
-        {endContent ? <div className="shrink-0">{endContent}</div> : null}
       </div>
     </header>
   );

@@ -9,7 +9,7 @@ export interface ModalProps {
   trigger?: ReactNode;
   /**
    * Dialog content. Pass a render function to receive `close()` so action
-   * buttons can dismiss the modal — this is the correct way to close from a
+   * buttons can dismiss the modal: this is the correct way to close from a
    * custom button (don't use `ModalClose`, which is the corner "X" affordance).
    */
   children: ReactNode | ((opts: { close: () => void }) => ReactNode);
