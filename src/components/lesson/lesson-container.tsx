@@ -22,7 +22,7 @@ const GLOW: Record<Exclude<LessonEvaluation, "unsubmitted">, string> = {
 };
 
 export interface LessonContainerProps {
-  /** Grading state — colors the border and a soft bottom glow (Brilliant dark). */
+  /** Grading state: colors the border and a soft bottom glow (Brilliant dark). */
   evaluation?: LessonEvaluation;
   children: ReactNode;
   className?: string;

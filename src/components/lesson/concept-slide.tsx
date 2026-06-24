@@ -5,7 +5,8 @@ import { cn } from "../../lib/cn";
 export interface ConceptSlideProps {
   /** Placeholder illustration. */
   icon?: ReactNode;
-  title: string;
+  /** Optional heading. When absent, only the body renders (no empty gap). */
+  title?: ReactNode;
   children?: ReactNode;
   className?: string;
 }
@@ -24,11 +25,18 @@ export function ConceptSlide({
           {icon}
         </div>
       ) : null}
-      <h2 className="text-2xl font-bold tracking-tight text-foreground">
-        {title}
-      </h2>
+      {title ? (
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          {title}
+        </h2>
+      ) : null}
       {children ? (
-        <div className="mt-3 text-base leading-relaxed text-muted">
+        <div
+          className={cn(
+            "text-lg leading-relaxed text-muted",
+            title ? "mt-4" : undefined,
+          )}
+        >
           {children}
         </div>
       ) : null}
