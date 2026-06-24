@@ -1,0 +1,4 @@
+# Treat Rive assets and wasm as binary so Git never rewrites line endings,
+# which would corrupt them (per Rive's runtime docs).
+*.riv binary
+*.wasm binary

@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .gstack/
+
+# Tooling artifacts & asset exploration (not part of the app)
+.impeccable/
+Generation Scripts/
+public/course-art-prototypes/
