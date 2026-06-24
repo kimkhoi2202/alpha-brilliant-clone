@@ -40,7 +40,7 @@ export function Gamification() {
           />
         </div>
         <div>
-          <Subhead>League card — locked</Subhead>
+          <Subhead>League card: locked</Subhead>
           <LeagueCard
             variant="locked"
             title="Unlock Leagues"
@@ -50,7 +50,7 @@ export function Gamification() {
         </div>
       </div>
 
-      <Subhead className="mt-6">League card — active</Subhead>
+      <Subhead className="mt-6">League card: active</Subhead>
       <div className="max-w-md">
         <LeagueCard
           variant="active"

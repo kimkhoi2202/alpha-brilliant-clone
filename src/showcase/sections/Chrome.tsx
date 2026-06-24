@@ -10,7 +10,7 @@ import {
 import { Button, Counter } from "../../components/ui";
 import { Section, Subhead } from "../Section";
 
-/* Placeholder icons — swapped for real art later. */
+/* Placeholder icons: swapped for real art later. */
 function HomeIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
@@ -57,7 +57,7 @@ export function Chrome() {
       title="App chrome"
       description="The persistent framing: the in-app top nav, the marketing nav, the lesson header, and the sticky footer CTA bar. Icons are placeholders."
     >
-      <Frame label="Top nav — in-app">
+      <Frame label="Top nav: in-app">
         <TopNav
           sticky={false}
           tabs={tabs}
@@ -74,7 +74,7 @@ export function Chrome() {
         />
       </Frame>
 
-      <Frame label="Top nav — marketing">
+      <Frame label="Top nav: marketing">
         <TopNav
           sticky={false}
           endContent={
@@ -93,7 +93,7 @@ export function Chrome() {
         />
       </Frame>
 
-      <Frame label="Footer CTA bar — check / continue">
+      <Frame label="Footer CTA bar: check / continue">
         <div className="grid h-24 place-items-center text-sm text-muted">
           lesson content…
         </div>
@@ -102,7 +102,7 @@ export function Chrome() {
         </FooterCtaBar>
       </Frame>
 
-      <Frame label="Footer CTA bar — with secondary action">
+      <Frame label="Footer CTA bar: with secondary action">
         <div className="grid h-24 place-items-center text-sm text-muted">
           lesson content…
         </div>

@@ -18,7 +18,7 @@ const ALERTS = [
   {
     status: "warning",
     title: "Not quite",
-    description: "You added the sides — try squaring them first.",
+    description: "You added the sides. Try squaring them first.",
   },
   {
     status: "danger",
@@ -67,7 +67,7 @@ export function Feedback() {
     <Section
       id="feedback"
       title="Feedback"
-      description="Instant, specific responses — the heart of the learn-by-doing loop."
+      description="Instant, specific responses: the heart of the learn-by-doing loop."
     >
       <Subhead>Alerts</Subhead>
       <div className="space-y-3">

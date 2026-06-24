@@ -21,7 +21,7 @@ export function Typography() {
     <Section
       id="typography"
       title="Typography"
-      description="Outfit (variable) is the single typeface across the app — a clean geometric sans in the spirit of Brilliant."
+      description="Outfit (variable) is the single typeface across the app, a clean geometric sans in the spirit of Brilliant."
     >
       <Subhead>Type scale</Subhead>
       <div className="space-y-2">

@@ -48,7 +48,7 @@ export function Buttons() {
         ))}
       </Row>
 
-      <Subhead className="mt-6">Modes — clicky (3D) vs flat</Subhead>
+      <Subhead className="mt-6">Modes: clicky (3D) vs flat</Subhead>
       <div className="space-y-3">
         <Row>
           {(["primary", "accent", "success", "warning"] as const).map((v) => (
