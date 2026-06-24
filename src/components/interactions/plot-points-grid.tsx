@@ -30,23 +30,15 @@ export function PlotPointsGrid({
         markers={markers}
         placed={placed}
         onPlace={disabled ? undefined : onPlace}
+        onRemove={disabled ? undefined : () => onClear()}
       />
       <p className="text-sm text-muted" aria-live="polite">
         {placed.length === 0
           ? `Tap the grid to place ${targetCount} point${targetCount > 1 ? "s" : ""}.`
           : remaining > 0
             ? `${remaining} more to place.`
-            : "Ready — tap Check, or clear to redo."}
+            : "Ready, tap Check or tap the point to redo."}
       </p>
-      {placed.length > 0 && !disabled ? (
-        <button
-          type="button"
-          onClick={onClear}
-          className="text-sm font-medium text-muted underline-offset-2 transition-colors hover:text-foreground hover:underline"
-        >
-          Clear
-        </button>
-      ) : null}
     </div>
   );
 }

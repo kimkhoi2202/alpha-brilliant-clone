@@ -8,7 +8,7 @@ export interface SliderInputProps {
   disabled?: boolean;
 }
 
-/** Slider with a big live readout — adjust and watch the value respond. */
+/** Slider with a big live readout: adjust and watch the value respond. */
 export function SliderInput({
   min,
   max,
