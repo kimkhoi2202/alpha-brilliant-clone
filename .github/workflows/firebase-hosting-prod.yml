@@ -1,0 +1,43 @@
+name: Deploy to Firebase Hosting (prod)
+
+# Auto-deploys the app to Firebase Hosting (the live channel) whenever the
+# `prod` branch changes. Promote a release by merging into `prod` (e.g. main -> prod).
+# Requires the repo secret FIREBASE_SERVICE_ACCOUNT_FIR_94B95 (a Firebase service
+# account JSON key with Hosting deploy permission).
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Deploy to Firebase Hosting (live)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIR_94B95 }}
+          projectId: fir-94b95
+          channelId: live
