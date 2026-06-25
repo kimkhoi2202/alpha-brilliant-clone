@@ -35,9 +35,10 @@ jobs:
         run: pnpm run build
 
       - name: Deploy to Firebase Hosting (live)
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIR_94B95 }}
-          projectId: fir-94b95
-          channelId: live
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIR_94B95 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npx -y firebase-tools@latest deploy --only hosting --project fir-94b95 --non-interactive
+          rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
