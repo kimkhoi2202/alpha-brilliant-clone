@@ -1,0 +1,372 @@
+/*
+ * AlphaBrilliant: design tokens, a faithful clone of Brilliant's palette.
+ *
+ * `:root` holds Brilliant's raw color ramps (the theme-agnostic source of truth).
+ * The `.dark` block maps HeroUI's semantic tokens onto those ramps; HeroUI then
+ * derives every hover/soft/secondary shade from them via color-mix, so the whole
+ * system recomputes automatically. These rules are intentionally UNLAYERED so
+ * they win over @heroui/styles' `@layer base` defaults without `!important`.
+ *
+ * Values transcribed from Brilliant's published Panda/Chakra tokens (dark theme).
+ * Adding a light theme later = add a `.light` block that maps onto the same ramps.
+ */
+
+:root {
+  /* Neutrals */
+  --bp-white: #ffffff;
+  --bp-black: #000000;
+  --bp-dark-gray: #1e1e1e;
+
+  --bp-gray-50: #f8f8f8;
+  --bp-gray-100: #f2f2f2;
+  --bp-gray-200: #e5e5e5;
+  --bp-gray-300: #cccccc;
+  --bp-gray-400: #b3b3b3;
+  --bp-gray-500: #999999;
+  --bp-gray-600: #808080;
+  --bp-gray-700: #666666;
+  --bp-gray-800: #4c4c4c;
+  --bp-gray-900: #383838;
+  --bp-gray-950: #141414;
+
+  /* White alphas (Brilliant uses these for borders + secondary text on dark) */
+  --bp-wa-50: rgba(255, 255, 255, 0.025);
+  --bp-wa-100: rgba(255, 255, 255, 0.05);
+  --bp-wa-200: rgba(255, 255, 255, 0.1);
+  --bp-wa-300: rgba(255, 255, 255, 0.2);
+  --bp-wa-400: rgba(255, 255, 255, 0.3);
+  --bp-wa-500: rgba(255, 255, 255, 0.4);
+  --bp-wa-600: rgba(255, 255, 255, 0.5);
+  --bp-wa-700: rgba(255, 255, 255, 0.6);
+  --bp-wa-800: rgba(255, 255, 255, 0.7);
+  --bp-wa-900: rgba(255, 255, 255, 0.8);
+  --bp-wa-950: rgba(255, 255, 255, 0.9);
+
+  /* Blue */
+  --bp-blue-50: #f6f8ff;
+  --bp-blue-100: #ecf0ff;
+  --bp-blue-200: #dae2ff;
+  --bp-blue-300: #abbdff;
+  --bp-blue-400: #7491ff;
+  --bp-blue-500: #456dff;
+  --bp-blue-600: #375ce3;
+  --bp-blue-700: #294bc6;
+  --bp-blue-800: #213c9e;
+  --bp-blue-900: #142563;
+  --bp-blue-950: #080f28;
+
+  /* Green */
+  --bp-green-50: #f4fcf7;
+  --bp-green-100: #eafaee;
+  --bp-green-200: #d4f5dd;
+  --bp-green-300: #9fe8b3;
+  --bp-green-400: #5ed981;
+  --bp-green-500: #29cc57;
+  --bp-green-600: #15b441;
+  --bp-green-700: #009b2b;
+  --bp-green-800: #007c23;
+  --bp-green-900: #004e16;
+  --bp-green-950: #001f09;
+
+  /* Yellow (gold) */
+  --bp-yellow-50: #fffcf4;
+  --bp-yellow-100: #fef9e9;
+  --bp-yellow-200: #fdf3d3;
+  --bp-yellow-300: #fce49d;
+  --bp-yellow-400: #f9d25c;
+  --bp-yellow-500: #f7c325;
+  --bp-yellow-600: #d7a613;
+  --bp-yellow-700: #b78900;
+  --bp-yellow-800: #926d00;
+  --bp-yellow-900: #5c4400;
+  --bp-yellow-950: #251b00;
+
+  /* Red */
+  --bp-red-50: #fff7f7;
+  --bp-red-100: #ffefef;
+  --bp-red-200: #ffdfdf;
+  --bp-red-300: #ffb6b6;
+  --bp-red-400: #ff8585;
+  --bp-red-500: #ff5d5d;
+  --bp-red-600: #e14b4b;
+  --bp-red-700: #c43939;
+  --bp-red-800: #9c2e2e;
+  --bp-red-900: #621c1c;
+  --bp-red-950: #270b0b;
+
+  /* Orange */
+  --bp-orange-50: #fff9f4;
+  --bp-orange-100: #fff4e9;
+  --bp-orange-200: #ffe8d3;
+  --bp-orange-300: #ffcc9c;
+  --bp-orange-400: #ffa95a;
+  --bp-orange-500: #ff8d23;
+  --bp-orange-600: #e77a16;
+  --bp-orange-700: #ce6809;
+  --bp-orange-800: #a55307;
+  --bp-orange-900: #673404;
+  --bp-orange-950: #291502;
+
+  /* Teal */
+  --bp-teal-50: #f4fbfa;
+  --bp-teal-100: #eaf7f6;
+  --bp-teal-200: #d5efec;
+  --bp-teal-300: #a0dcd5;
+  --bp-teal-400: #61c4b8;
+  --bp-teal-500: #2cb0a1;
+  --bp-teal-600: #279b8d;
+  --bp-teal-700: #218478;
+  --bp-teal-800: #1a6a60;
+  --bp-teal-900: #124740;
+  --bp-teal-950: #092320;
+
+  /* Purple */
+  --bp-purple-50: #faf7ff;
+  --bp-purple-100: #f5efff;
+  --bp-purple-200: #ebe0ff;
+  --bp-purple-300: #d3b8ff;
+  --bp-purple-400: #b689ff;
+  --bp-purple-500: #9d62ff;
+  --bp-purple-600: #874de5;
+  --bp-purple-700: #7139cc;
+  --bp-purple-800: #5a2ea3;
+  --bp-purple-900: #381d66;
+  --bp-purple-950: #170b29;
+
+  /* Pink */
+  --bp-pink-50: #fff8fd;
+  --bp-pink-100: #fff0fb;
+  --bp-pink-200: #ffe1f7;
+  --bp-pink-300: #ffbdec;
+  --bp-pink-400: #ff90e0;
+  --bp-pink-500: #ff6bd5;
+  --bp-pink-600: #e05fbc;
+  --bp-pink-700: #bf51a0;
+  --bp-pink-800: #994080;
+  --bp-pink-900: #662b55;
+  --bp-pink-950: #33152b;
+
+  /* Lesson-feedback panel fills (Brilliant exact, dark theme) */
+  --bp-feedback-correct: #00370f;
+  --bp-feedback-incorrect: #383838;
+  --bp-feedback-retryable: #403000;
+
+  /* Iridescent brand gradient (blue -> pink -> gold) */
+  --bp-gradient-iridescent: linear-gradient(
+    86deg,
+    var(--bp-blue-400) -7.44%,
+    var(--bp-pink-400) 44.8%,
+    var(--bp-yellow-500) 102.54%
+  );
+}
+
+.dark,
+[data-theme="dark"] {
+  /* Shape: Brilliant buttons are pills; cards ~16px, inputs ~12px. This 0.5rem
+     base drives HeroUI's radius scale (lg 8 · xl 12 · 2xl 16 · 3xl 24px). */
+  --radius: 0.5rem;
+
+  /* Canvas & text: Brilliant's charcoal (#141414 = gray-950), not pure black. */
+  --background: var(--bp-gray-950); /* #141414 */
+  --foreground: var(--bp-white);
+  --muted: var(--bp-wa-700); /* text-secondary */
+
+  /* Surfaces: stepped subtly above the charcoal canvas (Brilliant's nav/cards
+     sit ~#1c–#1e); the hairline border still does most of the separation. */
+  --nav-background: var(--bp-dark-gray); /* #1e1e1e */
+  --surface: #1c1c1e;
+  --surface-secondary: #232326;
+  --surface-tertiary: #2a2a2e;
+  --overlay: #232326;
+
+  /* Neutral controls (grey "Why?" pill, disabled fills, hamburger) */
+  --default: #29292d;
+  --default-foreground: var(--bp-white);
+
+  /* High-contrast primary CTA: Brilliant's white Check / Continue / Sign in */
+  --primary: var(--bp-white);
+  --primary-foreground: #0a0a0b;
+  --primary-hover: #e9e9eb;
+
+  /* Brand / course accent (blue for math; the "Start" button) */
+  --accent: var(--bp-blue-500); /* #456DFF */
+  --accent-foreground: var(--bp-white);
+
+  /* Streak / energy accent: Brilliant's "pear" (lime-gold streak bolt). */
+  --streak: #b5e853;
+  /* Streak fire: the flame that replaces the lightning bolt everywhere. */
+  --streak-flame: #f59e2e; /* amber flame body + completed-day disc */
+  --streak-flame-core: #fcd24d; /* inner flame highlight */
+
+  /* Status: solid fills with near-black text (Brilliant) */
+  --success: var(--bp-green-400); /* #5ED981 */
+  --success-foreground: var(--bp-gray-950);
+  --warning: var(--bp-yellow-400); /* #F9D25C */
+  --warning-foreground: var(--bp-gray-950);
+  --danger: var(--bp-red-400); /* #FF8585 */
+  --danger-foreground: var(--bp-gray-950);
+
+  /* Lines & links: Brilliant's hairline is whiteAlpha 0.2 (border.primary),
+     clearer than a 0.1 ghost line; the brighter hover edge is 0.4. */
+  --border: var(--bp-wa-300); /* whiteAlpha 0.2 */
+  --border-hover: var(--bp-wa-500); /* whiteAlpha 0.4 */
+  --separator: var(--bp-wa-100); /* whiteAlpha 0.05 */
+  /* The lesson player's card frame: a touch more present than the hairline
+     border, since it carries a 2px stroke (tablet/desktop only). */
+  --lesson-frame: #2b2b31;
+  --link: var(--bp-blue-400);
+
+  /* Segmented controls (e.g. the lesson progress bar track) */
+  --segment: #29292d;
+  --segment-foreground: var(--bp-white);
+
+  /* Lesson feedback (correct green / retryable gold rings + panels) */
+  --feedback-correct: var(--bp-feedback-correct);
+  --feedback-correct-foreground: var(--bp-green-300);
+  --feedback-retryable: var(--bp-feedback-retryable);
+  --feedback-retryable-foreground: var(--bp-yellow-300);
+  --feedback-incorrect: var(--bp-feedback-incorrect);
+  --feedback-incorrect-foreground: var(--bp-white);
+}
+
+/*
+ * Brilliant button intents + the 3D "press-down."
+ *
+ * HeroUI's Button is token-driven: the base `.button` reads `--button-bg`,
+ * `--button-bg-hover`, `--button-bg-pressed`, `--button-fg`; each color variant
+ * only sets those four. We (1) redefine `primary` as Brilliant's high-contrast
+ * inverse (white on dark), (2) add `accent` (the course/brand blue "Start") plus
+ * `success` / `warning`, and (3) give solid CTAs a bottom lip + soft shadow that
+ * compresses on press. All rules are UNLAYERED so they beat @heroui's
+ * `@layer components` defaults; `accent`/`success`/`warning` are declared after
+ * `primary` so they win when both classes land on the element.
+ */
+
+/* Solid intents: color only. Brilliant dims the fill on hover/press rather
+   than shifting its hue, so we pin hover/pressed to the base color and let the
+   shared opacity rule below do the work (this also fixes the previously
+   undefined --accent/--success/--warning-hover tokens). */
+.button--primary {
+  --button-bg: var(--primary);
+  --button-bg-hover: var(--primary);
+  --button-bg-pressed: var(--primary);
+  --button-fg: var(--primary-foreground);
+}
+
+/* accent = course/brand blue (Brilliant's "Start") */
+.button--accent {
+  --button-bg: var(--accent);
+  --button-bg-hover: var(--accent);
+  --button-bg-pressed: var(--accent);
+  --button-fg: var(--accent-foreground);
+}
+
+.button--success {
+  --button-bg: var(--success);
+  --button-bg-hover: var(--success);
+  --button-bg-pressed: var(--success);
+  --button-fg: var(--success-foreground);
+}
+
+.button--warning {
+  --button-bg: var(--warning);
+  --button-bg-hover: var(--warning);
+  --button-bg-pressed: var(--warning);
+  --button-fg: var(--warning-foreground);
+}
+
+.button--danger {
+  --button-bg: var(--danger);
+  --button-bg-hover: var(--danger);
+  --button-bg-pressed: var(--danger);
+  --button-fg: var(--danger-foreground);
+}
+
+/* Brilliant's hover/active feel: dim the whole control, uniformly, no hue shift. */
+.button--primary,
+.button--accent,
+.button--success,
+.button--warning,
+.button--danger {
+  transition:
+    opacity 130ms ease,
+    transform 90ms var(--ease-out-quad, ease),
+    box-shadow 90ms var(--ease-out-quad, ease);
+}
+.button--primary:not(:disabled):not([aria-disabled="true"]):hover,
+.button--accent:not(:disabled):not([aria-disabled="true"]):hover,
+.button--success:not(:disabled):not([aria-disabled="true"]):hover,
+.button--warning:not(:disabled):not([aria-disabled="true"]):hover,
+.button--danger:not(:disabled):not([aria-disabled="true"]):hover {
+  opacity: 0.85;
+}
+.button--primary:not(:disabled):not([aria-disabled="true"]):active,
+.button--accent:not(:disabled):not([aria-disabled="true"]):active,
+.button--success:not(:disabled):not([aria-disabled="true"]):active,
+.button--warning:not(:disabled):not([aria-disabled="true"]):active,
+.button--danger:not(:disabled):not([aria-disabled="true"]):active,
+.button--primary[data-pressed="true"],
+.button--accent[data-pressed="true"],
+.button--success[data-pressed="true"],
+.button--warning[data-pressed="true"],
+.button--danger[data-pressed="true"] {
+  opacity: 0.7;
+}
+
+/* The "clicky" 3D press-down: opt in via the Button `clicky` prop, which adds
+   `.button--clicky`. Filled CTAs enable it by default; outline/ghost/secondary
+   controls stay flatter so they don't get a heavy black cast shadow. */
+.button--clicky {
+  /* Two layers, both derived from the button fill so they show on the dark
+     canvas: (1) a light crisp lip right under the edge, (2) a softer, deeper
+     diffuse shadow grounding it, Brilliant's floating elevation, not a hard
+     ledge. */
+  box-shadow:
+    0 3px 0 0 color-mix(in srgb, var(--button-bg), #000 14%),
+    0 5px 8px -5px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 90ms var(--ease-out-quad, ease),
+    box-shadow 90ms var(--ease-out-quad, ease),
+    opacity 130ms ease;
+}
+
+.button--clicky:not(:disabled):not([aria-disabled="true"]):active,
+.button--clicky[data-pressed="true"] {
+  /* Press down: drop and collapse the elevation. */
+  transform: translateY(3px);
+  box-shadow:
+    0 0 0 0 color-mix(in srgb, var(--button-bg), #000 14%),
+    0 2px 4px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Disabled CTAs render as Brilliant's flat dark-grey (not a faded fill). */
+.button--primary:disabled,
+.button--accent:disabled,
+.button--success:disabled,
+.button--warning:disabled,
+.button--danger:disabled,
+.button--primary[aria-disabled="true"],
+.button--accent[aria-disabled="true"],
+.button--success[aria-disabled="true"],
+.button--warning[aria-disabled="true"],
+.button--danger[aria-disabled="true"] {
+  --button-bg: var(--default);
+  --button-fg: var(--muted);
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* No lip on a disabled clicky button. */
+.button--clicky:disabled,
+.button--clicky[aria-disabled="true"] {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button--clicky {
+    transition: background-color 100ms ease;
+  }
+  .button--clicky:active {
+    transform: none;
+  }
+}

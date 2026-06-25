@@ -1,48 +1,30 @@
+import { useEffect } from "react";
+import { RouterProvider } from "@tanstack/react-router";
+
 import { useAuth } from "./lib/AuthContext";
-import "./App.css";
+import { router } from "./router";
+
+function RouteSplash() {
+  return (
+    <div className="grid min-h-svh place-items-center bg-background text-foreground">
+      <div
+        className="size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"
+        role="status"
+        aria-label="Loading"
+      />
+    </div>
+  );
+}
 
 export default function App() {
-  const { user, loading, signInWithGoogle, logout } = useAuth();
+  const auth = useAuth();
 
-  if (loading) {
-    return (
-      <main className="shell">
-        <p className="muted">Loading…</p>
-      </main>
-    );
-  }
+  // Re-run route guards whenever the auth identity changes (sign in / out).
+  useEffect(() => {
+    void router.invalidate();
+  }, [auth.user]);
 
-  return (
-    <main className="shell">
-      <div className="brand">
-        <span className="brand-mark" aria-hidden>
-          △
-        </span>
-        <h1>AlphaBrilliant</h1>
-      </div>
-      <p className="tagline">
-        Learn the Pythagorean Theorem by doing — not watching.
-      </p>
+  if (auth.loading) return <RouteSplash />;
 
-      {user ? (
-        <div className="card">
-          <p>
-            Signed in as <strong>{user.displayName ?? user.email}</strong>
-          </p>
-          <button type="button" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </div>
-      ) : (
-        <div className="card">
-          <p>Sign in to start learning.</p>
-          <button type="button" onClick={() => void signInWithGoogle()}>
-            Continue with Google
-          </button>
-        </div>
-      )}
-
-      <p className="status">Scaffold ready · Firebase wired · lessons coming next</p>
-    </main>
-  );
+  return <RouterProvider router={router} context={{ auth }} />;
 }

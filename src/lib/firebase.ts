@@ -1,9 +1,13 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 
-// Firebase web config for project "fir-94b95" (AlphaTok).
-// The apiKey is a public client identifier, not a secret — access is controlled
+// Firebase web config for project "fir-94b95".
+// The apiKey is a public client identifier, not a secret: access is controlled
 // by Firebase Security Rules, not by hiding this value.
 const firebaseConfig = {
   apiKey: "AIzaSyCP53Sh2WfS2rrm1teeQSzfmnrpoziHve4",
@@ -17,5 +21,13 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Offline-first: progress/streak writes survive reloads and brief disconnects,
+// and resume is consistent across tabs (PRD §1.5 Reliability).
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
+
 export const googleProvider = new GoogleAuthProvider();
