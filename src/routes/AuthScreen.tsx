@@ -63,28 +63,6 @@ function GoogleIcon() {
   );
 }
 
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 22 22" fill="none" className="size-5" aria-hidden>
-      <path
-        d="M0 11.0662C0.00127985 16.5108 3.9361 21.1467 9.28038 22V14.2648H6.48977V11.0662H9.28368V8.6313C9.15878 7.47753 9.55044 6.32766 10.3524 5.49353C11.1544 4.6594 12.2837 4.22747 13.4338 4.31489C14.2594 4.32831 15.0829 4.40229 15.8977 4.53625V7.2578H14.5074C14.0287 7.19472 13.5475 7.35378 13.1993 7.69018C12.8511 8.02657 12.6735 8.5039 12.7167 8.98768V11.0662H15.7647L15.2774 14.2659H12.7167V22C18.4964 21.0809 22.5493 15.7697 21.9393 9.91413C21.3293 4.05853 16.2698 -0.291573 10.4263 0.0152787C4.58284 0.322131 0.000928892 5.17851 0 11.0662Z"
-        fill="#0866FF"
-      />
-    </svg>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <svg viewBox="0 0 17 21" fill="none" className="size-5" aria-hidden>
-      <path
-        d="M11.0718 3.70342C11.691 2.95595 12.1288 1.93086 12.1288 0.905766C12.1288 0.756273 12.1181 0.617459 12.0861 0.5C11.0825 0.542712 9.87599 1.17272 9.14997 2.02696C8.5841 2.66765 8.05026 3.70342 8.05026 4.72851C8.05026 4.88868 8.08229 5.03817 8.09297 5.09156C8.15703 5.10224 8.2638 5.11292 8.35989 5.11292C9.26741 5.11292 10.3991 4.51495 11.0718 3.70342ZM11.7764 5.33716C10.271 5.33716 9.0432 6.25547 8.2638 6.25547C7.42033 6.25547 6.33131 5.39055 5.00739 5.39055C2.51971 5.39055 0 7.45142 0 11.3275C0 13.7515 0.928876 16.3142 2.08196 17.9586C3.0749 19.3468 3.93972 20.5 5.1889 20.5C6.4274 20.5 6.97191 19.6778 8.50936 19.6778C10.0682 19.6778 10.4098 20.4786 11.7764 20.4786C13.1324 20.4786 14.0399 19.24 14.8834 18.012C15.8443 16.6025 16.2393 15.2357 16.25 15.1716C16.1753 15.1503 13.5808 14.0932 13.5808 11.1247C13.5808 8.56193 15.6201 7.4087 15.7375 7.32328C14.3922 5.39055 12.3423 5.33716 11.7764 5.33716Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
 /** Brilliant's 3D pill button (face + bottom lip that compresses on press). */
 function AuthButton({
   tone = "surface",
@@ -165,10 +143,6 @@ export function AuthScreen() {
     }
   }
 
-  function unavailable(provider: string) {
-    setError(`${provider} sign-in is coming soon. Use Google or email.`);
-  }
-
   const canSubmit =
     email.trim() !== "" &&
     password !== "" &&
@@ -187,12 +161,6 @@ export function AuthScreen() {
           <div className="flex w-full flex-col gap-3">
             <AuthButton icon={<GoogleIcon />} disabled={busy} onClick={() => void handleGoogle()}>
               Sign in with Google
-            </AuthButton>
-            <AuthButton icon={<FacebookIcon />} onClick={() => unavailable("Facebook")}>
-              Sign in with Facebook
-            </AuthButton>
-            <AuthButton icon={<AppleIcon />} onClick={() => unavailable("Apple")}>
-              Continue with Apple
             </AuthButton>
             <AuthButton onClick={() => { setError(null); setMode("email"); }}>
               Sign in with email
