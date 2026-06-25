@@ -519,6 +519,11 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
   const [open, setOpen] = useState(false);
   const [state, dispatch] = useReducer(calcReducer, INITIAL_STATE);
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Rolling buffer of the most recent letter keystrokes so that typing "sqrt"
+  // on the focused panel applies √ (the same action as the √ button). It is
+  // reset on any non-letter key and after a brief idle (see onKeyDown).
+  const letterBufferRef = useRef("");
+  const letterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Apply a keypad action, then pull keyboard focus back onto the PANEL on the next
   // frame (so it wins over react-aria focusing the pressed key). The panel holds
@@ -535,6 +540,40 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       const { key } = event;
+
+      // Typing the letters s-q-r-t in order (case-insensitive) applies √, exactly
+      // like pressing the √ button. We keep a short rolling buffer of recent
+      // single letters and fire the √ action once it ends with "sqrt". Like every
+      // other calc key, letters also stopPropagation so they don't leak to the
+      // lesson/page. Letters combined with ⌘/Ctrl/Alt are left to the browser.
+      if (/^[a-z]$/i.test(key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (letterTimerRef.current !== null) {
+          clearTimeout(letterTimerRef.current);
+          letterTimerRef.current = null;
+        }
+        const buffer = (letterBufferRef.current + key.toLowerCase()).slice(-8);
+        if (buffer.endsWith("sqrt")) {
+          letterBufferRef.current = "";
+          run({ type: "sqrt" });
+        } else {
+          letterBufferRef.current = buffer;
+          // Drop stale letters after a brief idle so they don't accumulate.
+          letterTimerRef.current = setTimeout(() => {
+            letterBufferRef.current = "";
+            letterTimerRef.current = null;
+          }, 1000);
+        }
+        return;
+      }
+      // Any non-letter key breaks an in-progress "sqrt" sequence.
+      if (letterTimerRef.current !== null) {
+        clearTimeout(letterTimerRef.current);
+        letterTimerRef.current = null;
+      }
+      letterBufferRef.current = "";
+
       // Every key the calc handles also stops propagation so it can't leak to the
       // lesson - especially Enter, which must compute here, not advance the lesson.
       if (key === "Escape") {
