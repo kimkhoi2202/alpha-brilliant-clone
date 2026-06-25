@@ -40,5 +40,16 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          npx -y firebase-tools@latest deploy --only hosting --project fir-94b95 --non-interactive
+          deploy() { npx -y firebase-tools@latest deploy --only hosting --project fir-94b95 --non-interactive; }
+          n=0
+          until deploy; do
+            n=$((n + 1))
+            if [ "$n" -ge 5 ]; then
+              echo "Deploy failed after $n attempts."
+              rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
+              exit 1
+            fi
+            echo "Deploy attempt $n failed (likely a transient OAuth token-endpoint error); retrying in 15s..."
+            sleep 15
+          done
           rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
