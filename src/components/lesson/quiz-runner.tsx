@@ -157,6 +157,11 @@ export function QuizRunner({
       // document.activeElement, already dropped to <body>). A range slider has no
       // own-Enter, so it is driven below like every button.
       const source = e.target;
+      // Inside the calculator panel: it owns its keys (Enter = compute), so let it
+      // handle the keypress and never advance the quiz from a key typed in the calc.
+      if (source instanceof Element && source.closest("[data-lesson-calculator]")) {
+        return;
+      }
       if (
         (source instanceof HTMLInputElement && source.type !== "range") ||
         source instanceof HTMLTextAreaElement

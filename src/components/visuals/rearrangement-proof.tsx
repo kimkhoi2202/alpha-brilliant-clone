@@ -228,6 +228,10 @@ export function RearrangementProof({ a, b, className }: RearrangementProofProps)
         ))}
       </svg>
 
+      <p className="max-w-xs text-center text-sm text-muted" aria-live="polite">
+        Same square, same triangles, so the gold area can't change.{" "}
+        {atStart ? "Here it's one c² square." : "Here it's a² + b²."}
+      </p>
       <Button
         isIconOnly
         variant="accent"
@@ -241,10 +245,6 @@ export function RearrangementProof({ a, b, className }: RearrangementProofProps)
           <UndoIcon className="size-5 shrink-0" />
         )}
       </Button>
-      <p className="max-w-xs text-center text-sm text-muted" aria-live="polite">
-        Same square, same triangles, so the gold area can't change.{" "}
-        {atStart ? "Here it's one c² square." : "Here it's a² + b²."}
-      </p>
     </div>
   );
 }

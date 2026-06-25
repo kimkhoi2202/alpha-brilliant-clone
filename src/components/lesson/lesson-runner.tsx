@@ -349,6 +349,13 @@ function StepScreen({
       // has already dropped activeElement to <body> by now). A range slider has no
       // own-Enter, so it is NOT excluded - it is driven below like every button.
       const source = e.target;
+      // Inside the calculator panel: it owns its keys (Enter = compute, etc.), so
+      // let it handle the keypress and never drive the lesson from a key typed while
+      // the calc holds focus. Once the user clicks back on the lesson, focus leaves
+      // the calc and Enter drives the lesson again.
+      if (source instanceof Element && source.closest("[data-lesson-calculator]")) {
+        return;
+      }
       if (
         (source instanceof HTMLInputElement && source.type !== "range") ||
         source instanceof HTMLTextAreaElement

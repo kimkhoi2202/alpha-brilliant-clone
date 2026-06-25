@@ -28,3 +28,4 @@ dist-ssr
 .impeccable/
 Generation Scripts/
 public/course-art-prototypes/
+.firebase/

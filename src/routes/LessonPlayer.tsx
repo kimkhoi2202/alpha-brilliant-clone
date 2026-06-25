@@ -127,7 +127,6 @@ export function LessonPlayer() {
             size="lg"
             art={<CongratsBadge className="size-52" />}
             title="Lesson complete!"
-            subtitle={`${summary.correct}/${summary.total} correct`}
             actionLabel={next ? "Next lesson" : "Back to course"}
             onContinue={() => (next ? openLesson(next) : goToCourse())}
             secondaryActionLabel={next ? "Back to course" : undefined}

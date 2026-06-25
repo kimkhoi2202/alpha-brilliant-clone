@@ -487,7 +487,12 @@ function Key({
       aria-label={ariaLabel}
       className={cn(
         "h-12 min-h-0 w-full min-w-0 rounded-xl px-0 text-lg font-semibold tabular-nums",
-        active && "ring-2 ring-foreground/70 ring-offset-2 ring-offset-overlay",
+        // No focus ring / outline on any keypad key: clicking or focusing a key
+        // shows nothing (the panel holds the invisible keyboard focus). The pending
+        // operator is cued by a subtle brightness instead of the old gray ring.
+        "outline-none focus:outline-none focus-visible:outline-none",
+        "focus:ring-0 focus-visible:ring-0 data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-0",
+        active && "brightness-125",
         className,
       )}
     >
@@ -515,58 +520,71 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
   const [state, dispatch] = useReducer(calcReducer, INITIAL_STATE);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Apply a keypad action. The calculator deliberately NEVER takes focus - not on
-  // open, not after a key press (the panel's onMouseDown below also stops clicks
-  // from moving focus into it). So it can't trap the keyboard: with the calc open,
-  // clicking anywhere in the lesson leaves focus in the lesson and Enter drives
-  // the lesson, not the calc. It stays fully usable by clicking its keys.
+  // Apply a keypad action, then pull keyboard focus back onto the PANEL on the next
+  // frame (so it wins over react-aria focusing the pressed key). The panel holds
+  // focus *invisibly* - its outline and every key's focus ring are suppressed - so
+  // the calc can be typed into without any "focused calculator" UI. The lesson's
+  // Enter handler bails for keydowns inside the panel, so Enter computes here and
+  // does NOT advance the lesson; focus only leaves the calc when the user clicks
+  // the lesson, at which point Enter drives the lesson again.
   const run = useCallback((action: CalcAction) => {
     dispatch(action);
+    requestAnimationFrame(() => dialogRef.current?.focus());
   }, []);
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       const { key } = event;
+      // Every key the calc handles also stops propagation so it can't leak to the
+      // lesson - especially Enter, which must compute here, not advance the lesson.
       if (key === "Escape") {
+        event.stopPropagation();
         setOpen(false);
         return;
       }
       if (/^[0-9]$/.test(key)) {
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "digit", digit: key });
         return;
       }
       if (key === ".") {
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "dot" });
         return;
       }
       if (key === "^") {
         // Convenience: `^` types a square (²).
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "square" });
         return;
       }
       const opForKey: Record<string, Operator> = { "+": "+", "-": "−", "*": "×", "/": "÷" };
       if (key in opForKey) {
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "operator", operator: opForKey[key] });
         return;
       }
       if (key === "Enter" || key === "=") {
-        // If a keypad key is focused, let Enter activate that key instead.
+        // The panel holds the (invisible) focus, so Enter computes here.
         if (key === "Enter" && event.target !== event.currentTarget) return;
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "equals" });
         return;
       }
       if (key === "Backspace") {
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "backspace" });
         return;
       }
       if (key === "Delete") {
         event.preventDefault();
+        event.stopPropagation();
         run({ type: "clear" });
       }
     },
@@ -655,20 +673,21 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
 
       {/*
         Non-blocking floating panel — a plain absolutely-positioned div, NOT a
-        modal/portal popover. It renders no full-screen underlay, never contains
-        focus, and installs no interact-outside handler, so pointer events outside
-        it pass straight through to the lesson and the page stays fully interactive
-        while the calculator is open. It sits just above the trigger (trigger
-        height 44px + a 12px gap), right-aligned to it, and is shown/hidden purely
-        by `open`. When closed it is `inert` + pointer-events-none so it neither
-        captures input nor takes focus; only the trigger and the header × close it.
+        modal/portal popover. It renders no full-screen underlay and installs no
+        interact-outside handler, so pointer events outside it pass straight through
+        to the lesson and the page stays fully interactive while the calculator is
+        open. It sits just above the trigger (trigger height 44px + a 12px gap),
+        right-aligned to it, and is shown/hidden purely by `open`. When closed it is
+        `inert` + pointer-events-none; only the trigger and the header × close it.
 
-        `onMouseDown` preventDefault keeps clicks anywhere in the panel (keys or
-        bare backdrop) from moving focus INTO it - the keys still compute via their
-        pointer-driven onPress. With nothing here ever stealing focus, the lesson
-        keeps it and Enter drives the lesson (see lesson-runner). `role="dialog"`
-        is non-modal here, so `data-lesson-calculator` lets the lesson's Enter
-        handler tell this always-mounted panel apart from a real modal dialog.
+        The panel itself holds keyboard focus so the calc can be TYPED into, but
+        invisibly: `outline-none` here + the keys' suppressed focus rings mean there
+        is no "focused calculator" UI. `onMouseDown` preventDefault stops the pressed
+        key / backdrop from grabbing focus, then we focus the panel so its onKeyDown
+        (digits, + − × ÷, ., =/Enter, Backspace, Esc) handles typing. `role="dialog"`
+        is non-modal here, so `data-lesson-calculator` lets the lesson's Enter handler
+        tell this always-mounted panel from a real modal AND bail when a keypress
+        starts inside it (so a calc Enter computes instead of advancing the lesson).
       */}
       <div
         ref={dialogRef}
@@ -678,11 +697,17 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
         inert={!open}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        onMouseDown={(event) => event.preventDefault()}
+        onMouseDown={(event) => {
+          // Keep keyboard focus on the PANEL (not the pressed key), so typing works
+          // with no per-key focus ring: block the default focus-on-mousedown, then
+          // focus the panel itself (run() re-affirms this after react-aria presses).
+          event.preventDefault();
+          dialogRef.current?.focus();
+        }}
         className={cn(
           "absolute bottom-[8rem] right-1 z-50 w-[280px] sm:bottom-[3.75rem] lg:bottom-[4rem] lg:right-2",
           "origin-bottom-right rounded-2xl border border-border bg-overlay p-3",
-          "shadow-[0_18px_50px_rgba(0,0,0,0.55)] outline-none",
+          "shadow-[0_18px_50px_rgba(0,0,0,0.55)] outline-none focus:outline-none focus-visible:outline-none",
           "transition duration-150 ease-out motion-reduce:transition-none",
           open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0",
         )}
