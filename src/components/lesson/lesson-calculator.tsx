@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useReducer,
   useRef,
@@ -519,11 +520,47 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
   const [open, setOpen] = useState(false);
   const [state, dispatch] = useReducer(calcReducer, INITIAL_STATE);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerWrapperRef = useRef<HTMLDivElement>(null);
   // Rolling buffer of the most recent letter keystrokes so that typing "sqrt"
   // on the focused panel applies √ (the same action as the √ button). It is
   // reset on any non-letter key and after a brief idle (see onKeyDown).
   const letterBufferRef = useRef("");
   const letterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-focus the panel when it opens so the user can immediately type (digits,
+  // operators, the "sqrt" letters, Enter) with no second click. Deferred one frame
+  // so the `inert` attribute (cleared once `open` is true) is gone before we focus -
+  // an inert element can't take focus - and `preventScroll` keeps the page from
+  // jumping to the bottom-right panel. Enter then computes in the calc while it
+  // holds focus, which is the intended behavior.
+  useEffect(() => {
+    if (!open) return;
+    const raf = requestAnimationFrame(() => {
+      dialogRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [open]);
+
+  // While open, a pointerdown anywhere outside the panel and the trigger returns
+  // keyboard focus to the lesson (so the lesson's Enter works again) by blurring the
+  // panel's invisible focus - WITHOUT closing the calc. Only the × button, the
+  // trigger toggle, and Esc close it. The panel is non-blocking (no underlay /
+  // interact-outside), so the click still reaches the lesson regardless.
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      const panel = dialogRef.current;
+      const target = event.target as Node | null;
+      if (!panel || !target) return;
+      if (panel.contains(target) || triggerWrapperRef.current?.contains(target)) {
+        return;
+      }
+      const active = document.activeElement as HTMLElement | null;
+      if (active && panel.contains(active)) active.blur();
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
 
   // Apply a keypad action, then pull keyboard focus back onto the PANEL on the next
   // frame (so it wins over react-aria focusing the pressed key). The panel holds
@@ -663,6 +700,7 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
   return (
     <>
       <div
+        ref={triggerWrapperRef}
         className={cn(
           // Mirror Koji (bottom-1 left-1 … lg:bottom-2 lg:left-2) on the right.
           // On small screens the centered footer CTA goes full-width, so lift the
