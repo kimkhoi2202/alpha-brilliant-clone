@@ -32,13 +32,15 @@ export function PlotPointsGrid({
         onPlace={disabled ? undefined : onPlace}
         onRemove={disabled ? undefined : () => onClear()}
       />
-      <p className="text-sm text-muted" aria-live="polite">
-        {placed.length === 0
-          ? `Tap the grid to place ${targetCount} point${targetCount > 1 ? "s" : ""}.`
-          : remaining > 0
-            ? `${remaining} more to place.`
-            : "Ready, tap Check or tap the point to redo."}
-      </p>
+      {!disabled && (
+        <p className="text-sm text-muted" aria-live="polite">
+          {placed.length === 0
+            ? `Tap the grid to place ${targetCount} point${targetCount > 1 ? "s" : ""}.`
+            : remaining > 0
+              ? `${remaining} more to place.`
+              : "Ready, tap Check or tap the point to redo."}
+        </p>
+      )}
     </div>
   );
 }

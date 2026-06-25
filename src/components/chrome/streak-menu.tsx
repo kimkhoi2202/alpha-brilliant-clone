@@ -66,7 +66,19 @@ export function StreakMenu({
   lessonsComplete,
 }: StreakMenuProps) {
   const [open, setOpen] = useState(false);
+  // Keep the panel mounted while it plays its exit animation, then unmount.
+  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Mount immediately on open; the exit animation's onAnimationEnd unmounts.
+  function toggleMenu() {
+    if (open) {
+      setOpen(false);
+    } else {
+      setMounted(true);
+      setOpen(true);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -96,15 +108,22 @@ export function StreakMenu({
         icon={
           <StreakBolt completed={currentStreak > 0} className="streak-bolt-pulse" />
         }
-        onPress={() => setOpen((o) => !o)}
+        onPress={toggleMenu}
         isActive={open}
         aria-label={`${currentStreak} day streak`}
       />
 
-      {open ? (
+      {mounted ? (
         <div
           role="dialog"
           aria-label="Streak details"
+          data-state={open ? "open" : "closed"}
+          onAnimationEnd={(event) => {
+            // Ignore bubbling child animations (e.g. the weekday discs); only
+            // unmount once the panel's own exit animation has finished.
+            if (event.target !== event.currentTarget) return;
+            if (!open) setMounted(false);
+          }}
           className="streak-popover absolute right-0 top-full z-50 mt-3 w-[320px]"
         >
           <span

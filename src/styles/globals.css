@@ -139,19 +139,38 @@
     }
   }
 
-  /* The popover drops in (fade + slide) when opened. */
+  /* The popover fades + scales in from the badge on open, and reverses on
+     close. Origin is the top-right corner so it grows out of the streak pill.
+     Exit is a touch quicker than the entrance (Emil: exits can be faster). */
   .streak-popover {
+    transform-origin: top right;
+  }
+  .streak-popover[data-state="open"] {
     animation: streak-popover-in 180ms
+      var(--ease-out-cubic, cubic-bezier(0.215, 0.61, 0.355, 1)) both;
+  }
+  .streak-popover[data-state="closed"] {
+    animation: streak-popover-out 140ms
       var(--ease-out-cubic, cubic-bezier(0.215, 0.61, 0.355, 1)) both;
   }
   @keyframes streak-popover-in {
     0% {
       opacity: 0;
-      transform: translateY(-6px);
+      transform: translateY(-6px) scale(0.96);
     }
     100% {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes streak-popover-out {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.96);
     }
   }
 
@@ -170,11 +189,35 @@
     }
   }
 
+  /* Reduced motion: no pulse, no scale/translate. The popover keeps only a
+     minimal opacity fade so its exit still fires animationend → unmount,
+     instead of vanishing abruptly. */
   @media (prefers-reduced-motion: reduce) {
     .streak-bolt-pulse,
-    .streak-popover,
     .streak-disc {
       animation: none;
+    }
+    .streak-popover[data-state="open"] {
+      animation: streak-popover-fade-in 120ms linear both;
+    }
+    .streak-popover[data-state="closed"] {
+      animation: streak-popover-fade-out 120ms linear both;
+    }
+  }
+  @keyframes streak-popover-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes streak-popover-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
     }
   }
 }
