@@ -15,7 +15,6 @@ export function SignInForm({ onSubmit, onReset, onSignUp }: SignInFormProps) {
   return (
     <>
       <ProviderButton icon="G">Continue with Google</ProviderButton>
-      <ProviderButton icon="">Continue with Apple</ProviderButton>
       <DividerOr />
       <Input type="email" placeholder="Email" />
       <Input type="password" placeholder="Password" />
