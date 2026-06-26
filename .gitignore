@@ -29,3 +29,11 @@ dist-ssr
 Generation Scripts/
 public/course-art-prototypes/
 .firebase/
+
+# Local env / secrets — never commit real keys
+.env
+.env.*
+!.env.example
+
+# Ralph orchestration runtime state (RALPH_TASK.md itself is tracked)
+.ralph/
