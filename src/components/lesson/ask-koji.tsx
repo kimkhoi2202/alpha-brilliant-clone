@@ -125,16 +125,16 @@ export function AskKoji({
     (rive: Rive) => {
       riveRef.current = rive;
       // `bracketsOn` is already set (via viewModelBooleans before this runs):
-      // false for the dormant decoration, true for the interactive entry point.
+      // off for both the dormant decoration and the interactive entry point.
       fire(swoopRef.current ? "playEnter" : "idle");
     },
     [fire],
   );
 
-  // AI on: a tappable "Ask Koji" entry point. The "< >" brackets show (signaling
-  // the affordance), pointer events are enabled, and a real button owns the tap +
-  // accessible name. The canvas itself stays non-interactive so the tap always
-  // lands on the button.
+  // AI on: a tappable "Ask Koji" entry point. Brackets are off (Koji shows as
+  // himself, not the "< >" frame); the tap affordance comes from the wrapping
+  // button — hover/active scale, a focus ring, and an accessible name. The canvas
+  // stays non-interactive so the tap always lands on the button.
   if (interactive) {
     return (
       <div className="absolute bottom-1 left-1 z-40 lg:bottom-2 lg:left-2">
@@ -148,7 +148,7 @@ export function AskKoji({
             src={ASK_KOJI_RIV}
             stateMachines="AskKoji"
             autoBind
-            viewModelBooleans={{ bracketsOn: true }}
+            viewModelBooleans={{ bracketsOn: false }}
             onRive={onRive}
             className="pointer-events-none size-40"
           />
