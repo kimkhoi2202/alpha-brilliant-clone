@@ -30,6 +30,8 @@ export interface StepRecord {
   correct: boolean;
   hintsUsed: boolean;
   firstTryCorrect: boolean;
+  /** Set when the learner used Koji's reveal-solution (Phase 2); excluded from mastery. */
+  assisted?: boolean;
 }
 
 export interface LessonProgress {

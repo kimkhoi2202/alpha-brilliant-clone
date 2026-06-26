@@ -270,6 +270,8 @@ export type ProblemStep = {
   feedback: Feedback;
   /** XP awarded for a correct answer (default 15, Brilliant-style). */
   xp?: number;
+  /** Provenance: hand-authored (default) or AI-generated (Phase 2, Pillar B). */
+  source?: "authored" | "ai";
 };
 
 export type Step = ConceptStep | ProblemStep;

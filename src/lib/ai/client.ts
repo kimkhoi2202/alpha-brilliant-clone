@@ -12,10 +12,10 @@
  */
 import { httpsCallable } from "firebase/functions";
 
-import type { ProblemStep } from "../../content/types";
+import type { AnswerValue, ProblemStep } from "../../content/types";
 import { functions } from "../firebase";
 import { aiEnabled } from "./flag";
-import type { Grounding } from "./grounding";
+import type { Grounding, GroundingGivens } from "./grounding";
 
 // ---------------------------------------------------------------------------
 // runTutor — grounded text hints + personalized wrong-answer explanations.
@@ -50,17 +50,16 @@ export type GeneratableInteractionKind =
   | "multiple-choice"
   | "tile-expression";
 
-export type GenerationDifficulty = "intro" | "easy" | "medium" | "hard";
+/** Difficulty buckets the generator supports (mirrors the server contract). */
+export type GenerationDifficulty = "easy" | "medium" | "hard";
 
 export interface GenerateProblemInput {
+  /** Which verifiable interaction kind to generate (one per call). */
+  interactionKind: GeneratableInteractionKind;
   /** Difficulty (typically derived from the learner's `StepRecord`). */
-  difficulty: GenerationDifficulty;
-  /** Restrict to specific verifiable kinds (server applies defaults otherwise). */
-  allowedKinds?: GeneratableInteractionKind[];
-  /** Concept seed (defaults to the course concept server-side). */
-  concept?: string;
-  /** Optional grounding from a recent step to steer style / difficulty. */
-  grounding?: Grounding;
+  difficulty?: GenerationDifficulty;
+  /** Optional seed for deterministic server-side choices (testing/repro). */
+  seed?: number;
 }
 
 export interface GenerateProblemResult {
@@ -129,10 +128,76 @@ async function callCallable(
   }
 }
 
+// --- grounding → flat wire payload (the runTutor callable expects scalars) ---
+
+/** Flatten the structured givens into the scalar map the callable expects. */
+function flattenGivens(g: GroundingGivens): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  if (g.triangle) {
+    out.a = g.triangle.a;
+    out.b = g.triangle.b;
+    if (g.triangle.orientation) out.orientation = g.triangle.orientation;
+    if (g.triangle.unit) out.unit = g.triangle.unit;
+  }
+  if (g.visualKind) out.visual = g.visualKind;
+  if (g.numeric?.unit) out.unit = g.numeric.unit;
+  if (typeof g.numeric?.tolerance === "number") out.tolerance = g.numeric.tolerance;
+  if (g.choices) out.choices = g.choices.map((c) => `${c.id}:${c.label}`).join(", ");
+  if (g.tiles)
+    out.tiles = `bank=[${g.tiles.bank.join(",")}] template=[${g.tiles.template
+      .map((t) => t ?? "_")
+      .join(",")}]`;
+  return out;
+}
+
+/** Reduce a structured AnswerValue to a single scalar for grounding / leak checks. */
+function scalarAnswer(av: AnswerValue | null): string | number | null {
+  if (!av) return null;
+  switch (av.kind) {
+    case "numeric":
+    case "slider":
+    case "count-squares":
+      return av.value;
+    case "multiple-choice":
+      return av.choiceId;
+    case "tap-bar":
+      return av.barId;
+    case "pick-side":
+      return av.side;
+    case "pick-angle":
+      return av.vertex;
+    case "multi-select":
+      return av.choiceIds.join(", ");
+    case "pick-sides":
+      return av.sides.join(", ");
+    case "tile-expression":
+      return av.filled.map((t) => t ?? "_").join(" ");
+    case "plot-points":
+      return av.points.map((p) => `(${p.x},${p.y})`).join(", ");
+    case "categorize":
+      return Object.entries(av.placement)
+        .map(([k, v]) => `${k}->${v ?? "_"}`)
+        .join(", ");
+  }
+}
+
 /** Grounded text tutor: a progressive hint or a personalized explanation. */
 export async function runTutor(input: RunTutorInput): Promise<RunTutorResult> {
   if (!aiEnabled()) return EMPTY_TUTOR_RESULT;
-  const data = await callCallable("runTutor", input);
+  const g = input.grounding;
+  // Map the structured grounding to the callable's flat, scalar wire contract.
+  const payload = {
+    concept: g.concept,
+    prompt: g.prompt,
+    interactionKind: g.interactionKind,
+    givens: flattenGivens(g.givens),
+    correctAnswer: scalarAnswer(g.correctAnswer) ?? "",
+    learnerAnswer: scalarAnswer(g.learnerAnswer),
+    attemptNumber: g.attemptNumber,
+    mode: input.kind === "explanation" ? "explain" : "hint",
+    hintTier: input.hintLevel,
+  };
+  const data = await callCallable("runTutor", payload);
   const text = data ? asString(data.text) : null;
   return { ok: text !== null, text };
 }
@@ -155,10 +220,12 @@ export async function mintRealtimeToken(): Promise<RealtimeTokenResult> {
   if (!data) return EMPTY_TOKEN_RESULT;
   const value =
     asString(data.value) ?? asString(data.token) ?? asString(data.client_secret);
+  // Server returns epoch-SECONDS; normalize to epoch-ms for the client contract.
+  const expiresSec = asNumber(data.expiresAt) ?? asNumber(data.expires_at);
   return {
     ok: value !== null,
     value,
     model: asString(data.model),
-    expiresAt: asNumber(data.expiresAt) ?? asNumber(data.expires_at),
+    expiresAt: expiresSec !== null ? Math.round(expiresSec * 1000) : null,
   };
 }
