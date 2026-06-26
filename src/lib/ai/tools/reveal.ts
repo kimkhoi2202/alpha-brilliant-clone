@@ -69,6 +69,15 @@ export const revealSolution = defineTool({
     }
     const step = stepCtx.step;
 
+    // Already solved: there's nothing to reveal. Short-circuit before the gate so
+    // a voice agent that calls this after a correct answer gets a clean no-op.
+    if (stepCtx.record?.correct) {
+      return {
+        allowed: false,
+        reason: "You already solved this one — nice work! Ask me for a fresh problem if you want more.",
+      };
+    }
+
     // --- The effort gate (§2.3): genuine attempt AND Koji engagement. ---
     const attempts = stepCtx.record?.attempts ?? 0;
     if (attempts <= 0) {

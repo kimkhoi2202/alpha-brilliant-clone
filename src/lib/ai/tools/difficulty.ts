@@ -10,15 +10,11 @@
 import type { GenerationDifficulty } from "../client";
 import type { StepRecord } from "../../learner";
 
-/** The buckets the generator supports, in ascending order. */
-export const DIFFICULTY_LEVELS: readonly GenerationDifficulty[] = [
-  "easy",
-  "medium",
-  "hard",
-] as const;
-
 /** Session-scoped difficulty preference; null means "derive from `StepRecord`". */
 let preference: GenerationDifficulty | null = null;
+
+/** Subscribers notified when the preference changes (for `useSyncExternalStore`). */
+const listeners = new Set<() => void>();
 
 /** The current preference, or null when generation should auto-derive. */
 export function getDifficultyPreference(): GenerationDifficulty | null {
@@ -27,7 +23,21 @@ export function getDifficultyPreference(): GenerationDifficulty | null {
 
 /** Set (or clear, with null) the session difficulty preference. */
 export function setDifficultyPreference(level: GenerationDifficulty | null): void {
+  if (preference === level) return;
   preference = level;
+  for (const notify of listeners) notify();
+}
+
+/**
+ * Subscribe to preference changes so a surface (Infinite Practice) reacts live
+ * when a voice/tool `setDifficulty` runs. Returns an unsubscribe; shaped for
+ * React's `useSyncExternalStore`.
+ */
+export function subscribeDifficultyPreference(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 /**
@@ -38,10 +48,13 @@ export function setDifficultyPreference(level: GenerationDifficulty | null): voi
 export function difficultyFromRecord(
   record: StepRecord | null | undefined,
 ): GenerationDifficulty {
-  if (!record || record.attempts === 0) return "medium";
+  // `firstTryCorrect` implies `attempts === 0`, so it must be checked BEFORE the
+  // attempts guard — otherwise "hard" is unreachable (a nailed-it-first-try
+  // record would short-circuit to "medium").
+  if (!record) return "medium";
   if (record.firstTryCorrect) return "hard";
-  if (record.correct) return "medium";
-  return "easy";
+  if (record.attempts === 0) return "medium";
+  return record.correct ? "medium" : "easy";
 }
 
 /**

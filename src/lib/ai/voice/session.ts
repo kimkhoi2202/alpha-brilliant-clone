@@ -109,6 +109,37 @@ function classifyConnectError(err: unknown): VoiceErrorReason {
   return "connection";
 }
 
+/**
+ * Whether a session `error` event is fatal — i.e. the connection/transport (or
+ * unrecoverable auth) failed, so the session should be torn down. Routine
+ * response / tool / transcription errors are recoverable and must NOT kill a
+ * live session. The payload is untyped (`unknown`), so inspect it defensively.
+ */
+function isFatalSessionError(error: unknown): boolean {
+  const text = describeError(error).toLowerCase();
+  if (!text) return false;
+  return /connection|disconnect|transport|websocket|webrtc|\bice\b|fatal|unauthorized|forbidden|expired|invalid_api_key/.test(
+    text,
+  );
+}
+
+/** Best-effort string of an untyped error (unwraps one level of `.error` nesting). */
+function describeError(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return `${error.name} ${error.message}`;
+  if (typeof error === "object" && error !== null) {
+    const rec = error as Record<string, unknown>;
+    const inner =
+      typeof rec.error === "object" && rec.error !== null
+        ? (rec.error as Record<string, unknown>)
+        : rec;
+    return [inner.type, inner.code, inner.message, inner.name]
+      .filter((v): v is string => typeof v === "string")
+      .join(" ");
+  }
+  return "";
+}
+
 export class KojiVoiceSession {
   readonly #session: RealtimeSession;
   readonly #onChange: (snapshot: VoiceSnapshot) => void;
@@ -271,9 +302,21 @@ export class KojiVoiceSession {
     session.on("audio_interrupted", () => {
       if (!this.#closed) this.#patch({ speaking: false });
     });
-    session.on("error", () => {
+    session.on("error", (event) => {
       if (this.#closed) return;
-      this.#fail(this.#snapshot.errorReason ?? "connection");
+      // Most session errors are recoverable (a single failed response, a tool
+      // hiccup, a transient transcription error). Connection loss arrives
+      // separately via `connection_change` above, so only a genuinely
+      // fatal/connection error tears the session down here; anything else is
+      // logged and the live session is kept so the learner can keep talking.
+      if (isFatalSessionError(event.error)) {
+        this.#fail(this.#snapshot.errorReason ?? "connection");
+      } else if (import.meta.env.DEV) {
+        console.warn(
+          "[koji-voice] non-fatal session error (keeping session alive):",
+          event.error,
+        );
+      }
     });
   }
 

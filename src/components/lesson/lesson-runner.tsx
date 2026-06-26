@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 
 import {
@@ -313,6 +313,22 @@ function StepScreen({
     [kojiRef],
   );
 
+  // Apply an unlocked Koji reveal: fill the engine-computed answer and mark the
+  // step revealed (mirrors `seeAnswer`). The `revealSolution` tool has already
+  // recorded the step `assisted` via `recordStep`, so it never counts as mastery.
+  // Memoized so it can ride on the `ToolContext` without churning it — this is
+  // what lets a VOICE reveal update the lesson exactly like the text panel does.
+  const applyReveal = useCallback(
+    (result: RevealAllowed) => {
+      if (step.kind !== "problem") return;
+      setAnswer(result.answer);
+      setHintsUsed(true);
+      setPhase("revealed");
+      setMessage(result.worked);
+    },
+    [step],
+  );
+
   // The single live `ToolContext` every Koji tool runs against.
   const toolContext = useToolContext({
     lessonId,
@@ -321,6 +337,7 @@ function StepScreen({
     record: liveRecord,
     koji: kojiReactions,
     engagement: engagement.signal,
+    onReveal: applyReveal,
   });
 
   // Reveal effort-gate (§2.3): a genuine attempt AND Koji engagement. The
@@ -370,17 +387,6 @@ function StepScreen({
     setHintsUsed(true);
     setPhase("revealed");
     setMessage(step.feedback.default);
-  }
-
-  // Apply an unlocked Koji reveal: fill the engine-computed answer and mark the
-  // step revealed (mirrors `seeAnswer`). The `revealSolution` tool has already
-  // recorded the step `assisted` via `recordStep`, so it never counts as mastery.
-  function applyReveal(result: RevealAllowed) {
-    if (step.kind !== "problem") return;
-    setAnswer(result.answer);
-    setHintsUsed(true);
-    setPhase("revealed");
-    setMessage(result.worked);
   }
 
   // Advancing no longer waits on Koji's goodbye wave; that wave fires on its own

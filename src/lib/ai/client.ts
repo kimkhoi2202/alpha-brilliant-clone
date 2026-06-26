@@ -12,7 +12,7 @@
  */
 import { httpsCallable } from "firebase/functions";
 
-import type { ProblemStep } from "../../content/types";
+import type { AnswerValue, ProblemStep } from "../../content/types";
 import { functions } from "../firebase";
 import { aiEnabled } from "./flag";
 import type { Grounding, GroundingGivens } from "./grounding";
@@ -150,6 +150,20 @@ function flattenGivens(g: GroundingGivens): Record<string, string | number> {
   return out;
 }
 
+/** The numeric value of a numeric/slider/count-squares answer, else undefined. */
+function numericAnswerValue(answer: AnswerValue): number | undefined {
+  if (
+    (answer.kind === "numeric" ||
+      answer.kind === "slider" ||
+      answer.kind === "count-squares") &&
+    typeof answer.value === "number" &&
+    Number.isFinite(answer.value)
+  ) {
+    return answer.value;
+  }
+  return undefined;
+}
+
 /** Grounded text tutor: a progressive hint or a personalized explanation. */
 export async function runTutor(input: RunTutorInput): Promise<RunTutorResult> {
   if (!aiEnabled()) return EMPTY_TUTOR_RESULT;
@@ -157,12 +171,16 @@ export async function runTutor(input: RunTutorInput): Promise<RunTutorResult> {
   // Map the structured grounding to the callable's flat wire contract. We send a
   // HUMAN-READABLE answer (label / side name / value+unit), not internal ids, so
   // the explanation reads correctly and the server's leak check is meaningful (W1).
+  // For numeric answers we ALSO send the raw value so the server can leak-check
+  // by value (e.g. catch "5.0" / "5 cm"), not just the rendered text (C1).
+  const correctAnswerValue = numericAnswerValue(g.correctAnswer);
   const payload = {
     concept: g.concept,
     prompt: g.prompt,
     interactionKind: g.interactionKind,
     givens: flattenGivens(g.givens),
     correctAnswer: g.correctAnswerText,
+    ...(correctAnswerValue !== undefined ? { correctAnswerValue } : {}),
     learnerAnswer: g.learnerAnswerText,
     attemptNumber: g.attemptNumber,
     mode: input.kind === "explanation" ? "explain" : "hint",
@@ -189,10 +207,10 @@ export async function mintRealtimeToken(): Promise<RealtimeTokenResult> {
   if (!aiEnabled()) return EMPTY_TOKEN_RESULT;
   const data = await callCallable("mintRealtimeToken");
   if (!data) return EMPTY_TOKEN_RESULT;
-  const value =
-    asString(data.value) ?? asString(data.token) ?? asString(data.client_secret);
-  // Server returns epoch-SECONDS; normalize to epoch-ms for the client contract.
-  const expiresSec = asNumber(data.expiresAt) ?? asNumber(data.expires_at);
+  // The server returns exactly `token` + `expiresAt` (epoch-SECONDS).
+  const value = asString(data.token);
+  // Normalize the expiry to epoch-ms for the client contract.
+  const expiresSec = asNumber(data.expiresAt);
   return {
     ok: value !== null,
     value,
