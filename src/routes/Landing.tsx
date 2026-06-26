@@ -48,7 +48,7 @@ export function Landing() {
             <button
               type="button"
               onClick={goAuth}
-              className="text-sm font-medium text-muted transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-1 text-sm font-medium text-muted transition-colors hover:text-foreground"
             >
               Log in
             </button>
