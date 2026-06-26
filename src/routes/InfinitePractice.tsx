@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { FooterCtaBar } from "../components/chrome";
@@ -14,6 +14,10 @@ import {
 } from "../components/practice";
 import { Button } from "../components/ui";
 import { aiEnabled } from "../lib/ai/flag";
+import {
+  getDifficultyPreference,
+  subscribeDifficultyPreference,
+} from "../lib/ai/tools/difficulty";
 import { useLearner, type StepRecord } from "../lib/learner";
 
 const PRIMARY_CTA_CLASS = "h-12 min-h-12 text-base";
@@ -50,9 +54,18 @@ function InfinitePracticeSession({ onExit }: { onExit: () => void }) {
   // Session results feed back into difficulty so a hot/cold run nudges the ramp.
   const [sessionRecords, setSessionRecords] = useState<StepRecord[]>([]);
 
+  // A voice/tool `setDifficulty` writes a session preference; subscribe so the
+  // screen reacts the moment it changes, and honor it over the history-derived
+  // default so "make it harder" actually changes the next problem shown.
+  const preference = useSyncExternalStore(
+    subscribeDifficultyPreference,
+    getDifficultyPreference,
+    getDifficultyPreference,
+  );
+
   const difficulty = useMemo(
-    () => difficultyFromHistory(progress, sessionRecords),
-    [progress, sessionRecords],
+    () => preference ?? difficultyFromHistory(progress, sessionRecords),
+    [preference, progress, sessionRecords],
   );
 
   const { status, problem, token, next } = useInfinitePractice(difficulty);
