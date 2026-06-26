@@ -74,7 +74,7 @@ export function Pricing() {
         {/* Free: flat hairline surface, secondary CTA. */}
         <article
           aria-labelledby="plan-free"
-          className="flex flex-col rounded-2xl border border-border bg-[var(--surface)] p-6 sm:p-7"
+          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface)] p-6 sm:p-7"
         >
           <h3 id="plan-free" className="text-lg font-bold text-foreground">
             Free
@@ -95,6 +95,9 @@ export function Pricing() {
           </ul>
 
           <div className="mt-auto pt-7">
+            <p className="mb-3 text-center text-xs text-muted">
+              No card required. This is the complete learn-by-doing course.
+            </p>
             <Button
               variant="secondary"
               size="lg"
@@ -103,9 +106,6 @@ export function Pricing() {
             >
               Start learning, free
             </Button>
-            <p className="mt-3 text-center text-xs text-muted">
-              No card required. This is the complete learn-by-doing course.
-            </p>
           </div>
         </article>
 
@@ -113,14 +113,12 @@ export function Pricing() {
         <article
           aria-labelledby="plan-premium"
           className={[
-            "relative flex flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7",
+            "relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7",
             "transition-[transform,border-color,box-shadow] duration-200 ease-[var(--ease-out-cubic)]",
             "[@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:border-accent/60 [@media(hover:hover)]:hover:shadow-lg [@media(hover:hover)]:hover:shadow-accent/20",
             "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
           ].join(" ")}
         >
-          <PythagorasMotif />
-
           <div className="relative flex flex-1 flex-col">
             <div className="flex items-center justify-between gap-3">
               <h3 id="plan-premium" className="text-lg font-bold text-foreground">
@@ -317,29 +315,6 @@ function Benefit({ children }: { children: ReactNode }) {
       </span>
       <span className="text-sm leading-relaxed text-foreground">{children}</span>
     </li>
-  );
-}
-
-/**
- * Faint right-triangle motif with its squared corner, the course's Pythagorean
- * mark echoed from the app's `PracticePromoCard`. Purely decorative.
- */
-function PythagorasMotif() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 80 80"
-      className="pointer-events-none absolute -top-4 -right-3 size-28 select-none text-accent/15"
-    >
-      <path
-        d="M14 66 H66 V14 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-      />
-      <path d="M14 54 H26 V66" fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
   );
 }
 

@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { Tabs } from "@heroui/react";
 
-import { Avatar, Chip, Divider } from "../../components/ui";
+import { Avatar } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import { LandingSection, SectionHeading } from "../ui/section";
 
@@ -33,15 +33,6 @@ interface Audience {
   label: string;
   quotes: readonly Quote[];
 }
-
-interface Stat {
-  /** Bracketed placeholder value, rendered as large stat typography. */
-  value: string;
-  label: string;
-}
-
-/** Every handle is the same explicit placeholder, never a fabricated account. */
-const HANDLE = "@placeholder";
 
 const AUDIENCES: readonly Audience[] = [
   {
@@ -112,17 +103,6 @@ const AUDIENCES: readonly Audience[] = [
   },
 ];
 
-/** The bold outcome anchor; the lead stat is featured, two support it. */
-const ANCHOR_STAT: Stat = {
-  value: "[N]%",
-  label: "of learners said it finally clicked",
-};
-
-const SUPPORTING_STATS: readonly Stat[] = [
-  { value: "[N]", label: "lessons completed across the chapter" },
-  { value: "[N] / 10", label: "median Level Review score" },
-];
-
 /** Entrance for the active panel's cards: a gentle, staggered rise that
  *  collapses to nothing under reduced motion (and is never scroll-gated). */
 const RISE = "animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out motion-reduce:animate-none";
@@ -163,10 +143,7 @@ function QuoteCard({
         <Avatar name={quote.name} size={featured ? "md" : "sm"} />
         <div className="flex min-w-0 flex-col gap-1">
           <span className="text-sm font-semibold text-foreground">{quote.name}</span>
-          <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span>{quote.detail}</span>
-            <Chip size="sm">{HANDLE}</Chip>
-          </span>
+          <span className="text-xs text-muted">{quote.detail}</span>
         </div>
       </figcaption>
     </figure>
@@ -189,10 +166,10 @@ export function SocialProof() {
       />
 
       <Tabs defaultSelectedKey="students" className="mt-10 sm:mt-12">
-        <Tabs.ListContainer>
+        <Tabs.ListContainer className="flex justify-center">
           <Tabs.List
             aria-label="Reviews by audience"
-            className="mx-auto w-full max-w-md"
+            className="w-fit border border-border"
           >
             {AUDIENCES.map((audience) => (
               <Tabs.Tab key={audience.id} id={audience.id}>
@@ -227,35 +204,6 @@ export function SocialProof() {
           );
         })}
       </Tabs>
-
-      <div className="mx-auto mt-12 max-w-4xl rounded-2xl border-2 border-border bg-[var(--surface)] p-6 sm:mt-14 sm:p-8">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <h3 className="text-sm font-semibold text-foreground">Early outcomes</h3>
-          <Chip size="sm" intent="warning" variant="soft">
-            Illustrative, not yet measured
-          </Chip>
-        </div>
-
-        <div className="mt-6 flex flex-col items-center gap-2 text-center">
-          <span className="text-5xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-6xl">
-            {ANCHOR_STAT.value}
-          </span>
-          <p className="max-w-xs text-pretty text-sm text-muted">{ANCHOR_STAT.label}</p>
-        </div>
-
-        <Divider className="my-7 sm:my-8" />
-
-        <div className="grid gap-7 sm:grid-cols-2 sm:gap-8">
-          {SUPPORTING_STATS.map((stat) => (
-            <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
-              <span className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground">
-                {stat.value}
-              </span>
-              <p className="max-w-[16rem] text-pretty text-sm text-muted">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </LandingSection>
   );
 }
