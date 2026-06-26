@@ -20,6 +20,7 @@ import type { AnswerValue, LessonId, Step } from "../../../content/types";
 import { useLearner, type StepRecord } from "../../learner";
 import { aiEnabled } from "../flag";
 import { createStepContext } from "./context";
+import type { RevealAllowed } from "./reveal";
 import type {
   EngagementSignal,
   KojiReactions,
@@ -103,6 +104,12 @@ export interface UseToolContextInput {
   koji: KojiReactions | null;
   /** The per-step engagement signal (from `useEngagement`). */
   engagement: EngagementSignal;
+  /**
+   * Apply an unlocked reveal to the host UI (fill the answer + advance to
+   * "revealed"). Lets a granted voice `revealSolution` reflect in the lesson,
+   * matching the text panel's reveal. Pass a stable callback.
+   */
+  onReveal?: (result: RevealAllowed) => void;
 }
 
 /**
@@ -112,7 +119,7 @@ export interface UseToolContextInput {
  * produced identically to every other surface (P2).
  */
 export function useToolContext(input: UseToolContextInput): ToolContext {
-  const { lessonId, step, answer, record, koji, engagement } = input;
+  const { lessonId, step, answer, record, koji, engagement, onReveal } = input;
   const learner = useLearner();
   const navigate = useNavigate();
   const ai = aiEnabled();
@@ -155,7 +162,8 @@ export function useToolContext(input: UseToolContextInput): ToolContext {
       step: stepCtx,
       koji,
       engagement,
+      onReveal,
     }),
-    [ai, navTo, learner, stepCtx, koji, engagement],
+    [ai, navTo, learner, stepCtx, koji, engagement, onReveal],
   );
 }

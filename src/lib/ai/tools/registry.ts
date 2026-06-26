@@ -18,6 +18,7 @@ import type { z } from "zod";
 
 import type { AnswerValue, LessonId, Step } from "../../../content/types";
 import type { Grounding } from "../grounding";
+import type { RevealAllowed } from "./reveal";
 import type {
   LearnerProfile,
   LessonProgress,
@@ -159,6 +160,15 @@ export interface ToolContext {
   readonly koji: KojiReactions | null;
   /** Per-step "has the learner engaged Koji?" signal (drives the reveal gate). */
   readonly engagement: EngagementSignal;
+  /**
+   * Apply an unlocked reveal back into the host UI — fill the engine-computed
+   * answer and advance the step to "revealed", mirroring the lesson panel's
+   * `applyReveal`. The lesson player provides it; a granted voice
+   * `revealSolution` calls it so the lesson reflects the reveal (the tool has
+   * already recorded the step `assisted`). Absent on surfaces with no step UI,
+   * where the reveal simply isn't mirrored.
+   */
+  readonly onReveal?: (result: RevealAllowed) => void;
 }
 
 // ---------------------------------------------------------------------------

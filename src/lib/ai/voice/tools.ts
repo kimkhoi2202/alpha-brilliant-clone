@@ -25,7 +25,12 @@ import type { z } from "zod";
 import { gradeStep } from "../../../content/engine";
 import type { AnswerValue, ProblemStep } from "../../../content/types";
 import { hintLeaksAnswer } from "../verify";
-import { appToolRegistry, type AnyAppTool, type ToolContext } from "../tools";
+import {
+  appToolRegistry,
+  type AnyAppTool,
+  type RevealAllowed,
+  type ToolContext,
+} from "../tools";
 
 /** Cap the JSON we hand back to the model so a big result can't bloat the turn. */
 const MAX_RESULT_CHARS = 1200;
@@ -106,6 +111,18 @@ export function summarizeToolResult(
   return safeJson(result);
 }
 
+/**
+ * A granted voice `revealSolution` must update the lesson UI exactly like the
+ * text panel's `applyReveal` — fill the engine answer + advance to "revealed" —
+ * so the screen doesn't stay stuck on "wrong" after Koji reveals by voice. The
+ * tool has already recorded the step `assisted`; this just reflects it in the UI.
+ */
+function applyRevealToHost(name: string, result: unknown, ctx: ToolContext): void {
+  if (name !== "revealSolution" || !ctx.onReveal) return;
+  const rec = asRecord(result);
+  if (rec?.allowed === true) ctx.onReveal(result as RevealAllowed);
+}
+
 /** Adapt one `AppTool` into a realtime function tool bound to the live context. */
 function toRealtimeTool(appTool: AnyAppTool, getContext: () => ToolContext) {
   return tool({
@@ -118,6 +135,8 @@ function toRealtimeTool(appTool: AnyAppTool, getContext: () => ToolContext) {
     execute: async (input: unknown): Promise<string> => {
       const ctx = getContext();
       const result = await appTool.handler(input, ctx);
+      // Mirror a granted reveal into the lesson UI (voice parity with the text panel).
+      applyRevealToHost(appTool.name, result, ctx);
       return summarizeToolResult(appTool.name, result, ctx);
     },
   });
