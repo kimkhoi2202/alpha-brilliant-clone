@@ -77,18 +77,6 @@ export function Hero() {
 
         <div className="relative">
           <div className="rounded-3xl border-2 border-border bg-[var(--surface)] p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] sm:p-8">
-            <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <span
-                className="grid size-6 place-items-center rounded-md text-[var(--accent)]"
-                style={{ backgroundColor: "color-mix(in oklab, var(--accent) 16%, transparent)" }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M5 19 V5 L19 19 Z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
-                </svg>
-              </span>
-              Lesson 1 &middot; The 3-4-5 triangle
-            </div>
-
             <RightTriangleFigure
               a={4}
               b={3}
