@@ -15,6 +15,7 @@ import { httpsCallable } from "firebase/functions";
 import type { AnswerValue, ProblemStep } from "../../content/types";
 import { functions } from "../firebase";
 import { aiEnabled } from "./flag";
+import { asRecord } from "./json";
 import type { Grounding, GroundingGivens } from "./grounding";
 
 // ---------------------------------------------------------------------------
@@ -97,13 +98,8 @@ const EMPTY_TOKEN_RESULT: RealtimeTokenResult = {
 // ---------------------------------------------------------------------------
 // Wire helpers — callable responses are treated as `unknown` and normalized,
 // so a skeleton / partially-implemented backend can't crash the client.
+// (`asRecord` is shared via `./json`.)
 // ---------------------------------------------------------------------------
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : null;
-}
 
 function asString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
