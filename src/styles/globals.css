@@ -18,6 +18,19 @@
   --color-feedback-retryable-foreground: var(--feedback-retryable-foreground);
   --color-feedback-incorrect: var(--feedback-incorrect);
   --color-feedback-incorrect-foreground: var(--feedback-incorrect-foreground);
+
+  /*
+   * Shared easing curves (Emil Kowalski's blueprint). Several existing styles
+   * already reference these via `var(--ease-out-*, fallback)`; defining them
+   * here centralizes the motion system (and exposes `ease-out-cubic`,
+   * `ease-out-expo`, … as Tailwind timing-function utilities). Easing is
+   * theme-agnostic, so it lives at the root rather than under `.dark`.
+   */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
 @layer base {
@@ -218,6 +231,164 @@
     }
     to {
       opacity: 0;
+    }
+  }
+
+  /* =====================================================================
+   * Phase 2 — Koji tutor & Infinite Practice motion
+   * Compositor-only (transform/opacity); every block has a reduced-motion
+   * fallback below. Easing pulls the shared tokens defined in @theme.
+   * ===================================================================== */
+
+  /* Koji bottom-sheet + its backdrop — a paired enter/exit (shared easing). The
+     panel stays mounted through its exit animation, then onAnimationEnd unmounts
+     it. Reduced motion keeps a quick opacity-only fade (NOT `none`) so the exit
+     still fires animationend and the sheet actually unmounts. */
+  .koji-backdrop[data-state="open"] {
+    animation: koji-fade-in 240ms var(--ease-out-cubic) both;
+  }
+  .koji-backdrop[data-state="closed"] {
+    animation: koji-fade-out 200ms var(--ease-out-cubic) both;
+  }
+  .koji-sheet[data-state="open"] {
+    animation: koji-sheet-in 240ms var(--ease-out-cubic) both;
+  }
+  .koji-sheet[data-state="closed"] {
+    animation: koji-sheet-out 200ms var(--ease-out-cubic) both;
+  }
+  @keyframes koji-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes koji-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes koji-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes koji-sheet-out {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+  }
+
+  /* Koji utterances rise + fade as they're appended. Only newly-mounted nodes
+     animate (React keys existing bubbles), so the transcript never re-shuffles. */
+  .koji-message-in {
+    animation: koji-message-in 220ms var(--ease-out-cubic) both;
+  }
+  @keyframes koji-message-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* "Koji is thinking" — three dots breathe in a gentle wave (delay set inline). */
+  .koji-typing-dot {
+    animation: koji-typing-dot 1.1s var(--ease-in-out-cubic) infinite;
+  }
+  @keyframes koji-typing-dot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.35;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-3px);
+    }
+  }
+
+  /* Mic "listening" — soft concentric rings expand and fade (calmer than ping). */
+  .koji-mic-ring {
+    animation: koji-mic-ring 1.8s var(--ease-out-quad) infinite;
+  }
+  @keyframes koji-mic-ring {
+    0% {
+      opacity: 0.5;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.85);
+    }
+  }
+
+  /* "Speaking" equalizer — a few bars rise and fall (delay set inline). */
+  .koji-eq-bar {
+    transform-origin: bottom center;
+    animation: koji-eq-bar 0.85s var(--ease-in-out-cubic) infinite;
+  }
+  @keyframes koji-eq-bar {
+    0%,
+    100% {
+      transform: scaleY(0.4);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  /* Infinite Practice — each generated problem (and the loading/error stage)
+     settles in on mount; the per-problem remount re-arms it. */
+  .practice-stage-in {
+    animation: practice-stage-in 320ms var(--ease-out-cubic) both;
+  }
+  @keyframes practice-stage-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.992);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .koji-message-in,
+    .koji-typing-dot,
+    .koji-mic-ring,
+    .koji-eq-bar,
+    .practice-stage-in {
+      animation: none;
+    }
+    /* Keep a minimal fade (not `none`) so the sheet's exit still completes and
+       its onAnimationEnd unmounts it. */
+    .koji-sheet[data-state="open"],
+    .koji-backdrop[data-state="open"] {
+      animation: koji-fade-in 120ms linear both;
+    }
+    .koji-sheet[data-state="closed"],
+    .koji-backdrop[data-state="closed"] {
+      animation: koji-fade-out 120ms linear both;
     }
   }
 }

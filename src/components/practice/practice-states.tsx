@@ -13,12 +13,22 @@ export function PracticeLoading() {
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="h-6 w-3/4 max-w-md animate-pulse rounded-full bg-default" />
-      <div className="h-40 w-full max-w-[16rem] animate-pulse rounded-3xl bg-default" />
-      <div className="grid w-full max-w-md grid-cols-2 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-2xl bg-default" />
-        ))}
+      {/* A skeleton shaped like a real problem (prompt · figure · answer grid),
+          so the swap to the live problem has no layout jump. Purely decorative. */}
+      <div
+        aria-hidden
+        className="flex w-full max-w-md flex-col items-center gap-6"
+      >
+        <div className="h-6 w-3/4 animate-pulse rounded-full bg-default motion-reduce:animate-none" />
+        <div className="h-40 w-full max-w-[16rem] animate-pulse rounded-3xl bg-default motion-reduce:animate-none" />
+        <div className="grid w-full grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-14 animate-pulse rounded-2xl bg-default motion-reduce:animate-none"
+            />
+          ))}
+        </div>
       </div>
       <p className="text-sm font-medium text-muted">Generating a fresh problem…</p>
     </div>
@@ -33,12 +43,28 @@ export function PracticeLoading() {
 export function PracticeError() {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-10 text-center">
-      <Callout intent="warning" title="No verified problem right now">
+      <Callout
+        intent="warning"
+        title="No verified problem right now"
+        icon={<ShieldIcon />}
+      >
         We couldn't generate a problem that passed verification. Practice only
         ever shows checked problems, so nothing wrong slips through — give it
         another try in a moment.
       </Callout>
     </div>
+  );
+}
+
+/** A shield-check mark — reinforces that practice only serves verified problems. */
+function ShieldIcon() {
+  return (
+    <svg aria-hidden="true" className="size-4" viewBox="0 0 16 16">
+      <path
+        d="M8 1.5 13 3.2v4.1c0 3.2-2.1 5.6-5 6.7-2.9-1.1-5-3.5-5-6.7V3.2L8 1.5Zm2.7 4.2-3.4 3.4-1.6-1.6-1 1 2.6 2.6 4.4-4.4-1-1Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 
@@ -52,7 +78,7 @@ export function PracticeUnavailable({ onBack }: { onBack: () => void }) {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <AppHeader />
-      <main className="mx-auto flex max-w-lg flex-col items-center gap-6 px-4 py-16 text-center sm:py-24">
+      <main className="practice-stage-in mx-auto flex max-w-lg flex-col items-center gap-6 px-4 py-16 text-center sm:py-24">
         <h1 className="text-2xl font-bold tracking-tight">Infinite Practice</h1>
         <Callout intent="info" title="Practice requires AI">
           Infinite Practice serves an endless stream of fresh, verified problems

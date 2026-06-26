@@ -142,7 +142,7 @@ export function AskKoji({
           type="button"
           onClick={onAsk}
           aria-label="Ask Koji for help"
-          className="block rounded-full outline-none transition-transform duration-150 hover:scale-105 focus-visible:ring-2 focus-visible:ring-accent active:scale-95 motion-reduce:transition-none"
+          className="block touch-manipulation rounded-full outline-none transition-transform duration-150 ease-[var(--ease-out-cubic)] focus-visible:ring-2 focus-visible:ring-accent active:scale-95 [@media(hover:hover)]:hover:scale-105 motion-reduce:transition-none"
         >
           <RivePlayer
             src={ASK_KOJI_RIV}
