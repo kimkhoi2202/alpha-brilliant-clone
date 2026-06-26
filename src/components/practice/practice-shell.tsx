@@ -100,7 +100,7 @@ export function PracticeShell({
             type="button"
             onClick={onExit}
             aria-label="Exit practice"
-            className="grid size-10 shrink-0 place-items-center rounded-[20px] text-muted transition-[color,background-color,border-radius] duration-200 ease-out hover:rounded-xl hover:bg-default hover:text-foreground motion-reduce:transition-none"
+            className="relative grid size-10 shrink-0 touch-manipulation place-items-center rounded-[20px] text-muted transition-[color,background-color,border-radius] duration-200 ease-out before:absolute before:-inset-1 before:content-[''] hover:rounded-xl hover:bg-default hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
           >
             <CloseIcon />
           </button>
@@ -137,7 +137,11 @@ export function PracticeShell({
           />
 
           <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-4 py-6 sm:py-8">
-            <div className="m-auto w-full max-w-3xl">{children}</div>
+            {/* The stage settles in on mount; PracticeProblem remounts per
+                problem (keyed by token), so the next-problem swap re-arms it. */}
+            <div className="practice-stage-in m-auto w-full max-w-3xl">
+              {children}
+            </div>
           </div>
 
           <div className="relative z-10 shrink-0">

@@ -143,12 +143,15 @@ export function VoiceControls({ ctx }: VoiceControlsProps) {
         />
 
         <div className="min-w-0 flex-1">
-          <p
-            className="truncate text-sm font-semibold leading-tight text-foreground"
-            aria-live="polite"
-          >
-            {title}
-          </p>
+          <div className="flex items-center gap-2">
+            {voice.speaking ? <Equalizer /> : null}
+            <p
+              className="truncate text-sm font-semibold leading-tight text-foreground"
+              aria-live="polite"
+            >
+              {title}
+            </p>
+          </div>
           {hint ? <p className="truncate text-xs text-muted">{hint}</p> : null}
         </div>
 
@@ -215,30 +218,40 @@ function MicButton({
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        "relative grid size-14 shrink-0 place-items-center rounded-full outline-none transition-colors duration-200 motion-reduce:transition-none",
+        "relative grid size-14 shrink-0 touch-manipulation place-items-center rounded-full outline-none transition-[background-color,color,transform] duration-200 ease-[var(--ease-out-cubic)] motion-reduce:transition-none",
         "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        "disabled:cursor-not-allowed disabled:opacity-70",
+        "active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100",
         active
           ? "bg-warning text-warning-foreground"
           : error
             ? "bg-default text-muted"
-            : "bg-accent text-accent-foreground hover:brightness-105",
+            : "bg-accent text-accent-foreground [@media(hover:hover)]:hover:brightness-110",
       )}
     >
-      {/* Listening pulse — compositor-only (scale + opacity), reduced-motion safe. */}
+      {/* Listening — soft concentric rings expand outward (compositor-only). */}
       {active ? (
+        <>
+          <span
+            aria-hidden
+            className="koji-mic-ring absolute inset-0 rounded-full bg-warning/40"
+          />
+          <span
+            aria-hidden
+            className="koji-mic-ring absolute inset-0 rounded-full bg-warning/30"
+            style={{ animationDelay: "0.6s" }}
+          />
+        </>
+      ) : null}
+      {/* Koji speaking (mic idle) — a calm accent halo cueing "tap to jump in". */}
+      {speaking && !active ? (
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full bg-warning/40 motion-safe:animate-ping"
+          className="koji-mic-ring absolute inset-0 rounded-full bg-accent/40"
         />
       ) : null}
-      {connecting ? (
-        <Spinner />
-      ) : active ? (
-        <StopGlyph />
-      ) : (
-        <MicGlyph speaking={speaking} />
-      )}
+      <span className="relative">
+        {connecting ? <Spinner /> : active ? <StopGlyph /> : <MicGlyph />}
+      </span>
     </button>
   );
 }
@@ -256,7 +269,7 @@ function HandsFreeToggle({ checked, onChange }: HandsFreeToggleProps) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 self-start rounded-full text-xs font-medium text-muted outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="flex touch-manipulation items-center gap-2 self-start rounded-full py-1 text-xs font-medium text-muted outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       <span
         aria-hidden
@@ -297,6 +310,9 @@ function VoiceTranscript({ voice }: { voice: RealtimeVoiceApi }) {
   return (
     <div
       ref={scrollRef}
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions"
       className="flex max-h-40 flex-col gap-2 overflow-y-auto rounded-2xl bg-default/40 p-3"
       aria-label="Voice transcript"
     >
@@ -304,42 +320,60 @@ function VoiceTranscript({ voice }: { voice: RealtimeVoiceApi }) {
         <div
           key={entry.id}
           className={cn(
-            "max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
+            "koji-message-in max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
             entry.role === "user"
               ? "self-end bg-accent-soft/70 text-foreground"
-              : "self-start bg-background text-foreground",
+              : "self-start bg-surface text-foreground",
           )}
         >
+          <span className="sr-only">
+            {entry.role === "user" ? "You said: " : "Koji said: "}
+          </span>
           {entry.text}
-          {entry.inProgress ? <span className="text-muted">…</span> : null}
+          {entry.inProgress ? (
+            <span className="text-muted" aria-hidden>
+              …
+            </span>
+          ) : null}
         </div>
       ))}
     </div>
   );
 }
 
-function MicGlyph({ speaking }: { speaking: boolean }) {
+function MicGlyph() {
   return (
-    <span className="relative">
-      <svg aria-hidden viewBox="0 0 24 24" className="size-6">
-        <path
-          fill="currentColor"
-          d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"
-        />
-        <path
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          d="M6 11a6 6 0 0 0 12 0M12 17v3"
-        />
-      </svg>
-      {speaking ? (
+    <svg aria-hidden viewBox="0 0 24 24" className="size-6">
+      <path
+        fill="currentColor"
+        d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"
+      />
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        d="M6 11a6 6 0 0 0 12 0M12 17v3"
+      />
+    </svg>
+  );
+}
+
+/**
+ * A tiny equalizer that signals live audio while Koji is speaking. Decorative
+ * (aria-hidden) — the spoken status is already announced via the status line.
+ * Bars scale on the Y axis only (compositor-only); reduced motion holds them.
+ */
+function Equalizer() {
+  return (
+    <span aria-hidden className="flex h-3.5 items-end gap-[3px]">
+      {[0, 150, 300, 90].map((delay) => (
         <span
-          aria-hidden
-          className="absolute -right-1 -top-1 size-2 rounded-full bg-warning motion-safe:animate-pulse"
+          key={delay}
+          className="koji-eq-bar block h-full w-[3px] rounded-full bg-accent"
+          style={{ animationDelay: `${delay}ms` }}
         />
-      ) : null}
+      ))}
     </span>
   );
 }

@@ -188,7 +188,20 @@ export function KojiPanel({
     }
   }, [autoHintToken, requestHint]);
 
-  if (!open) return null;
+  // Keep the sheet mounted while it plays its exit animation, then unmount on
+  // its `onAnimationEnd` (the same data-state pattern as the streak popover).
+  // Mounting is deferred to the next frame so the CSS enter animation arms
+  // cleanly. Presentational only — `onClose` still fires the instant the learner
+  // dismisses; this only defers the unmount by one exit animation.
+  const [mounted, setMounted] = useState(open);
+
+  useEffect(() => {
+    if (!open) return;
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, [open]);
+
+  if (!mounted) return null;
 
   const intro = isProblem
     ? "Stuck? Ask me for a hint and I'll nudge you in the right direction — no spoilers."
@@ -196,6 +209,8 @@ export function KojiPanel({
 
   return (
     <KojiSheet
+      open={open}
+      onClosed={() => setMounted(false)}
       onClose={onClose}
       messages={messages}
       busy={busy}
@@ -214,6 +229,10 @@ export function KojiPanel({
 }
 
 interface KojiSheetProps {
+  /** Drives the enter (true) / exit (false) animation via `data-state`. */
+  open: boolean;
+  /** Fired once the exit animation finishes, so `KojiPanel` can unmount it. */
+  onClosed: () => void;
   onClose: () => void;
   messages: KojiMessage[];
   busy: boolean;
@@ -235,6 +254,8 @@ interface KojiSheetProps {
  * animation re-arms each time) and owns focus, Escape-to-close, and auto-scroll.
  */
 function KojiSheet({
+  open,
+  onClosed,
   onClose,
   messages,
   busy,
@@ -249,16 +270,8 @@ function KojiSheet({
   onReveal,
   voice,
 }: KojiSheetProps) {
-  const [entered, setEntered] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
-
-  // Enter transition (slide + fade up). The flip happens in a rAF callback (not
-  // synchronously in the effect body), and re-arms because we mount on open.
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
   // Move focus into the sheet on open; Escape closes it.
   useEffect(() => {
@@ -286,21 +299,23 @@ function KojiSheet({
       <div
         aria-hidden
         onClick={onClose}
-        className={cn(
-          "absolute inset-0 bg-black/40 transition-opacity duration-200 motion-reduce:transition-none",
-          entered ? "opacity-100" : "opacity-0",
-        )}
+        data-state={open ? "open" : "closed"}
+        className="koji-backdrop absolute inset-0 bg-black/50 backdrop-blur-[2px]"
       />
       <div
         ref={sheetRef}
         tabIndex={-1}
+        data-state={open ? "open" : "closed"}
+        onAnimationEnd={(event) => {
+          // Ignore child animations (message bubbles, etc.) bubbling up; only the
+          // sheet's own exit animation unmounts it.
+          if (event.target !== event.currentTarget) return;
+          if (!open) onClosed();
+        }}
         className={cn(
-          "absolute inset-x-0 bottom-0 mx-auto flex max-h-[75svh] w-full max-w-lg flex-col rounded-t-3xl border border-border bg-background shadow-2xl shadow-black/40 outline-none",
+          "koji-sheet absolute inset-x-0 bottom-0 mx-auto flex max-h-[78svh] w-full max-w-lg flex-col rounded-t-3xl border border-border bg-background shadow-2xl shadow-black/40 outline-none",
+          "transform-gpu will-change-transform",
           "sm:inset-x-auto sm:bottom-4 sm:left-4 sm:max-w-sm sm:rounded-3xl",
-          "transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none",
-          entered
-            ? "translate-y-0 opacity-100"
-            : "translate-y-6 opacity-0 motion-reduce:translate-y-0 motion-reduce:opacity-100",
         )}
       >
         <header className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -318,7 +333,7 @@ function KojiSheet({
             type="button"
             onClick={onClose}
             aria-label="Close Koji"
-            className="ml-auto grid size-8 shrink-0 place-items-center rounded-full text-muted outline-none transition-colors hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent"
+            className="relative -mr-1 ml-auto grid size-9 shrink-0 touch-manipulation place-items-center rounded-full text-muted outline-none transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent"
           >
             <svg aria-hidden viewBox="0 0 16 16" className="size-4">
               <path
@@ -333,10 +348,15 @@ function KojiSheet({
 
         <div
           ref={scrollRef}
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
           className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
         >
           {messages.length === 0 && !busy ? (
-            <p className="text-sm leading-relaxed text-muted">{intro}</p>
+            <p className="koji-message-in text-sm leading-relaxed text-muted">
+              {intro}
+            </p>
           ) : null}
           {messages.map((message) => (
             <KojiBubble key={message.id} message={message} />
@@ -346,7 +366,7 @@ function KojiSheet({
 
         {voice}
 
-        <footer className="flex flex-col gap-2 border-t border-border px-4 py-3">
+        <footer className="flex flex-col gap-2 border-t border-border px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)_+_0.75rem)]">
           {!isProblem ? (
             <p className="text-sm text-muted">
               Work through the idea — I&apos;m here when you reach the practice problems.
@@ -405,11 +425,11 @@ function KojiSheet({
 function KojiBubble({ message }: { message: KojiMessage }) {
   if (message.role === "reveal") {
     return (
-      <div className="rounded-2xl border border-border bg-default/60 p-3">
+      <div className="koji-message-in rounded-2xl border border-border bg-default/60 p-3.5">
         <p className="text-[0.7rem] font-bold uppercase tracking-wider text-muted">
           Here&apos;s the answer
         </p>
-        <p className="mt-1 text-lg font-bold text-foreground">
+        <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
           {renderMathText(message.answerText)}
         </p>
         <p className="mt-2 text-sm leading-relaxed text-foreground">
@@ -430,9 +450,9 @@ function KojiBubble({ message }: { message: KojiMessage }) {
         : null;
 
   return (
-    <div className="rounded-2xl bg-accent-soft/60 p-3">
+    <div className="koji-message-in rounded-2xl bg-accent-soft/60 p-3.5">
       {label ? (
-        <p className="text-[0.7rem] font-bold uppercase tracking-wider text-accent">
+        <p className="text-[0.7rem] font-bold uppercase tracking-wider tabular-nums text-accent">
           {label}
         </p>
       ) : null}
@@ -443,18 +463,19 @@ function KojiBubble({ message }: { message: KojiMessage }) {
   );
 }
 
-/** "Koji is thinking" — three pulsing dots (transform/opacity only, 60fps). */
+/** "Koji is thinking" — three dots breathe in a gentle wave (transform/opacity
+ * only, 60fps; reduced motion leaves three dimmed dots). */
 function TypingIndicator() {
   return (
     <div
-      className="flex w-fit items-center gap-1 rounded-2xl bg-accent-soft/60 px-3 py-3"
+      className="koji-message-in flex w-fit items-center gap-1.5 rounded-2xl bg-accent-soft/60 px-3.5 py-3.5"
       role="status"
       aria-label="Koji is thinking"
     >
-      {[0, 150, 300].map((delay) => (
+      {[0, 160, 320].map((delay) => (
         <span
           key={delay}
-          className="size-1.5 animate-bounce rounded-full bg-accent motion-reduce:animate-none"
+          className="koji-typing-dot size-1.5 rounded-full bg-accent opacity-60"
           style={{ animationDelay: `${delay}ms` }}
         />
       ))}
