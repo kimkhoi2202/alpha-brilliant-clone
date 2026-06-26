@@ -10,10 +10,15 @@ import {
   LevelHeader,
   PythagorasArt,
 } from "../components/course";
+import { PracticePromoCard } from "../components/practice";
 import { Button } from "../components/ui";
 import { course, getLesson, lessonOrder, problemCount } from "../content";
+import { aiEnabled } from "../lib/ai/flag";
 import { requestLessonIntro } from "../lib/lesson-transition";
 import { useLearner } from "../lib/learner";
+
+/** The course's end-of-level review; Infinite Practice unlocks once it's done. */
+const LEVEL_REVIEW_LESSON_ID = "level-review";
 
 const RECOMMEND_LABEL = {
   start: "Start",
@@ -36,6 +41,11 @@ export function CourseMapScreen() {
   const courseAllCompleted = lessonOrder.every(
     (id) => lessonStatus(id) === "completed",
   );
+  // Infinite Practice (Pillar B) is reached AFTER the level review, and only
+  // with AI on — otherwise the entry point stays hidden so the AI-off path is
+  // byte-for-byte Phase 1 (P1).
+  const practiceUnlocked =
+    aiEnabled() && lessonStatus(LEVEL_REVIEW_LESSON_ID) === "completed";
   // The active "you are here" Koji marker only exists once progress has loaded.
   // Before that, progress is empty so every lesson reads "available" and the
   // recommendation falls back to lesson 1, marking it active would fire Koji on
@@ -114,6 +124,11 @@ export function CourseMapScreen() {
                 className="mt-4"
               />
             </div>
+            {practiceUnlocked ? (
+              <PracticePromoCard
+                onStart={() => void navigate({ to: "/practice" })}
+              />
+            ) : null}
           </div>
 
           <div className="mx-auto w-full max-w-md space-y-12 overflow-x-hidden">

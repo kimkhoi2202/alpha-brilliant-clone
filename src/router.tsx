@@ -10,6 +10,7 @@ import { AnimationsScreen } from "./routes/AnimationsScreen";
 import { AuthScreen } from "./routes/AuthScreen";
 import { ComponentsScreen } from "./routes/ComponentsScreen";
 import { CourseMapScreen } from "./routes/CourseMapScreen";
+import { InfinitePractice } from "./routes/InfinitePractice";
 import { LessonPlayer } from "./routes/LessonPlayer";
 import { MedallionScaleScreen } from "./routes/MedallionScaleScreen";
 import { ProfileScreen } from "./routes/ProfileScreen";
@@ -68,6 +69,16 @@ const profileRoute = createRoute({
   component: ProfileScreen,
 });
 
+// "Infinite Practice" (Pillar B): verified, adaptive generation, reached after
+// the course's level-review. Auth-guarded; the screen itself handles the AI-off
+// state, so a direct visit with AI off shows a graceful explainer.
+const practiceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/practice",
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: InfinitePractice,
+});
+
 const componentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/components",
@@ -92,6 +103,7 @@ const routeTree = rootRoute.addChildren([
   courseMapRoute,
   lessonRoute,
   profileRoute,
+  practiceRoute,
   componentsRoute,
   devRoute,
   medallionsRoute,
