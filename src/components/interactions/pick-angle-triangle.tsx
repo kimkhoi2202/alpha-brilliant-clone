@@ -133,7 +133,7 @@ export function PickAngleTriangle({
   let captionClass = "text-muted";
   if (selected) {
     caption = `The ${names[selected]} corner`;
-    if (!locked) captionClass = "text-accent";
+    if (!locked) captionClass = "text-accent-soft-foreground";
     else captionClass = phase === "wrong" ? "text-warning" : "text-success";
   }
 

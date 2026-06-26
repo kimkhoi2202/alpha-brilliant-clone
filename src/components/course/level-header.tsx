@@ -43,7 +43,7 @@ function CloseIcon() {
 
 function LevelEyebrow({ level }: { level: string | number }) {
   return (
-    <span className="block text-xs font-bold uppercase tracking-wider text-accent">
+    <span className="block text-xs font-bold uppercase tracking-wider text-accent-soft-foreground">
       Level {level}
     </span>
   );

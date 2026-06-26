@@ -22,7 +22,7 @@ export function PracticePromoCard({ onStart }: PracticePromoCardProps) {
     >
       <PythagorasMotif />
       <div className="relative">
-        <span className="inline-flex items-center rounded-full bg-accent/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent">
+        <span className="inline-flex items-center rounded-full bg-accent/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent-soft-foreground">
           New
         </span>
         <h3 className="mt-2.5 text-lg font-bold tracking-tight text-foreground">

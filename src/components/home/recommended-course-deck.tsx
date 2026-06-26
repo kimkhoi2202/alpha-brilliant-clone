@@ -40,7 +40,7 @@ export function RecommendedCourseDeck({
         </p>
         <h3 className="mt-1 text-xl font-bold text-foreground">{course}</h3>
         {level ? (
-          <p className="text-xs font-bold uppercase tracking-wider text-accent">
+          <p className="text-xs font-bold uppercase tracking-wider text-accent-soft-foreground">
             {level}
           </p>
         ) : null}

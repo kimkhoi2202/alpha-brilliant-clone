@@ -33,7 +33,7 @@ const DIFFICULTY_LABEL: Record<GenerationDifficulty, string> = {
 
 const DIFFICULTY_CLASS: Record<GenerationDifficulty, string> = {
   easy: "bg-success/15 text-success",
-  medium: "bg-accent/15 text-accent",
+  medium: "bg-accent/15 text-accent-soft-foreground",
   hard: "bg-warning/15 text-warning",
 };
 
