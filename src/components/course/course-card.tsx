@@ -75,9 +75,9 @@ export function CourseCard({
         </div>
       )}
       <div className="space-y-2">
-        <h3 className="text-2xl font-bold leading-tight tracking-tight text-foreground">
+        <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground">
           {title}
-        </h3>
+        </h2>
         {description ? (
           <p className="text-sm leading-relaxed text-muted">
             {renderMathText(description)}

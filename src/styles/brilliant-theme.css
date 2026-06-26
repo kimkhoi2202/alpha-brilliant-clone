@@ -253,11 +253,14 @@
   --button-fg: var(--primary-foreground);
 }
 
-/* accent = course/brand blue (Brilliant's "Start") */
+/* accent = course/brand blue (Brilliant's "Start"). The fill is deepened ~8%
+   from the brand accent so white CTA text clears WCAG AA (white on #456DFF is
+   4.29:1; on this deeper shade it's ~4.9:1). The brand accent token itself is
+   unchanged, so borders / links / selection tints stay exactly #456DFF. */
 .button--accent {
-  --button-bg: var(--accent);
-  --button-bg-hover: var(--accent);
-  --button-bg-pressed: var(--accent);
+  --button-bg: color-mix(in srgb, var(--accent), #000 8%);
+  --button-bg-hover: color-mix(in srgb, var(--accent), #000 8%);
+  --button-bg-pressed: color-mix(in srgb, var(--accent), #000 8%);
   --button-fg: var(--accent-foreground);
 }
 
