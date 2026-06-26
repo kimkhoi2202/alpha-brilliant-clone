@@ -11,6 +11,7 @@ import { AuthScreen } from "./routes/AuthScreen";
 import { ComponentsScreen } from "./routes/ComponentsScreen";
 import { CourseMapScreen } from "./routes/CourseMapScreen";
 import { InfinitePractice } from "./routes/InfinitePractice";
+import { Landing } from "./routes/Landing";
 import { LessonPlayer } from "./routes/LessonPlayer";
 import { MedallionScaleScreen } from "./routes/MedallionScaleScreen";
 import { ProfileScreen } from "./routes/ProfileScreen";
@@ -53,6 +54,14 @@ const courseMapRoute = createRoute({
   path: "/",
   beforeLoad: ({ context }) => requireAuth(context),
   component: CourseMapScreen,
+});
+
+// Public marketing landing. Lives at /landing while it's built and reviewed;
+// once it's signed off it takes over "/" and the app moves to /home.
+const landingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/landing",
+  component: Landing,
 });
 
 const lessonRoute = createRoute({
@@ -100,6 +109,7 @@ const medallionsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   authRoute,
+  landingRoute,
   courseMapRoute,
   lessonRoute,
   profileRoute,
