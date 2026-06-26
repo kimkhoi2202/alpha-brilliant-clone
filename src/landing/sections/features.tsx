@@ -1,7 +1,8 @@
 import { StreakCard, type StreakDay } from "../../components/gamification";
+import { AnswerChoice } from "../../components/lesson";
 import { FeedbackToast } from "../../components/lesson/feedback-toast";
 import { KojiMascot } from "../../components/lesson/koji";
-import { Chip, StateBadge } from "../../components/ui";
+import { Chip } from "../../components/ui";
 import { RightTriangleFigure } from "../../components/visuals";
 import { cn } from "../../lib/cn";
 import { LandingSection, SectionHeading } from "../ui/section";
@@ -29,8 +30,8 @@ const tileHeading =
 
 /**
  * Features bento, in the app's real dark skin. An asymmetric grid where every
- * tile embeds a genuine product moment: the instant-feedback FeedbackToast +
- * StateBadge, the lesson RightTriangleFigure, the animated KojiMascot, and the
+ * tile embeds a genuine product moment: the graded AnswerChoice + instant
+ * FeedbackToast, the lesson RightTriangleFigure, the animated KojiMascot, and the
  * real StreakCard. The Koji cell is the single focal accent tile. Nothing here
  * is a hand-rolled stand-in for a product component.
  */
@@ -48,7 +49,7 @@ export function Features() {
         role="list"
         className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-5"
       >
-        {/* Instant feedback: the real FeedbackToast + StateBadge on a graded answer. */}
+        {/* Instant feedback: the real graded AnswerChoice + FeedbackToast. */}
         <li
           className={cn(
             tileBase,
@@ -66,13 +67,18 @@ export function Features() {
             <p className="text-xs font-medium text-muted">
               Find c for the legs 3 and 4.
             </p>
-            <div className="relative inline-flex w-fit items-center gap-2 rounded-xl border-2 border-border bg-[var(--surface)] px-3 py-2">
-              <span className="text-sm text-muted">You typed</span>
+            <AnswerChoice
+              state="incorrect"
+              align="center"
+              disabled
+              className="w-fit"
+            >
+              <span className="text-sm text-muted">You typed</span>{" "}
               <span className="text-base font-semibold tabular-nums text-foreground">
                 7
               </span>
-              <StateBadge state="incorrect" />
-            </div>
+              <span className="sr-only"> — marked incorrect</span>
+            </AnswerChoice>
             <FeedbackToast status="retryable">
               You added the legs (3 + 4). Square each one first: 3&#178; + 4&#178;,
               then add.
