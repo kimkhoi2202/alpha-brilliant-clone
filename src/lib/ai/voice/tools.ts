@@ -1,7 +1,7 @@
 /**
  * Voice tool binding (PRD-phase-2 §3.2 "tools execute in the browser" / §3.3).
  *
- * Adapts every typed `AppTool` in the shared `appToolRegistry` into an
+ * Adapts every typed `AppTool` in the shared `appTools` catalog into an
  * `@openai/agents-realtime` function tool so Koji can navigate, hint, explain,
  * generate practice, set difficulty, read progress, reveal, and celebrate by
  * voice — the *same* catalog the text agent uses, against the *same* live
@@ -22,11 +22,12 @@
 import { tool } from "@openai/agents-realtime";
 import type { z } from "zod";
 
-import { gradeStep } from "../../../content/engine";
-import type { AnswerValue, ProblemStep } from "../../../content/types";
+import type { ProblemStep } from "../../../content/types";
 import { hintLeaksAnswer } from "../verify";
+import { asRecord } from "../json";
 import {
-  appToolRegistry,
+  appTools,
+  staticHint,
   type AnyAppTool,
   type RevealAllowed,
   type ToolContext,
@@ -34,12 +35,6 @@ import {
 
 /** Cap the JSON we hand back to the model so a big result can't bloat the turn. */
 const MAX_RESULT_CHARS = 1200;
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : null;
-}
 
 function safeJson(value: unknown): string {
   try {
@@ -49,15 +44,6 @@ function safeJson(value: unknown): string {
   } catch {
     return "{}";
   }
-}
-
-/** Phase-1 static fallback hint (mirrors the Koji text panel's `staticHint`). */
-function staticHint(problem: ProblemStep, answer: AnswerValue | null): string {
-  if (answer) {
-    const evaluation = gradeStep(problem, answer);
-    if (evaluation.status === "incorrect") return evaluation.message;
-  }
-  return problem.feedback.default;
 }
 
 /** The current problem step, or null when the learner isn't on one. */
@@ -143,10 +129,12 @@ function toRealtimeTool(appTool: AnyAppTool, getContext: () => ToolContext) {
 }
 
 /**
- * Build the realtime tool set from the shared registry. `getContext` is read on
- * every call so tools always act on the learner's current step/answer/engagement,
- * even though the voice session is created once.
+ * Build the realtime tool set from the shared `appTools` catalog. `getContext`
+ * is read on every call so tools always act on the learner's current
+ * step/answer/engagement, even though the voice session is created once.
  */
 export function buildRealtimeTools(getContext: () => ToolContext) {
-  return appToolRegistry.list().map((appTool) => toRealtimeTool(appTool, getContext));
+  return (appTools as readonly AnyAppTool[]).map((appTool) =>
+    toRealtimeTool(appTool, getContext),
+  );
 }
