@@ -152,7 +152,7 @@ export function VoiceControls({ ctx }: VoiceControlsProps) {
               {title}
             </p>
           </div>
-          {hint ? <p className="truncate text-xs text-muted">{hint}</p> : null}
+          {hint ? <p className="text-xs leading-snug text-muted">{hint}</p> : null}
         </div>
 
         {voice.speaking ? (
@@ -160,12 +160,19 @@ export function VoiceControls({ ctx }: VoiceControlsProps) {
             size="sm"
             variant="secondary"
             clicky={false}
+            className="min-h-11"
             onPress={voice.stopSpeaking}
           >
             Stop
           </Button>
         ) : isError ? (
-          <Button size="sm" variant="secondary" clicky={false} onPress={voice.retry}>
+          <Button
+            size="sm"
+            variant="secondary"
+            clicky={false}
+            className="min-h-11"
+            onPress={voice.retry}
+          >
             Try again
           </Button>
         ) : isLive ? (
@@ -173,6 +180,7 @@ export function VoiceControls({ ctx }: VoiceControlsProps) {
             size="sm"
             variant="secondary"
             clicky={false}
+            className="min-h-11"
             onPress={voice.endSession}
           >
             End
@@ -269,7 +277,7 @@ function HandsFreeToggle({ checked, onChange }: HandsFreeToggleProps) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex touch-manipulation items-center gap-2 self-start rounded-full py-1 text-xs font-medium text-muted outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="flex min-h-11 touch-manipulation items-center gap-2 self-start rounded-full py-1 text-xs font-medium text-muted outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       <span
         aria-hidden
