@@ -8,7 +8,7 @@ import {
   type LessonNodeState,
 } from "../../components/course";
 import { course, getLesson } from "../../content";
-import { LandingSection, SectionHeading } from "../ui/section";
+import { Eyebrow, LandingSection } from "../ui/section";
 
 /**
  * Marketing-only progression for the path preview, keyed by the real lesson ids
@@ -63,30 +63,40 @@ export function CoursePath() {
 
   return (
     <LandingSection id="course">
-      <SectionHeading
-        eyebrow="The chapter"
-        title="One chapter, understood all the way down."
-        description="Five short lessons and a review take you from naming a hypotenuse to measuring distance on a grid. You work one step at a time and master it before moving on, so every new idea rests on the one before it."
-      />
+      <div className="grid items-stretch gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+        {/* Intro rail: the section's heading lives here (left-aligned, matching
+            the shared SectionHeading scale) so the column anchors to the top of
+            the tall map card instead of a lone ring floating in empty space. The
+            mastery medallion + its copy then fill the lower half as a deliberate
+            "where you stand" footer. */}
+        <div className="flex flex-col items-start">
+          <Eyebrow>The chapter</Eyebrow>
+          <h2 className="mt-3 text-balance text-[clamp(2rem,4vw,3rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground">
+            One chapter, understood all the way down.
+          </h2>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+            Five short lessons and a review take you from naming a hypotenuse to
+            measuring distance on a grid. You work one step at a time and master
+            it before moving on, so every new idea rests on the one before it.
+          </p>
 
-      <div className="mt-12 grid items-center gap-12 lg:mt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-        <div className="flex flex-col items-start gap-6">
-          <div className="mt-1 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
+          <div className="mt-8 flex w-full flex-1 flex-col justify-center gap-5 rounded-3xl border border-border bg-[var(--surface)] p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:mt-10">
             <LessonProgressMedallion
               current={masteredCount}
               total={lessonIds.length}
               className="shrink-0"
             />
-            <p className="max-w-[19rem] text-sm leading-relaxed text-muted">
-              Each lesson rolls up into a mastery signal, so you can see at a
-              glance what is solid and what to revisit.
-            </p>
+            <div className="flex max-w-sm flex-col gap-3">
+              <p className="text-sm leading-relaxed text-muted">
+                Each lesson rolls up into a mastery signal, so you can see at a
+                glance what is solid and what to revisit.
+              </p>
+              <p className="text-sm leading-relaxed text-muted">
+                Finish the chapter and Infinite Practice keeps fresh, verified
+                problems coming.
+              </p>
+            </div>
           </div>
-
-          <p className="max-w-[34rem] text-sm leading-relaxed text-muted">
-            Finish the chapter and Infinite Practice keeps fresh, verified
-            problems coming.
-          </p>
         </div>
 
         <div className="relative">
