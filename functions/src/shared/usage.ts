@@ -47,6 +47,7 @@ export async function trackUsage(
       { merge: true },
     );
   } catch (err) {
-    console.error(`trackUsage failed (uid=${uid}, field=${field})`, err);
+    // Don't log `uid` (PII); the field + error are enough to diagnose.
+    console.error(`trackUsage failed (field=${field})`, err);
   }
 }

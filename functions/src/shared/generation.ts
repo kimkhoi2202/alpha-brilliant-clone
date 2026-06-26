@@ -267,6 +267,9 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
         gridSquares: true,
         highlightSquare: countSide,
       };
+      // Author the prompt deterministically from the server-owned countSide so it
+      // can never desync from the highlighted square (W2, same pattern as pick-side).
+      promptOverride = `Count the unit squares in the square drawn on the ${SIDE_NAMES[countSide]}.`;
       break;
     }
     case "pick-side": {
@@ -306,10 +309,16 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
     case "tile-expression": {
       const c = hypotenuse(a, b);
       if (!Number.isInteger(c)) throw new Error("tile-expression needs an integer hypotenuse");
-      // Learner places the two legs into a² + b² = c²; solution computed by us.
-      const template: (string | null)[] = [null, "²", "+", null, "²", "=", String(c), "²"];
-      const solution = [String(a), String(b)];
-      const tiles = shuffle(ctx.rng, Array.from(new Set([String(a), String(b), String(c), String(a + 1)])));
+      // a² + b² is commutative, so a two-blank [a, b] template marked the learner
+      // wrong whenever they placed the legs in the other (equally valid) order
+      // (~50% of the time). Fix leg `a` in the template and blank ONLY leg `b`,
+      // making the placement unambiguous (C2).
+      const template: (string | null)[] = [String(a), "²", "+", null, "²", "=", String(c), "²"];
+      const solution = [String(b)];
+      const tiles = shuffle(
+        ctx.rng,
+        Array.from(new Set([String(b), String(a), String(c), String(b + 1)])),
+      );
       interaction = { kind: "tile-expression", tiles, template, solution };
       visual = { kind: "right-triangle", a, b, labels: true };
       break;
@@ -344,8 +353,17 @@ export function verify(step: ProblemStep): boolean {
   if (eval_.status !== "correct") return false;
 
   switch (interaction.kind) {
-    case "numeric":
-      return Number.isFinite(interaction.answer);
+    case "numeric": {
+      if (!Number.isFinite(interaction.answer)) return false;
+      // Independent firewall: don't just trust the stored answer — recompute
+      // c = √(a²+b²) from the visual's right-triangle legs and require they
+      // agree within tolerance. Reject if we can't recompute (W).
+      const v = step.visual;
+      if (!v || v.kind !== "right-triangle") return false;
+      const c = hypotenuse(v.a, v.b);
+      if (!Number.isFinite(c)) return false;
+      return Math.abs(interaction.answer - c) <= (interaction.tolerance ?? 0);
+    }
     case "multiple-choice": {
       // Exactly one option must match the (server-computed) correct choice id,
       // and every distractor must be a genuinely different number.

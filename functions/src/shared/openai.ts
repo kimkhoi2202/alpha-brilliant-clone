@@ -1,10 +1,10 @@
 /**
- * OpenAI client factory + the locked Phase 2 model ids (PRD §2.2).
+ * The locked Phase 2 model ids (PRD §2.2).
  *
- * The key never leaves the server: callers pass the resolved secret value from
- * `defineSecret("OPENAI_API_KEY").value()` and we build a per-invocation client.
+ * The OpenAI client is constructed inline at each call site from the resolved
+ * secret value (`defineSecret("OPENAI_API_KEY").value()`), so the key never
+ * leaves the server.
  */
-import OpenAI from "openai";
 
 /** Locked model ids for Phase 2 (PRD §2.2). */
 export const MODELS = {
@@ -17,8 +17,3 @@ export const MODELS = {
 } as const;
 
 export type TextModel = typeof MODELS.text | typeof MODELS.hintMini;
-
-/** Build an OpenAI client from a resolved secret value (server-side only). */
-export function makeOpenAI(apiKey: string): OpenAI {
-  return new OpenAI({ apiKey });
-}

@@ -11,8 +11,9 @@
  *   ⇢ client.responses.create()  (Structured Outputs)
  */
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import OpenAI from "openai";
 import { OPENAI_API_KEY } from "../shared/secrets.js";
-import { makeOpenAI, MODELS } from "../shared/openai.js";
+import { MODELS } from "../shared/openai.js";
 import { requireUid } from "../shared/auth.js";
 import { trackUsage } from "../shared/usage.js";
 import type { ProblemStep, TriangleSide } from "../content/types.js";
@@ -45,14 +46,6 @@ export interface GenerateProblemRequest {
 export interface GenerateProblemResponse {
   /** The verified, render-ready problem, tagged `source:"ai"`. */
   step: ProblemStep;
-  /** Kind generated (echo). */
-  kind: GenerableKind;
-  /** Difficulty used (echo). */
-  difficulty: Difficulty;
-  /** Number of model attempts made (1..MAX_ATTEMPTS). */
-  attempts: number;
-  /** True if the deterministic fallback bank produced the problem. */
-  usedFallback: boolean;
 }
 
 function isGenerableKind(value: unknown): value is GenerableKind {
@@ -78,7 +71,7 @@ export const generateProblem = onCall<GenerateProblemRequest>(
     // Server owns the target side for pick-side (the answer key, never the model's).
     const targetSide: TriangleSide = (["a", "b", "c"] as const)[Math.floor(rng() * 3)] ?? "c";
 
-    const client = makeOpenAI(OPENAI_API_KEY.value());
+    const client = new OpenAI({ apiKey: OPENAI_API_KEY.value() });
     const schema = proposalSchema(kind);
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -104,7 +97,7 @@ export const generateProblem = onCall<GenerateProblemRequest>(
 
         if (verify(step)) {
           await trackUsage(uid, "problemsGenerated");
-          return { step, kind, difficulty, attempts: attempt, usedFallback: false };
+          return { step };
         }
         await trackUsage(uid, "problemsRejected");
       } catch (err) {
@@ -117,6 +110,6 @@ export const generateProblem = onCall<GenerateProblemRequest>(
     // All model attempts failed verification → deterministic, pre-verified fallback.
     const step = buildFallback(kind, difficulty, seed);
     await trackUsage(uid, "problemsGenerated");
-    return { step, kind, difficulty, attempts: MAX_ATTEMPTS, usedFallback: true };
+    return { step };
   },
 );
