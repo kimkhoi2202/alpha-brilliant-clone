@@ -30,6 +30,15 @@ export interface AskKojiProps {
   swoop?: boolean;
   /** The mascot publishes its imperative reactions here for the runner to call. */
   handleRef?: RefObject<KojiHandle | null>;
+  /**
+   * Light Koji up as a tappable "Ask Koji" entry point (Phase 2, AI on). When
+   * false — the default, and the only behavior with AI off — Koji is the dormant
+   * Phase 1 decoration: brackets hidden, `pointer-events-none`, `aria-hidden`,
+   * byte-for-byte unchanged. Gate this on `aiEnabled()` at the call site.
+   */
+  interactive?: boolean;
+  /** Tapped the "Ask Koji" affordance (only meaningful when `interactive`). */
+  onAsk?: () => void;
 }
 
 const SUCCESS = [
@@ -60,7 +69,12 @@ function pick<T>(xs: readonly T[]): T {
  * view-model triggers: `playEnter`/`idle` to bring him on, and `successSmall…`,
  * `incorrect`, `correctAfterIncorrect`, `waveLeft…` as answer reactions.
  */
-export function AskKoji({ swoop = false, handleRef }: AskKojiProps) {
+export function AskKoji({
+  swoop = false,
+  handleRef,
+  interactive = false,
+  onAsk,
+}: AskKojiProps) {
   const riveRef = useRef<Rive | null>(null);
   // Capture the entrance choice once; `onRive` fires a single time on load.
   const swoopRef = useRef(swoop);
@@ -110,11 +124,38 @@ export function AskKoji({ swoop = false, handleRef }: AskKojiProps) {
   const onRive = useCallback(
     (rive: Rive) => {
       riveRef.current = rive;
-      // `bracketsOn` is already false (set via viewModelBooleans before this runs).
+      // `bracketsOn` is already set (via viewModelBooleans before this runs):
+      // false for the dormant decoration, true for the interactive entry point.
       fire(swoopRef.current ? "playEnter" : "idle");
     },
     [fire],
   );
+
+  // AI on: a tappable "Ask Koji" entry point. The "< >" brackets show (signaling
+  // the affordance), pointer events are enabled, and a real button owns the tap +
+  // accessible name. The canvas itself stays non-interactive so the tap always
+  // lands on the button.
+  if (interactive) {
+    return (
+      <div className="absolute bottom-1 left-1 z-40 lg:bottom-2 lg:left-2">
+        <button
+          type="button"
+          onClick={onAsk}
+          aria-label="Ask Koji for help"
+          className="block rounded-full outline-none transition-transform duration-150 hover:scale-105 focus-visible:ring-2 focus-visible:ring-accent active:scale-95 motion-reduce:transition-none"
+        >
+          <RivePlayer
+            src={ASK_KOJI_RIV}
+            stateMachines="AskKoji"
+            autoBind
+            viewModelBooleans={{ bracketsOn: true }}
+            onRive={onRive}
+            className="pointer-events-none size-40"
+          />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
