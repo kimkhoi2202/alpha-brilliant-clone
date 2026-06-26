@@ -26,3 +26,12 @@ Build Phase 2 exactly as specified in `PRD-phase-2.md`, to a world-class bar, wi
 - Conventional commits; one PR per feature branch into the phase-2 integration branch; **reviewed before merge**.
 - All worktrees live under `alpha-brilliant-clone/`.
 - Do not touch `main`/`prod`. Do not break the AI-off path.
+
+## Review cadence (multi-pass — required)
+
+Single-pass is NOT enough. Each review-heavy discipline iterates until it clearly clears the bar:
+
+- **Design (Emil):** at least **3 passes** — build/polish → design critique (score each dimension against Emil's `reference/critique.md` + `audit.md`) → refine → re-critique — looping until it clearly *exceeds* the bar, not merely meets it.
+- **UI/UX QA (impeccable-swarm):** run the **full loop with multiple iterations** (partition → inspect → fix → re-verify), never a single inspection. Stop only when every slice passes (critique ≥ 32/40, audit ≥ 16/20, AI-slop = pass, 0 P0/P1) on a *re-verified* run.
+- **Code review:** **re-review after fixes** (review → fix → re-review) until an explicit APPROVE — not one-and-done.
+- Applies to **every phase** (including Phase 3).
