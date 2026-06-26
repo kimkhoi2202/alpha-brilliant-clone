@@ -5,6 +5,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 
 // Firebase web config for project "fir-94b95".
 // The apiKey is a public client identifier, not a secret: access is controlled
@@ -21,6 +22,12 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Phase 2 (AI): client handle for our callable Cloud Functions. The default
+// region (us-central1) matches the backend's setGlobalOptions in functions/.
+// Importing this is inert — no AI path runs unless aiEnabled() is true and an
+// `src/lib/ai/client.ts` wrapper is actually called.
+export const functions = getFunctions(app);
 
 // Offline-first: progress/streak writes survive reloads and brief disconnects,
 // and resume is consistent across tabs (PRD §1.5 Reliability).
