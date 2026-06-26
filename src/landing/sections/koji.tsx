@@ -38,19 +38,19 @@ export function KojiTutor() {
  */
 function KojiStage() {
   return (
-    <div className="flex flex-col items-center gap-7 lg:items-start">
+    <div className="flex flex-col items-center gap-7">
       <div className="relative grid w-full place-items-center py-4" aria-hidden>
         <div
-          className="pointer-events-none absolute size-72 max-w-full rounded-full"
+          className="pointer-events-none absolute size-96 max-w-full rounded-full"
           style={{
             background:
               "radial-gradient(closest-side, color-mix(in oklab, var(--accent) 24%, transparent), transparent 78%)",
           }}
         />
-        <KojiMascot className="size-48" />
+        <KojiMascot className="size-64" />
       </div>
 
-      <p className="max-w-sm text-pretty text-center text-sm leading-relaxed text-muted lg:text-left">
+      <p className="mx-auto max-w-md text-pretty text-center text-base leading-relaxed text-foreground/80">
         Koji is optional. With the tutor switched off, every lesson still teaches from start
         to finish, with hand-written hints and instant feedback.
       </p>
