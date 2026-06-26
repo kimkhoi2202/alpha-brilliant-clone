@@ -12,8 +12,9 @@
  * token; we return ONLY that (plus non-secret metadata) to the browser.
  */
 import { onCall } from "firebase-functions/v2/https";
+import OpenAI from "openai";
 import { OPENAI_API_KEY } from "../shared/secrets.js";
-import { makeOpenAI, MODELS } from "../shared/openai.js";
+import { MODELS } from "../shared/openai.js";
 import { requireUid } from "../shared/auth.js";
 import { trackUsage } from "../shared/usage.js";
 
@@ -42,10 +43,6 @@ export interface MintRealtimeTokenResponse {
   expiresAt: number;
   /** Realtime model the session is configured for. */
   model: string;
-  /** The created session id (`sess_...`), for client logging/correlation. */
-  sessionId: string;
-  /** Voice the session will speak with. */
-  voice: string;
 }
 
 export const mintRealtimeToken = onCall<MintRealtimeTokenRequest>(
@@ -54,7 +51,7 @@ export const mintRealtimeToken = onCall<MintRealtimeTokenRequest>(
     const uid = requireUid(request);
     const voice = request.data?.voice ?? "marin";
 
-    const client = makeOpenAI(OPENAI_API_KEY.value());
+    const client = new OpenAI({ apiKey: OPENAI_API_KEY.value() });
 
     const created = await client.realtime.clientSecrets.create({
       expires_after: { anchor: "created_at", seconds: TOKEN_TTL_SECONDS },
@@ -73,8 +70,6 @@ export const mintRealtimeToken = onCall<MintRealtimeTokenRequest>(
       token: created.value,
       expiresAt: created.expires_at,
       model: MODELS.realtime,
-      sessionId: created.session.id,
-      voice,
     };
   },
 );

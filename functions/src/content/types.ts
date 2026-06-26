@@ -1,3 +1,4 @@
+// ponytail: vendored copy of src/content/*; upgrade: shared workspace package + parity check
 /**
  * Content model — VENDORED COPY for the Cloud Functions workspace.
  *
