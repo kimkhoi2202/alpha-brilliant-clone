@@ -6,6 +6,10 @@
     "module": "esnext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "strict": true,
+    /* ponytail: noUncheckedIndexedAccess deferred — it surfaces 39 pre-existing
+       Phase-1 index-access errors across 13 files (visuals, quiz-runner,
+       lesson-calculator, content, routes), a broad yak-shave beyond Phase-2. */
 
     /* Bundler mode */
     "moduleResolution": "bundler",
