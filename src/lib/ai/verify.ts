@@ -113,17 +113,23 @@ function checkNumericRelationships(step: ProblemStep): string[] {
     }
   }
 
-  // numeric "find the hypotenuse": the answer must equal √(a²+b²) within tolerance.
-  if (
-    interaction.kind === "numeric" &&
-    visual?.kind === "right-triangle" &&
-    isHypotenuseUnknown(visual)
-  ) {
-    const c = evalNumber("sqrt(a^2 + b^2)", { a: visual.a, b: visual.b });
-    const tol = (interaction.tolerance ?? 0) + 1e-9;
-    if (!Number.isFinite(c) || Math.abs(interaction.answer - c) > tol) {
+  // numeric answers must be INDEPENDENTLY re-derivable from verifiable givens —
+  // we never pass on the generator's stated `answer`. The one numeric relationship
+  // this course can recompute is the right-triangle hypotenuse √(a²+b²); a numeric
+  // problem we cannot recompute that way fails closed (defense-in-depth: don't
+  // trust the generator's goodwill).
+  if (interaction.kind === "numeric") {
+    if (visual?.kind === "right-triangle" && isHypotenuseUnknown(visual)) {
+      const c = evalNumber("sqrt(a^2 + b^2)", { a: visual.a, b: visual.b });
+      const tol = (interaction.tolerance ?? 0) + 1e-9;
+      if (!Number.isFinite(c) || Math.abs(interaction.answer - c) > tol) {
+        errors.push(
+          `numeric hypotenuse mismatch: answer=${interaction.answer} expected≈${c}`,
+        );
+      }
+    } else {
       errors.push(
-        `numeric hypotenuse mismatch: answer=${interaction.answer} expected≈${c}`,
+        "numeric answer not independently verifiable: no right-triangle legs to recompute from",
       );
     }
   }
@@ -183,9 +189,11 @@ function containsToken(haystack: string, token: string): boolean {
   const needle = token.toLowerCase().trim();
   if (needle.length === 0) return false;
 
-  // Numbers: match the whole value, not a digit inside a larger number.
+  // Numbers: match the whole value, not a digit inside a larger number. The
+  // trailing guard only blocks a following digit (not a dot), so a trailing
+  // period ("it's 5.") still counts as a leak.
   if (NUMBER_TOKEN.test(needle)) {
-    return new RegExp(`(?<![\\d.])${escapeRegExp(needle)}(?![\\d.])`).test(haystack);
+    return new RegExp(`(?<![\\d.])${escapeRegExp(needle)}(?!\\d)`).test(haystack);
   }
   // Single letters (e.g. side "c"): match as a whole word only.
   if (needle.length === 1) {
@@ -199,9 +207,9 @@ function containsToken(haystack: string, token: string): boolean {
 function numberTokens(value: number, unit?: string): string[] {
   if (!Number.isFinite(value)) return [];
   const tokens = [String(value)];
-  if (!Number.isInteger(value)) {
-    tokens.push(value.toFixed(1), value.toFixed(2));
-  }
+  // Fixed-decimal renderings the model might use. Emitted for integers too
+  // (answer 5 → "5.0" / "5.00"), so a hint like "it's 5.0 cm" is still caught.
+  tokens.push(value.toFixed(1), value.toFixed(2));
   if (unit) {
     tokens.push(`${value} ${unit}`, `${value}${unit}`);
   }
