@@ -95,7 +95,9 @@ function mentionsNumericValue(text: string, value: number): boolean {
  * the value robustly so a leak like "it's 5." can't slip through the substring
  * path (C1). Non-numeric answers keep the case-insensitive substring check.
  */
-function mentionsAnswer(
+// Exported for unit testing (the smoke test exercises the real leak firewall);
+// behavior is unchanged — this is the same private helper `runTutor` calls.
+export function mentionsAnswer(
   text: string,
   answer: string | number,
   value?: number,

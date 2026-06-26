@@ -10,6 +10,8 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "test": "node --import tsx --test test/firewall.test.ts",
+    "check:parity": "node scripts/check-content-parity.mjs",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.1",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }
 }
