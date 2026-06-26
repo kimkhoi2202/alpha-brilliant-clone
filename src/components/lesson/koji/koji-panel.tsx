@@ -18,7 +18,7 @@
  * mounted across open/close so the transcript survives); the presentational
  * `KojiSheet` mounts only while open, so its enter animation re-arms each time.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { gradeStep } from "../../../content/engine";
 import type { AnswerValue, ProblemStep, Step } from "../../../content/types";
@@ -35,6 +35,7 @@ import { cn } from "../../../lib/cn";
 import { Button } from "../../ui";
 import { renderMathText } from "../../ui/math";
 import type { StepPhase } from "../step-view";
+import { VoiceControls } from "./voice-controls";
 
 export interface KojiPanelProps {
   /** Whether the panel is shown. */
@@ -207,6 +208,7 @@ export function KojiPanel({
       onHint={() => void requestHint()}
       onExplain={() => void requestExplain()}
       onReveal={() => void requestReveal()}
+      voice={<VoiceControls ctx={ctx} />}
     />
   );
 }
@@ -224,6 +226,8 @@ interface KojiSheetProps {
   onHint: () => void;
   onExplain: () => void;
   onReveal: () => void;
+  /** The mic surface (tap-to-talk + hands-free + live transcript). */
+  voice: ReactNode;
 }
 
 /**
@@ -243,6 +247,7 @@ function KojiSheet({
   onHint,
   onExplain,
   onReveal,
+  voice,
 }: KojiSheetProps) {
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -338,6 +343,8 @@ function KojiSheet({
           ))}
           {busy ? <TypingIndicator /> : null}
         </div>
+
+        {voice}
 
         <footer className="flex flex-col gap-2 border-t border-border px-4 py-3">
           {!isProblem ? (
