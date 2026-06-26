@@ -105,6 +105,7 @@ export function CourseMapScreen() {
     <div className="min-h-svh bg-background text-foreground">
       <AppHeader />
       <main className="mx-auto max-w-5xl px-4 pt-10 pb-28 sm:px-6 lg:pt-12 lg:pb-32">
+        <h1 className="sr-only">{course.title}</h1>
         <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
           <div className="h-fit space-y-5 md:sticky md:top-24">
             <CourseCard
