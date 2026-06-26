@@ -3,7 +3,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { Brand } from "../components/chrome/brand";
 import { TopNav } from "../components/chrome/top-nav";
 import { Button } from "../components/ui";
+import { CoursePath } from "../landing/sections/course-path";
+import { FAQ } from "../landing/sections/faq";
+import { Features } from "../landing/sections/features";
+import { FinalCTA } from "../landing/sections/final-cta";
+import { Footer } from "../landing/sections/footer";
 import { Hero } from "../landing/sections/hero";
+import { HowItWorks } from "../landing/sections/how-it-works";
+import { InteractiveProof } from "../landing/sections/interactive-proof";
+import { KojiTutor } from "../landing/sections/koji";
+import { Pricing } from "../landing/sections/pricing";
+import { SocialProof } from "../landing/sections/social-proof";
 import { scrollToId } from "../landing/ui/section";
 
 const NAV = [
@@ -16,8 +26,9 @@ const NAV = [
 
 /**
  * Public marketing landing, in the app's real dark skin. Composed entirely from
- * the app's real components (TopNav, Brand, Button, the lesson visuals) so it
- * reads as the actual product, not a separate marketing site.
+ * the app's real components (TopNav, Brand, Button, the lesson visuals, the
+ * premium/gamification/course surfaces) so it reads as the actual product, not a
+ * separate marketing site.
  */
 export function Landing() {
   const navigate = useNavigate();
@@ -50,13 +61,18 @@ export function Landing() {
 
       <main>
         <Hero />
+        <HowItWorks />
+        <InteractiveProof />
+        <Features />
+        <KojiTutor />
+        <CoursePath />
+        <SocialProof />
+        <Pricing />
+        <FAQ />
+        <FinalCTA />
       </main>
 
-      <footer className="border-t border-border py-10">
-        <div className="mx-auto max-w-6xl px-4 text-sm text-muted sm:px-6">
-          &copy; {new Date().getFullYear()} AlphaBrilliant &middot; Learn the Pythagorean theorem by doing.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

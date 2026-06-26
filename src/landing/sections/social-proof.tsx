@@ -1,0 +1,277 @@
+import type { CSSProperties } from "react";
+import { Tabs } from "@heroui/react";
+
+import { Avatar, Chip, Counter, Divider } from "../../components/ui";
+import { cn } from "../../lib/cn";
+import { Eyebrow, LandingSection } from "../ui/section";
+
+/**
+ * Social proof — credibility staged for the student and the people who buy for
+ * them, in the app's real dark skin. Audience-segmented quotes ride on the real
+ * HeroUI `Tabs` (segmented control), each quote uses the app's real `Avatar`
+ * (initials) + `Chip` (@handle), and the section anchors on real `Counter`
+ * outcome stats.
+ *
+ * Honesty: every quote and number here is an explicit, illustrative PLACEHOLDER.
+ * Attributions are role labels with `@placeholder` handles (no fabricated people,
+ * photos, press logos, or measured stats). Replace before launch.
+ */
+
+interface Quote {
+  /** The testimonial body. Placeholder copy, grounded in real product moments. */
+  body: string;
+  /** Role label (doubles as the Avatar initial + deterministic color). */
+  name: string;
+  /** Illustrative descriptor, e.g. a grade level. */
+  detail: string;
+  /** The lead quote for an audience gets the larger, featured treatment. */
+  featured?: boolean;
+}
+
+interface Audience {
+  id: string;
+  label: string;
+  quotes: readonly Quote[];
+}
+
+interface Stat {
+  /** Bracketed placeholder value, rendered in the real Counter pill. */
+  value: string;
+  label: string;
+}
+
+/** Every handle is the same explicit placeholder, never a fabricated account. */
+const HANDLE = "@placeholder";
+
+const AUDIENCES: readonly Audience[] = [
+  {
+    id: "students",
+    label: "Students",
+    quotes: [
+      {
+        body: "I dragged the triangle around for a minute and the squares just made sense.",
+        name: "Student",
+        detail: "9th grade",
+        featured: true,
+      },
+      {
+        body: "The hint showed me I added the legs instead of squaring them, so I fixed it on the next try.",
+        name: "Learner",
+        detail: "Test prep",
+      },
+      {
+        body: "I kept a streak going just to finish the last lesson.",
+        name: "Beginner",
+        detail: "Just started",
+      },
+    ],
+  },
+  {
+    id: "teachers",
+    label: "Teachers",
+    quotes: [
+      {
+        body: "It builds the intuition my lectures can't, one triangle at a time.",
+        name: "Teacher",
+        detail: "Geometry",
+        featured: true,
+      },
+      {
+        body: "Students arrive already understanding why the squares add up.",
+        name: "Educator",
+        detail: "High school",
+      },
+      {
+        body: "Instant feedback saves me from re-teaching the same slip every week.",
+        name: "Mentor",
+        detail: "After school",
+      },
+    ],
+  },
+  {
+    id: "parents",
+    label: "Parents",
+    quotes: [
+      {
+        body: "She actually wants to do her geometry now. The streak is doing something right.",
+        name: "Parent",
+        detail: "9th grader",
+        featured: true,
+      },
+      {
+        body: "No videos to sit through, so the homework actually gets done.",
+        name: "Family",
+        detail: "10th grader",
+      },
+      {
+        body: "I can see which lessons are solid and which need another pass.",
+        name: "Guardian",
+        detail: "First year",
+      },
+    ],
+  },
+];
+
+/** The bold outcome anchor; the lead stat is featured, two support it. */
+const ANCHOR_STAT: Stat = {
+  value: "[N]%",
+  label: "of learners said it finally clicked",
+};
+
+const SUPPORTING_STATS: readonly Stat[] = [
+  { value: "[N]", label: "lessons completed across the chapter" },
+  { value: "[N] / 10", label: "median Level Review score" },
+];
+
+/** Entrance for the active panel's cards: a gentle, staggered rise that
+ *  collapses to nothing under reduced motion (and is never scroll-gated). */
+const RISE = "animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out motion-reduce:animate-none";
+
+function QuoteMark() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="h-8 w-8 text-[var(--accent)] opacity-40"
+    >
+      <path d="M10 7C7.24 7 5 9.24 5 12v5h6v-6H8c0-1.66 .9-2 2-2V7zm9 0c-2.76 0-5 2.24-5 5v5h6v-6h-3c0-1.66 .9-2 2-2V7z" />
+    </svg>
+  );
+}
+
+function QuoteCard({
+  quote,
+  className,
+  style,
+}: {
+  quote: Quote;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const featured = quote.featured ?? false;
+
+  return (
+    <figure
+      style={style}
+      className={cn(
+        "relative flex h-full flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--surface)] p-6",
+        "transition-colors duration-200 ease-out hover:border-[color:var(--border-hover)]",
+        featured && "gap-5 p-7 sm:p-8",
+        className,
+      )}
+    >
+      {featured ? <QuoteMark /> : null}
+
+      <blockquote
+        className={cn(
+          "text-pretty text-foreground",
+          featured
+            ? "text-xl font-medium leading-relaxed sm:text-2xl"
+            : "text-base leading-relaxed",
+        )}
+      >
+        {featured ? quote.body : `\u201C${quote.body}\u201D`}
+      </blockquote>
+
+      <figcaption className="mt-auto flex items-center gap-3">
+        <Avatar name={quote.name} size={featured ? "md" : "sm"} />
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-sm font-semibold text-foreground">{quote.name}</span>
+          <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span>{quote.detail}</span>
+            <Chip size="sm">{HANDLE}</Chip>
+          </span>
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+export function SocialProof() {
+  return (
+    <LandingSection id="reviews" width="wide">
+      <div className="mx-auto max-w-2xl text-center">
+        <Eyebrow>What learners say</Eyebrow>
+
+        <h2 className="mt-4 text-balance text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-[1.08] tracking-[-0.02em] text-foreground">
+          Built for students.{" "}
+          <span className="text-[var(--accent)]">Trusted</span> by the people who
+          care about them.
+        </h2>
+
+        <p className="mx-auto mt-4 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg">
+          Illustrative placeholders for now. Every quote and number here is
+          replaced with a real, verified one before launch.
+        </p>
+      </div>
+
+      <Tabs defaultSelectedKey="students" className="mt-10 items-center gap-0 sm:mt-12">
+        <Tabs.List
+          aria-label="Reviews by audience"
+          className="mx-auto w-full max-w-md border-2 border-border bg-[var(--surface)] p-1"
+        >
+          {AUDIENCES.map((audience) => (
+            <Tabs.Tab
+              key={audience.id}
+              id={audience.id}
+              className="h-11 text-sm font-semibold"
+            >
+              {audience.label}
+              <Tabs.Indicator className="bg-[var(--surface-tertiary)] shadow-[0_1px_2px_rgba(0,0,0,0.45)]" />
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
+
+        {AUDIENCES.map((audience) => {
+          const featured = audience.quotes.find((quote) => quote.featured);
+          const supporting = audience.quotes.filter((quote) => !quote.featured);
+
+          return (
+            <Tabs.Panel key={audience.id} id={audience.id} className="mt-8 w-full p-0">
+              <div className="mx-auto grid max-w-4xl gap-4 sm:gap-5">
+                {featured ? <QuoteCard quote={featured} className={RISE} /> : null}
+
+                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+                  {supporting.map((quote, index) => (
+                    <QuoteCard
+                      key={quote.name}
+                      quote={quote}
+                      className={RISE}
+                      style={{ animationDelay: `${(index + 1) * 90}ms` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Tabs.Panel>
+          );
+        })}
+      </Tabs>
+
+      <div className="mx-auto mt-12 max-w-4xl rounded-2xl border-2 border-border bg-[var(--surface)] p-6 sm:mt-14 sm:p-8">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h3 className="text-sm font-semibold text-foreground">Early outcomes</h3>
+          <Chip size="sm" intent="warning" variant="soft">
+            Illustrative, not yet measured
+          </Chip>
+        </div>
+
+        <div className="mt-6 flex flex-col items-center gap-3 text-center">
+          <Counter value={ANCHOR_STAT.value} className="px-6 py-3 text-3xl" />
+          <p className="max-w-xs text-pretty text-sm text-muted">{ANCHOR_STAT.label}</p>
+        </div>
+
+        <Divider className="my-7 sm:my-8" />
+
+        <div className="grid gap-7 sm:grid-cols-2 sm:gap-8">
+          {SUPPORTING_STATS.map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
+              <Counter value={stat.value} className="text-2xl" />
+              <p className="max-w-[16rem] text-pretty text-sm text-muted">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </LandingSection>
+  );
+}
