@@ -44,7 +44,7 @@ export function PaywallComparison({ rows, className }: PaywallComparisonProps) {
         <div className="bg-surface px-4 py-3 text-center text-sm font-bold text-muted">
           Free
         </div>
-        <div className="bg-accent-soft px-4 py-3 text-center text-sm font-bold text-accent">
+        <div className="bg-accent-soft px-4 py-3 text-center text-sm font-bold text-accent-soft-foreground">
           Premium
         </div>
         {rows.map((r) => (

@@ -225,7 +225,7 @@ export function PickSideTriangle({
     const word = chosen.length > 1 ? "sides" : "side";
     caption = `The ${listJoin(chosen.map((id) => names[id]))} ${word}`;
     if (!locked) {
-      captionClass = "text-accent";
+      captionClass = "text-accent-soft-foreground";
     } else {
       const ok = correctSides
         ? sameSet(chosen, correctSides)

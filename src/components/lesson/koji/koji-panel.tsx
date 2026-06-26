@@ -309,10 +309,10 @@ function KojiSheet({
           "sm:inset-x-auto sm:bottom-4 sm:left-4 sm:max-w-sm sm:rounded-3xl",
         )}
       >
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <span
             aria-hidden
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-mono text-sm font-bold text-accent"
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-mono text-sm font-bold text-accent-soft-foreground"
           >
             {"< >"}
           </span>
@@ -335,7 +335,7 @@ function KojiSheet({
               />
             </svg>
           </button>
-        </header>
+        </div>
 
         <div
           ref={scrollRef}
@@ -374,6 +374,7 @@ function KojiSheet({
                 <Button
                   size="sm"
                   variant="secondary"
+                  className="min-h-11"
                   isDisabled={busy}
                   onPress={onHint}
                 >
@@ -383,6 +384,7 @@ function KojiSheet({
                   <Button
                     size="sm"
                     variant="secondary"
+                    className="min-h-11"
                     isDisabled={busy}
                     onPress={onExplain}
                   >
@@ -393,6 +395,7 @@ function KojiSheet({
               <Button
                 size="sm"
                 variant="warning"
+                className="min-h-11"
                 isDisabled={busy || !revealReady}
                 onPress={onReveal}
               >
@@ -443,7 +446,7 @@ function KojiBubble({ message }: { message: KojiMessage }) {
   return (
     <div className="koji-message-in rounded-2xl bg-accent-soft/60 p-3.5">
       {label ? (
-        <p className="text-[0.7rem] font-bold uppercase tracking-wider tabular-nums text-accent">
+        <p className="text-[0.7rem] font-bold uppercase tracking-wider tabular-nums text-accent-soft-foreground">
           {label}
         </p>
       ) : null}

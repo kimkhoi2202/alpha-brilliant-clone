@@ -47,7 +47,7 @@ export function LeagueCard({
           <p
             className={cn(
               "text-xs font-bold uppercase tracking-wider",
-              locked ? "text-muted" : "text-accent",
+              locked ? "text-muted" : "text-accent-soft-foreground",
             )}
           >
             {title}

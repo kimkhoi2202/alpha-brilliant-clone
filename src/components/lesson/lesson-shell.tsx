@@ -136,6 +136,7 @@ export function LessonShell({
         checkpoints={checkpoints}
       />
       <main className="flex min-h-0 flex-1 px-3 pb-3 pt-3 sm:px-6 sm:pb-6 md:px-10 md:pb-8 md:pt-4 xl:px-12">
+        <h1 className="sr-only">Lesson</h1>
         <div
           className={cn(
             "relative flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-[24px] border-2 transition-colors duration-300 sm:rounded-[28px]",
