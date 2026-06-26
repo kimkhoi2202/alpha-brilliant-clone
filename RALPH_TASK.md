@@ -34,4 +34,5 @@ Single-pass is NOT enough. Each review-heavy discipline iterates until it clearl
 - **Design (Emil):** at least **3 passes** — build/polish → design critique (score each dimension against Emil's `reference/critique.md` + `audit.md`) → refine → re-critique — looping until it clearly *exceeds* the bar, not merely meets it.
 - **UI/UX QA (impeccable-swarm):** run the **full loop with multiple iterations** (partition → inspect → fix → re-verify), never a single inspection. Stop only when every slice passes (critique ≥ 32/40, audit ≥ 16/20, AI-slop = pass, 0 P0/P1) on a *re-verified* run.
 - **Code review:** **re-review after fixes** (review → fix → re-review) until an explicit APPROVE — not one-and-done.
+- **Complexity (ponytail):** every diff gets a `ponytail-review` (cut over-engineering — YAGNI, reuse what's here, stdlib/native before deps, shortest working diff); a repo-wide `ponytail-audit` runs before promotion; deliberate shortcuts are marked with `ponytail: <ceiling>, <upgrade path>` comments so `ponytail-debt` can ledger them.
 - Applies to **every phase** (including Phase 3).
