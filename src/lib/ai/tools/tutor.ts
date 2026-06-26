@@ -47,8 +47,12 @@ function clampLevel(n: number): HintLevel {
   return 2;
 }
 
-/** Phase 1 static fallback: the targeted hint for a wrong answer, else default. */
-function staticHint(step: ProblemStep, answer: AnswerValue | null): string {
+/**
+ * Phase 1 static fallback: the targeted hint for a wrong answer, else the step's
+ * default. Shared by the voice tool layer and the Koji text panel so all three
+ * surfaces degrade identically (P5) when the model is off or leaks the answer.
+ */
+export function staticHint(step: ProblemStep, answer: AnswerValue | null): string {
   if (answer) {
     const evaluation = gradeStep(step, answer);
     if (evaluation.status === "incorrect") return evaluation.message;

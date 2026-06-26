@@ -20,13 +20,13 @@
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { gradeStep } from "../../../content/engine";
-import type { AnswerValue, ProblemStep, Step } from "../../../content/types";
+import type { Step } from "../../../content/types";
 import { hintLeaksAnswer } from "../../../lib/ai/verify";
 import {
   explainMiss,
   giveHint,
   revealSolution,
+  staticHint,
   type HintLevel,
   type RevealAllowed,
   type ToolContext,
@@ -76,15 +76,6 @@ type KojiMessageInit =
       narrative: string | null;
     };
 type KojiMessage = KojiMessageInit & { id: number };
-
-/** Phase 1 static fallback: the targeted hint for a wrong answer, else default. */
-function staticHint(step: ProblemStep, answer: AnswerValue | null): string {
-  if (answer) {
-    const evaluation = gradeStep(step, answer);
-    if (evaluation.status === "incorrect") return evaluation.message;
-  }
-  return step.feedback.default;
-}
 
 function hintLabel(count: number): string {
   if (count === 0) return "Ask for a hint";

@@ -1,13 +1,12 @@
 /**
- * Typed app-tool registry (PRD-phase-2 §3.3 "the app-control surface").
+ * Typed app-tool framework (PRD-phase-2 §3.3 "the app-control surface").
  *
  * This module owns the *framework*: the `ToolContext` Koji's tools run against,
- * the `AppTool` shape, the `defineTool` identity helper, and the registry that
- * stores the catalog. The §3.3 catalog itself (goToLesson / resumeLesson,
- * giveHint, explainMiss, generatePractice, setDifficulty, readProgress,
- * revealSolution, celebrate) lives in sibling files and is registered into
- * `appToolRegistry` via `./index`. Every tool is Zod-validated so the agent's
- * arguments are checked before a handler runs (P3).
+ * the `AppTool` shape, and the `defineTool` identity helper. The §3.3 catalog
+ * itself (goToLesson / resumeLesson, giveHint, explainMiss, generatePractice,
+ * setDifficulty, readProgress, revealSolution, celebrate) lives in sibling files
+ * and is collected into the `appTools` array by `./index`. Every tool is
+ * Zod-validated so the agent's arguments are checked before a handler runs (P3).
  *
  * The `ToolContext` is deliberately UI-framework-agnostic: it is a set of plain
  * interfaces (no JSX, no React, no router types) so the lesson player, the text
@@ -192,7 +191,7 @@ export interface AppTool<Schema extends z.ZodType = z.ZodType, Result = unknown>
   readonly handler: (args: z.infer<Schema>, ctx: ToolContext) => Result | Promise<Result>;
 }
 
-/** A type-erased tool, safe to store heterogeneously in the registry. */
+/** A type-erased tool, safe to store heterogeneously in the `appTools` catalog. */
 export type AnyAppTool = AppTool<z.ZodType, unknown>;
 
 /**
@@ -205,48 +204,3 @@ export function defineTool<Schema extends z.ZodType, Result>(
 ): AppTool<Schema, Result> {
   return tool;
 }
-
-/** The typed registry interface the tools-engineer populates. */
-export interface ToolRegistry {
-  /** Register a tool. Throws if a tool with the same name already exists. */
-  register<Schema extends z.ZodType, Result>(tool: AppTool<Schema, Result>): void;
-  /** Look a tool up by name. */
-  get(name: string): AnyAppTool | undefined;
-  /** Whether a tool with this name is registered. */
-  has(name: string): boolean;
-  /** All registered tools, in registration order. */
-  list(): readonly AnyAppTool[];
-}
-
-/** Create a fresh, empty registry (handy for tests or isolated agents). */
-export function createToolRegistry(): ToolRegistry {
-  const byName = new Map<string, AnyAppTool>();
-
-  return {
-    register<Schema extends z.ZodType, Result>(tool: AppTool<Schema, Result>): void {
-      if (byName.has(tool.name)) {
-        throw new Error(`Tool "${tool.name}" is already registered`);
-      }
-      // Erase the precise generic so heterogeneous tools share one map. Safe:
-      // callers validate `args` via `tool.parameters` before invoking `handler`.
-      byName.set(tool.name, tool as unknown as AnyAppTool);
-    },
-    get(name: string): AnyAppTool | undefined {
-      return byName.get(name);
-    },
-    has(name: string): boolean {
-      return byName.has(name);
-    },
-    list(): readonly AnyAppTool[] {
-      return [...byName.values()];
-    },
-  };
-}
-
-/**
- * The app-wide tool registry. It is populated with the §3.3 catalog as a side
- * effect of importing `./index` (the canonical entry point for consumers); see
- * that barrel for the registration. Importing this file alone yields the empty
- * framework only.
- */
-export const appToolRegistry: ToolRegistry = createToolRegistry();
