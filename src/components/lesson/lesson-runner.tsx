@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 
 import {
@@ -9,13 +9,21 @@ import {
   problemCount,
 } from "../../content/engine";
 import { getQuiz } from "../../content/quizzes";
-import type { AnswerValue, Lesson, Step } from "../../content/types";
+import type { AnswerValue, Lesson, LessonId, Step } from "../../content/types";
+import { aiEnabled } from "../../lib/ai/flag";
+import type { KojiReactions, RevealAllowed } from "../../lib/ai/tools";
+import {
+  useEngagement,
+  useToolContext,
+} from "../../lib/ai/tools/use-tool-context";
+import type { StepRecord } from "../../lib/learner";
 import { Button } from "../ui";
 import { renderMathText } from "../ui/math";
 import { FooterCtaBar } from "../chrome";
 import type { KojiHandle } from "./ask-koji";
 import { ExitLessonDialog } from "./exit-lesson-dialog";
 import { FeedbackToast } from "./feedback-toast";
+import { KojiPanel } from "./koji";
 import { LessonShell } from "./lesson-shell";
 import { QuizRunner } from "./quiz-runner";
 import { StepView, type StepPhase } from "./step-view";
@@ -178,6 +186,7 @@ export function LessonRunner({
           steps so Koji (inside the shell) keeps his Rive instance, entering
           once, not on every screen. StepScreen resets its own per-step state. */}
       <StepScreen
+        lessonId={lesson.id}
         step={step}
         progress={progress}
         energy={energy}
@@ -197,6 +206,8 @@ export function LessonRunner({
 }
 
 interface StepScreenProps {
+  /** The lesson this step belongs to (for grounding + `recordStep`). */
+  lessonId: LessonId;
   step: Step;
   progress: number;
   energy?: ReactNode;
@@ -218,6 +229,7 @@ interface StepScreenProps {
  * own per-step state when the step id changes.
  */
 function StepScreen({
+  lessonId,
   step,
   progress,
   energy,
@@ -227,6 +239,10 @@ function StepScreen({
   onExit,
   onAdvance,
 }: StepScreenProps) {
+  // Phase 2 Koji is entirely flag-gated: with AI off, none of the interactive
+  // surface below renders and the step behaves byte-for-byte like Phase 1.
+  const ai = aiEnabled();
+
   const [renderedStepId, setRenderedStepId] = useState(step.id);
   const [answer, setAnswer] = useState<AnswerValue | null>(
     step.kind === "problem" ? defaultAnswer(step.interaction) : null,
@@ -238,6 +254,16 @@ function StepScreen({
   // Latches once Koji's goodbye wave has fired on the final step, so it plays
   // exactly once (final lesson without a quiz only).
   const hasWavedRef = useRef(false);
+
+  // --- Koji (Phase 2) per-step state ---
+  const [kojiOpen, setKojiOpen] = useState(false);
+  // Bumped to auto-request a hint after the 2nd wrong attempt (offer, once).
+  const [autoHintToken, setAutoHintToken] = useState(0);
+  // Latches the one-time auto-offer so it fires once per step (state, not a ref,
+  // so it resets cleanly during the step-change render below).
+  const [autoOffered, setAutoOffered] = useState(false);
+  // The per-step "engaged Koji?" signal that (with a real attempt) unlocks reveal.
+  const engagement = useEngagement();
 
   // Reset per-step state when advancing to a new step. This replaces the
   // previous `key`-based remount (dropped so the shell, and Koji's persistent
@@ -253,7 +279,56 @@ function StepScreen({
     setAttempts(0);
     setHintsUsed(false);
     setMessage("");
+    // Reset Koji per step: close the panel, clear the auto-offer + engagement.
+    // All pure setState (the engagement signal is state-backed), so this runs
+    // safely as a render-phase adjustment alongside the resets above.
+    setKojiOpen(false);
+    setAutoHintToken(0);
+    setAutoOffered(false);
+    engagement.reset();
   }
+
+  // The learner's LIVE record for this step (from the player's own state, not the
+  // persisted snapshot) so the reveal effort-gate and grounding see the current
+  // attempt count, not a stale write that only lands on Continue.
+  const liveRecord = useMemo<StepRecord>(
+    () => ({
+      attempts,
+      correct: phase === "correct",
+      hintsUsed,
+      firstTryCorrect: phase === "correct" && attempts === 0,
+    }),
+    [attempts, phase, hintsUsed],
+  );
+
+  // A stable `KojiReactions` that always reads the latest mascot handle, so
+  // Koji's `celebrate` tool fires even though the ref is null on first render.
+  const kojiReactions = useMemo<KojiReactions>(
+    () => ({
+      success: () => kojiRef.current?.success(),
+      incorrect: () => kojiRef.current?.incorrect(),
+      correctAfterIncorrect: () => kojiRef.current?.correctAfterIncorrect(),
+      wave: (onDone?: () => void) => kojiRef.current?.wave(onDone),
+    }),
+    [kojiRef],
+  );
+
+  // The single live `ToolContext` every Koji tool runs against.
+  const toolContext = useToolContext({
+    lessonId,
+    step,
+    answer,
+    record: liveRecord,
+    koji: kojiReactions,
+    engagement: engagement.signal,
+  });
+
+  // Reveal effort-gate (§2.3): a genuine attempt AND Koji engagement. The
+  // `revealSolution` tool re-enforces this; this just drives the button state.
+  const revealReady =
+    step.kind === "problem" &&
+    attempts > 0 &&
+    (engagement.usedHint || engagement.talkedToKoji);
 
   function check() {
     if (step.kind !== "problem" || !answer) return;
@@ -268,7 +343,15 @@ function StepScreen({
       else kojiRef.current?.success();
     } else {
       setPhase("wrong");
-      setAttempts((n) => n + 1);
+      const nextAttempts = attempts + 1;
+      setAttempts(nextAttempts);
+      // Auto-offer Koji after ≥2 wrong attempts (PRD §4.1), once per step: open
+      // the panel and request a hint. AI-gated, so AI-off is unaffected.
+      if (ai && nextAttempts >= 2 && !autoOffered) {
+        setAutoOffered(true);
+        setKojiOpen(true);
+        setAutoHintToken((t) => t + 1);
+      }
       kojiRef.current?.incorrect();
     }
   }
@@ -279,12 +362,25 @@ function StepScreen({
     setMessage("");
   }
 
+  // AI-off only: the Phase 1 instant "See answer". With AI on this is replaced by
+  // the effort-gated Koji reveal (`applyReveal`), so this stays untouched.
   function seeAnswer() {
     if (step.kind !== "problem") return;
     setAnswer(correctAnswer(step.interaction));
     setHintsUsed(true);
     setPhase("revealed");
     setMessage(step.feedback.default);
+  }
+
+  // Apply an unlocked Koji reveal: fill the engine-computed answer and mark the
+  // step revealed (mirrors `seeAnswer`). The `revealSolution` tool has already
+  // recorded the step `assisted` via `recordStep`, so it never counts as mastery.
+  function applyReveal(result: RevealAllowed) {
+    if (step.kind !== "problem") return;
+    setAnswer(result.answer);
+    setHintsUsed(true);
+    setPhase("revealed");
+    setMessage(result.worked);
   }
 
   // Advancing no longer waits on Koji's goodbye wave; that wave fires on its own
@@ -319,7 +415,8 @@ function StepScreen({
     if (!koji) return;
     hasWavedRef.current = true;
     koji.wave();
-  }, [showsFinalContinue]);
+    // kojiRef is a stable ref; listed to satisfy exhaustive-deps without churn.
+  }, [showsFinalContinue, kojiRef]);
 
   const provided =
     step.kind === "problem" && answer
@@ -465,14 +562,28 @@ function StepScreen({
   } else if (phase === "wrong") {
     footer = (
       <FooterCtaBar sticky={false} constrain={false} divider={false}>
-        <Button
-          size="lg"
-          variant="secondary"
-          className={LESSON_SECONDARY_CTA_CLASS}
-          onPress={seeAnswer}
-        >
-          See answer
-        </Button>
+        {ai ? (
+          // AI on: the instant "See answer" is replaced by Koji, whose reveal is
+          // effort-gated (a real attempt + engagement) inside the panel.
+          <Button
+            size="lg"
+            variant="secondary"
+            className={LESSON_SECONDARY_CTA_CLASS}
+            onPress={() => setKojiOpen(true)}
+          >
+            Ask Koji
+          </Button>
+        ) : (
+          // AI off: the exact Phase 1 instant "See answer".
+          <Button
+            size="lg"
+            variant="secondary"
+            className={LESSON_SECONDARY_CTA_CLASS}
+            onPress={seeAnswer}
+          >
+            See answer
+          </Button>
+        )}
         <Button
           size="lg"
           variant="warning"
@@ -517,23 +628,42 @@ function StepScreen({
     ) : undefined;
 
   return (
-    <LessonShell
-      progress={progress}
-      onClose={onExit}
-      energy={energy}
-      correct={phase === "correct"}
-      toast={toast}
-      footer={footer}
-      kojiSwoop={kojiSwoop}
-      kojiRef={kojiRef}
-    >
-      <StepView
-        step={step}
-        answer={answer}
-        onAnswer={setAnswer}
-        phase={phase}
-        onSubmit={check}
-      />
-    </LessonShell>
+    <>
+      <LessonShell
+        progress={progress}
+        onClose={onExit}
+        energy={energy}
+        correct={phase === "correct"}
+        toast={toast}
+        footer={footer}
+        kojiSwoop={kojiSwoop}
+        kojiRef={kojiRef}
+        kojiInteractive={ai}
+        onAskKoji={ai ? () => setKojiOpen(true) : undefined}
+      >
+        <StepView
+          step={step}
+          answer={answer}
+          onAnswer={setAnswer}
+          phase={phase}
+          onSubmit={check}
+        />
+      </LessonShell>
+      {/* AI-only Koji surface (hints / explain / effort-gated reveal). Keyed by
+          step so its transcript resets per step. Never mounts with AI off. */}
+      {ai ? (
+        <KojiPanel
+          key={step.id}
+          open={kojiOpen}
+          onClose={() => setKojiOpen(false)}
+          ctx={toolContext}
+          step={step}
+          phase={phase}
+          revealReady={revealReady}
+          autoHintToken={autoHintToken}
+          onRevealed={applyReveal}
+        />
+      ) : null}
+    </>
   );
 }

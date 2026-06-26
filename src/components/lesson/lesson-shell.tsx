@@ -41,6 +41,13 @@ export interface LessonShellProps {
   kojiSwoop?: boolean;
   /** Receives Koji's reaction handle so the runner can react to grading. */
   kojiRef?: RefObject<KojiHandle | null>;
+  /**
+   * Light Koji up as a tappable "Ask Koji" entry point (Phase 2, AI on). Off by
+   * default, so with AI off the mascot stays the dormant Phase 1 decoration.
+   */
+  kojiInteractive?: boolean;
+  /** Tapped the "Ask Koji" affordance (only when `kojiInteractive`). */
+  onAskKoji?: () => void;
   className?: string;
 }
 
@@ -62,6 +69,8 @@ export function LessonShell({
   footer,
   kojiSwoop = false,
   kojiRef,
+  kojiInteractive = false,
+  onAskKoji,
   className,
 }: LessonShellProps) {
   // The callout adapts to its content: a compact bubble centered over Koji for
@@ -179,8 +188,14 @@ export function LessonShell({
             {footer}
           </div>
 
-          {/* Brilliant's in-lesson mascot, pinned bottom-left of the stage. */}
-          <AskKoji swoop={kojiSwoop} handleRef={kojiRef} />
+          {/* Brilliant's in-lesson mascot, pinned bottom-left of the stage.
+              Interactive (tappable "Ask Koji") only when AI is on. */}
+          <AskKoji
+            swoop={kojiSwoop}
+            handleRef={kojiRef}
+            interactive={kojiInteractive}
+            onAsk={onAskKoji}
+          />
 
           {/* Pop-up calculator, pinned bottom-right to mirror the mascot. */}
           <LessonCalculator />
