@@ -1,16 +1,94 @@
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import { SliderInput } from "../../components/interactions";
 import { Button } from "../../components/ui";
 import { RightTriangleFigure } from "../../components/visuals";
 import { LandingSection, scrollToId } from "../ui/section";
 
 const TRUST = ["Free to start", "No credit card", "Built for mobile"];
 
+/** Legs are constrained to whole numbers in a friendly range so the figure
+ *  always reads clearly and the squares stay countable. */
+const LEG_MIN = 2;
+const LEG_MAX = 8;
+
+/**
+ * The live hero diagram — the app's whole thesis ("learn by touching it") in the
+ * fold. It's not a picture of a lesson; it *is* one: the real lesson
+ * `RightTriangleFigure` driven by two design-system `SliderInput`s for the legs,
+ * with an a² + b² = c² readout that recomputes as you drag. Everything (the
+ * squares, their areas, the hypotenuse) is derived from `a`/`b` by the same
+ * component a learner uses, so it can never drift out of sync or be "wrong".
+ */
+function HeroPlayground() {
+  const [a, setA] = useState(4);
+  const [b, setB] = useState(3);
+
+  const sum = a * a + b * b;
+  const c = Math.sqrt(sum);
+  const cWhole = Number.isInteger(c);
+  const cText = cWhole ? String(c) : `√${sum} ≈ ${c.toFixed(2)}`;
+
+  return (
+    <div className="rounded-3xl border-2 border-border bg-[var(--surface)] p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] sm:p-8">
+      {/* Fixed-height stage so the card never jumps as the triangle reshapes. */}
+      <div className="flex h-60 items-center justify-center sm:h-64">
+        <RightTriangleFigure
+          a={a}
+          b={b}
+          showSquares
+          className="h-full w-full max-w-none"
+        />
+      </div>
+
+      {/* Live equation: the leg squares (accent) sum to c² (gold). */}
+      <p
+        aria-live="polite"
+        className="mt-4 text-center text-sm tabular-nums text-muted"
+      >
+        <span className="font-semibold text-[var(--accent)]">
+          {a}² + {b}²
+        </span>{" "}
+        ={" "}
+        <span className="font-semibold text-[var(--warning)]">{sum}</span>, so{" "}
+        <span className="font-semibold text-[var(--warning)]">c = {cText}</span>.
+      </p>
+
+      {/* The interactive part — drag a leg and watch everything respond. */}
+      <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
+        <p className="text-xs font-medium text-muted">
+          Drag a leg — the squares and c update live.
+        </p>
+        <SliderInput
+          compact
+          label="Base"
+          min={LEG_MIN}
+          max={LEG_MAX}
+          step={1}
+          value={a}
+          onChange={setA}
+        />
+        <SliderInput
+          compact
+          label="Height"
+          min={LEG_MIN}
+          max={LEG_MAX}
+          step={1}
+          value={b}
+          onChange={setB}
+        />
+      </div>
+    </div>
+  );
+}
+
 /**
  * Hero — the product-in-the-fold moment, in the app's real dark skin. Oversized
- * headline over a faint graph-paper field, paired with the app's actual
- * `RightTriangleFigure` (the color-coded 3-4-5 with counted unit cells) in a
- * real app card. Reuses the brand `Button`; nothing hand-rolled.
+ * headline over a faint graph-paper field, paired with a *live* triangle
+ * playground (the real `RightTriangleFigure` + `SliderInput`) so the very first
+ * thing a visitor can do is touch the math. Reuses the brand `Button`; nothing
+ * hand-rolled.
  */
 export function Hero() {
   const navigate = useNavigate();
@@ -76,22 +154,7 @@ export function Hero() {
         </div>
 
         <div className="relative">
-          <div className="rounded-3xl border-2 border-border bg-[var(--surface)] p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] sm:p-8">
-            <RightTriangleFigure
-              a={4}
-              b={3}
-              gridSquares
-              labels
-              showHypotenuseValue
-              className="max-w-[18rem]"
-            />
-
-            <p className="mt-5 text-center text-sm text-muted">
-              Count the squares:{" "}
-              <span className="font-semibold tabular-nums text-foreground">9 + 16 = 25</span>, so{" "}
-              <span className="font-semibold text-[var(--warning)]">c = 5</span>.
-            </p>
-          </div>
+          <HeroPlayground />
         </div>
       </div>
     </LandingSection>
