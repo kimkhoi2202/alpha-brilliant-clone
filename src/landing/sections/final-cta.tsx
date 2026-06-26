@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 
 import { Button } from "../../components/ui";
+import { Meteors } from "../../components/ui/meteors";
 import { LandingSection, SectionHeading, scrollToId } from "../ui/section";
 
 /**
@@ -16,16 +17,14 @@ export function FinalCTA() {
   return (
     <LandingSection id="start">
       <div className="relative isolate overflow-hidden rounded-3xl border-2 border-border bg-[var(--surface)] px-6 py-16 text-center shadow-[0_30px_90px_-50px_rgba(0,0,0,0.8)] sm:px-12 sm:py-20">
-        {/* Ambient brand wash, concentrated at the top edge so the headline keeps
-            full contrast on the near-plain surface below it. */}
+        {/* Decorative meteor shower, clipped to the card by the container's
+            `overflow-hidden`. Sits behind the content (-z-10). */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-20"
-          style={{
-            background:
-              "radial-gradient(62% 52% at 50% 0%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 70%)",
-          }}
-        />
+          className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        >
+          <Meteors number={20} />
+        </div>
 
         <div className="mx-auto flex max-w-2xl flex-col items-center">
           <SectionHeading
