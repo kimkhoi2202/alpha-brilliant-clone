@@ -5,9 +5,9 @@ import {
   type ChipIntent,
   Counter,
   ProgressBar,
-  StateBadge,
 } from "../../components/ui";
 import { StreakBolt } from "../../components/chrome";
+import { AnswerChoice } from "../../components/lesson";
 import { FeedbackToast } from "../../components/lesson/feedback-toast";
 import { RightTriangleFigure } from "../../components/visuals";
 import { cn } from "../../lib/cn";
@@ -142,13 +142,14 @@ export function HowItWorks() {
         <VisualCard intent="warning" tag="Lesson 3 · Find the hypotenuse">
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted">Your answer</span>
-            <span className="relative inline-flex">
-              <Chip intent="neutral" variant="solid" size="md" className="tabular-nums">
-                c = 7
-              </Chip>
-              <StateBadge state="incorrect" />
-              <span className="sr-only">Marked incorrect.</span>
-            </span>
+            <AnswerChoice
+              state="incorrect"
+              align="center"
+              disabled
+              className="w-fit tabular-nums"
+            >
+              c = 7<span className="sr-only"> — marked incorrect</span>
+            </AnswerChoice>
           </div>
           <FeedbackToast status="retryable" layout="roomy" className="mt-4">
             You added the legs: 3 + 4 = 7. Square each side first, then add: 3² + 4².
