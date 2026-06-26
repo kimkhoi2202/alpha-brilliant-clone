@@ -237,6 +237,26 @@ export class KojiVoiceSession {
     this.#interrupt();
   }
 
+  /**
+   * Inject a typed user turn into the *live* conversation. The SDK's
+   * `sendMessage` adds the message to the session history (so it lands in the
+   * same transcript as spoken turns via `history_updated`) and triggers Koji's
+   * spoken reply — so talking and typing share one thread. If Koji is mid-
+   * utterance we barge in first so the typed question takes the floor. No-ops
+   * unless the session is live (the hook connects first, then flushes).
+   */
+  sendText(text: string): void {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (this.#snapshot.phase !== "live") return;
+    if (this.#snapshot.speaking) this.#interrupt();
+    try {
+      this.#session.sendMessage(trimmed);
+    } catch {
+      // Transport not ready / already closing; the caller may retry.
+    }
+  }
+
   /** Tear down the session and free the mic. Idempotent. */
   close(): void {
     if (this.#closed) return;

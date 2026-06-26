@@ -67,6 +67,13 @@ export interface RealtimeVoiceApi {
   endSession: () => void;
   /** Retry after a failure. */
   retry: () => void;
+  /**
+   * Send a typed message into the same realtime conversation. Koji answers by
+   * voice and the typed turn appears in `transcript` alongside spoken turns. If
+   * the session isn't live yet it connects first (without forcing the mic open)
+   * and flushes the queued text once connected.
+   */
+  sendText: (text: string) => void;
 }
 
 export function useRealtimeVoice(
@@ -80,6 +87,8 @@ export function useRealtimeVoice(
 
   const sessionRef = useRef<KojiVoiceSession | null>(null);
   const markedRef = useRef(false);
+  // Typed messages sent before the session is live, flushed once connected.
+  const pendingTextRef = useRef<string[]>([]);
 
   // Latest callbacks/getters without rebuilding the session.
   const getContextRef = useRef(options.getContext);
@@ -101,24 +110,28 @@ export function useRealtimeVoice(
     sessionRef.current?.close();
     sessionRef.current = null;
     markedRef.current = false;
+    pendingTextRef.current = [];
     setSnapshot(INITIAL_SNAPSHOT);
   }, []);
 
-  const connect = useCallback(() => {
-    if (!aiOn || !supported) return;
-    // Fresh session per attempt (covers retry after an error too).
-    sessionRef.current?.close();
-    markedRef.current = false;
-    const ctx = getContextRef.current();
-    const session = new KojiVoiceSession({
-      getContext: () => getContextRef.current(),
-      grounding: ctx.step?.grounding() ?? null,
-      mode: handsFree ? "hands-free" : "tap",
-      onChange: setSnapshot,
-    });
-    sessionRef.current = session;
-    void session.connect(true);
-  }, [aiOn, supported, handsFree]);
+  const connect = useCallback(
+    (startListening = true) => {
+      if (!aiOn || !supported) return;
+      // Fresh session per attempt (covers retry after an error too).
+      sessionRef.current?.close();
+      markedRef.current = false;
+      const ctx = getContextRef.current();
+      const session = new KojiVoiceSession({
+        getContext: () => getContextRef.current(),
+        grounding: ctx.step?.grounding() ?? null,
+        mode: handsFree ? "hands-free" : "tap",
+        onChange: setSnapshot,
+      });
+      sessionRef.current = session;
+      void session.connect(startListening);
+    },
+    [aiOn, supported, handsFree],
+  );
 
   const toggleMic = useCallback(() => {
     if (snapshot.phase === "connecting") return;
@@ -154,6 +167,36 @@ export function useRealtimeVoice(
     connect();
   }, [connect]);
 
+  const sendText = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || !aiOn || !supported) return;
+      // Typing to Koji is engagement — unlock the reveal "talked to Koji" path.
+      getContextRef.current().engagement.markTalkedToKoji();
+      const session = sessionRef.current;
+      if (session && snapshot.phase === "live") {
+        session.sendText(trimmed);
+        return;
+      }
+      // Not connected yet: queue it and connect WITHOUT forcing the mic open
+      // (the learner is typing, not talking). The phase effect flushes on live.
+      pendingTextRef.current.push(trimmed);
+      if (snapshot.phase !== "connecting") connect(false);
+    },
+    [aiOn, supported, snapshot.phase, connect],
+  );
+
+  // Flush any text queued before the session connected, the moment it goes live.
+  useEffect(() => {
+    if (snapshot.phase !== "live") return;
+    if (pendingTextRef.current.length === 0) return;
+    const session = sessionRef.current;
+    if (!session) return;
+    const queued = pendingTextRef.current;
+    pendingTextRef.current = [];
+    for (const text of queued) session.sendText(text);
+  }, [snapshot.phase]);
+
   // Close the session (and free the mic) when the surface unmounts — e.g. the
   // Koji panel closes or the learner advances to the next step.
   useEffect(() => () => teardown(), [teardown]);
@@ -173,5 +216,6 @@ export function useRealtimeVoice(
     stopSpeaking,
     endSession,
     retry,
+    sendText,
   };
 }
