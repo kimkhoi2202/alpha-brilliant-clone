@@ -40,7 +40,7 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
   return (
     <span
       className={cn(
-        "text-xs font-bold uppercase tracking-[0.16em] text-[var(--accent)]",
+        "text-xs font-bold uppercase tracking-[0.16em] text-[var(--link)]",
         className,
       )}
     >
