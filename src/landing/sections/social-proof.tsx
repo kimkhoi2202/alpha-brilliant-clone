@@ -174,7 +174,6 @@ export function SocialProof() {
             {AUDIENCES.map((audience) => (
               <Tabs.Tab key={audience.id} id={audience.id}>
                 {audience.label}
-                <Tabs.Indicator />
               </Tabs.Tab>
             ))}
           </Tabs.List>
