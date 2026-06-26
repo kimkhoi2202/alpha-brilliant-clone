@@ -1,5 +1,5 @@
 import { RearrangementProof, RightTriangleFigure } from "../../components/visuals";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 /** Small play triangle, echoing the proof's own play control (a tinted accent
  *  chip in the card header, mirroring the hero card's lesson tag). */
@@ -41,18 +41,23 @@ export function InteractiveProof() {
         }}
       />
 
-      <div className="flex max-w-2xl flex-col items-start gap-5">
-        <Eyebrow>See it click</Eyebrow>
-        <h2 className="text-balance text-[clamp(2.25rem,5vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground">
-          Don&apos;t read the theorem. <span className="text-[var(--accent)]">Move it.</span>
-        </h2>
-        <p className="max-w-[36rem] text-pretty text-lg leading-relaxed text-muted">
-          Press play and the same four triangles slide inside the same square,
-          so the gold leftover can never change. First it reads as one c&#178;
-          square, then as a&#178; + b&#178;. You watch the theorem hold before
-          anyone writes it down.
-        </p>
-      </div>
+      <SectionHeading
+        eyebrow="See it click"
+        title={
+          <>
+            Don&apos;t read the theorem.{" "}
+            <span className="text-[var(--accent)]">Move it.</span>
+          </>
+        }
+        description={
+          <>
+            Press play and the same four triangles slide inside the same square,
+            so the gold leftover can never change. First it reads as one c&#178;
+            square, then as a&#178; + b&#178;. You watch the theorem hold before
+            anyone writes it down.
+          </>
+        }
+      />
 
       <div className="mt-12 grid items-stretch gap-6 lg:mt-16 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8">
         {/* Focal: the real interactive rearrangement proof. */}

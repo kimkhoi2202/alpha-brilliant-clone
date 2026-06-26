@@ -1,35 +1,27 @@
+import { KojiMascot } from "../../components/lesson/koji";
 import { Button, Callout, Chip } from "../../components/ui";
-import { RivePlayer } from "../../components/visuals";
-import { ASK_KOJI_RIV } from "../../lib/rive-runtime";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 /**
  * "Meet Koji" — the AI-tutor section, built inside the real app skin from the
- * app's own parts: the actual `< >` Koji (the in-lesson `RivePlayer`, same state
- * machine + view-model binding as `ask-koji.tsx`) beside a static snapshot of the
- * tutor thread, composed only from the real `Callout` / `Chip` / `Button`
- * components and mirroring `koji-panel.tsx`'s sheet layout (header → log → voice
- * → effort-gated reveal). Nothing here is hand-rolled chrome.
+ * app's own parts: the animated `KojiMascot` (the same `ask_koji.riv` state
+ * machine + view-model binding the lesson uses via `ask-koji.tsx`) beside a
+ * static snapshot of the tutor thread, composed only from the real `Callout` /
+ * `Chip` / `Button` components and mirroring `koji-panel.tsx`'s sheet layout
+ * (header → log → voice → effort-gated reveal). Nothing here is hand-rolled chrome.
  */
 export function KojiTutor() {
   return (
     <LandingSection id="koji" width="wide">
-      <header className="flex max-w-2xl flex-col items-start gap-5">
-        <Eyebrow>Meet Koji</Eyebrow>
-
-        <h2 className="text-balance text-[clamp(1.9rem,4vw,2.75rem)] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
-          Your tutor, <span className="text-[var(--accent)]">right in the lesson</span>.
-        </h2>
-
-        <p className="max-w-[40rem] text-pretty text-lg leading-relaxed text-muted">
-          Koji is the friendly{" "}
-          <span className="font-mono font-semibold text-foreground">{"< >"}</span> in the
-          corner of every lesson. Ask for a hint and you get a nudge toward your next move,
-          never the answer. Ask why something was wrong and Koji names the exact slip, like
-          adding the legs instead of squaring them. The worked solution unlocks only after a
-          real attempt, and you can work it all by text or by voice.
-        </p>
-      </header>
+      <SectionHeading
+        eyebrow="Meet Koji"
+        title={
+          <>
+            Your tutor, <span className="text-[var(--accent)]">right in the lesson</span>.
+          </>
+        }
+        description="Koji is the friendly tutor in the corner of every lesson. Ask for a hint and you get a nudge toward your next move, never the answer. Ask why something was wrong and Koji names the exact slip, like adding the legs instead of squaring them. The worked solution unlocks only after a real attempt, and you can work it all by text or by voice."
+      />
 
       <div className="mt-12 grid items-center gap-10 sm:mt-16 lg:grid-cols-2 lg:gap-16">
         <KojiStage />
@@ -40,9 +32,9 @@ export function KojiTutor() {
 }
 
 /**
- * The real Koji character on a soft accent stage. The canvas carries no meaning
- * on its own (it's the same dormant mascot the lesson renders), so the visual is
- * `aria-hidden` and the honest "optional" line below it does the talking.
+ * The real Koji character on a soft accent stage. The mascot is decorative — the
+ * same animated character the lesson renders, just dropped in place — so the
+ * visual is `aria-hidden` and the honest "optional" line below it does the talking.
  */
 function KojiStage() {
   return (
@@ -55,13 +47,7 @@ function KojiStage() {
               "radial-gradient(closest-side, color-mix(in oklab, var(--accent) 24%, transparent), transparent 78%)",
           }}
         />
-        <RivePlayer
-          src={ASK_KOJI_RIV}
-          stateMachines="AskKoji"
-          autoBind
-          viewModelBooleans={{ bracketsOn: true }}
-          className="size-48"
-        />
+        <KojiMascot className="size-48" />
       </div>
 
       <p className="max-w-sm text-pretty text-center text-sm leading-relaxed text-muted lg:text-left">
@@ -74,9 +60,9 @@ function KojiStage() {
 
 /**
  * A static snapshot of the in-lesson tutor thread, composed only from real UI
- * primitives and mirroring `koji-panel.tsx`: the `< >` header, a grounded hint
- * (real `Callout`) labelled by the layered-hint `Chip`s, the voice channel, and
- * the effort-gated reveal `Button` with the panel's own locked helper copy.
+ * primitives and mirroring `koji-panel.tsx`: the Koji identity header, a grounded
+ * hint (real `Callout`) labelled by the layered-hint `Chip`s, the voice channel,
+ * and the effort-gated reveal `Button` with the panel's own locked helper copy.
  */
 function KojiThread() {
   return (
@@ -84,12 +70,7 @@ function KojiThread() {
       <div className="overflow-hidden rounded-3xl border border-border bg-[var(--surface)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)]">
         {/* Header — mirrors the panel's Koji identity row. */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <span
-            aria-hidden
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-mono text-sm font-bold text-accent-soft-foreground"
-          >
-            {"< >"}
-          </span>
+          <KojiMascot className="size-9 shrink-0" loop={false} />
           <div className="min-w-0">
             <p className="text-sm font-semibold leading-tight text-foreground">Koji</p>
             <p className="truncate text-xs text-muted">Your study buddy</p>

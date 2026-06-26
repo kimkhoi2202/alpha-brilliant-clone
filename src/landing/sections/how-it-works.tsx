@@ -1,16 +1,17 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
-  Callout,
   Chip,
   type ChipIntent,
   Counter,
   ProgressBar,
   StateBadge,
 } from "../../components/ui";
+import { StreakBolt } from "../../components/chrome";
+import { FeedbackToast } from "../../components/lesson/feedback-toast";
 import { RightTriangleFigure } from "../../components/visuals";
 import { cn } from "../../lib/cn";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 /**
  * How it works — the manipulate-then-answer loop in three honest steps, shown
@@ -18,9 +19,9 @@ import { Eyebrow, LandingSection } from "../ui/section";
  * colour-coded by the job that colour already does in the product (accent-blue =
  * play, gold = a hint on a miss, green = forward progress), and pairs its copy
  * with the actual component a learner meets in that moment: the lesson
- * `RightTriangleFigure`, a graded answer with the real `Callout` hint, and the
- * chapter `ProgressBar` + streak `Counter`. Alternating rows keep the three
- * distinct and stack to a single column on mobile.
+ * `RightTriangleFigure`, a graded answer with the real `FeedbackToast` hint, and
+ * the chapter `ProgressBar` + streak `Counter`/`StreakBolt`. Alternating rows
+ * keep the three distinct and stack to a single column on mobile.
  */
 type StepIntent = Extract<ChipIntent, "accent" | "warning" | "success">;
 
@@ -29,21 +30,6 @@ const INTENT_VAR: Record<StepIntent, string> = {
   warning: "var(--warning)",
   success: "var(--success)",
 };
-
-/** Lucide-style flame, drawn in the app's streak amber (matches the nav pill). */
-function FlameIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
-        stroke="var(--streak-flame)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 /** The real app card frame (rounded-2xl, 2px hairline) with a small context tag. */
 function VisualCard({
@@ -95,7 +81,7 @@ function ChapterProgressVisual() {
         <span className="text-sm text-muted">Chapter progress</span>
         <Counter
           value="5"
-          icon={<FlameIcon />}
+          icon={<StreakBolt completed className="streak-bolt-pulse h-4 w-3" />}
           className="px-3 py-1 text-base"
           aria-label="Five day streak"
         />
@@ -164,9 +150,9 @@ export function HowItWorks() {
               <span className="sr-only">Marked incorrect.</span>
             </span>
           </div>
-          <Callout intent="warning" title="Not quite" className="mt-4">
+          <FeedbackToast status="retryable" layout="roomy" className="mt-4">
             You added the legs: 3 + 4 = 7. Square each side first, then add: 3² + 4².
-          </Callout>
+          </FeedbackToast>
         </VisualCard>
       ),
     },
@@ -188,16 +174,11 @@ export function HowItWorks() {
 
   return (
     <LandingSection id="how-it-works">
-      <header className="max-w-2xl">
-        <Eyebrow>How it works</Eyebrow>
-        <h2 className="mt-3 text-balance text-[clamp(2rem,4.5vw,3.25rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-foreground">
-          You do the math, then we name it.
-        </h2>
-        <p className="mt-4 max-w-[42rem] text-lg leading-relaxed text-muted">
-          The same loop runs through every lesson: act first, get a straight
-          answer, and watch it add up.
-        </p>
-      </header>
+      <SectionHeading
+        eyebrow="How it works"
+        title="You do the math, then we name it."
+        description="The same loop runs through every lesson: act first, get a straight answer, and watch it add up."
+      />
 
       <ol className="mt-14 space-y-12 sm:mt-16 sm:space-y-16 lg:space-y-24">
         {steps.map((step, i) => {
@@ -228,10 +209,6 @@ export function HowItWorks() {
           );
         })}
       </ol>
-
-      <p className="mt-12 text-sm text-muted sm:mt-16">
-        Then the next idea starts the loop again.
-      </p>
     </LandingSection>
   );
 }

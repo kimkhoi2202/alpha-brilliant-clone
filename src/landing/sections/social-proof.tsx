@@ -1,16 +1,16 @@
 import type { CSSProperties } from "react";
 import { Tabs } from "@heroui/react";
 
-import { Avatar, Chip, Counter, Divider } from "../../components/ui";
+import { Avatar, Chip, Divider } from "../../components/ui";
 import { cn } from "../../lib/cn";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 /**
  * Social proof — credibility staged for the student and the people who buy for
  * them, in the app's real dark skin. Audience-segmented quotes ride on the real
  * HeroUI `Tabs` (segmented control), each quote uses the app's real `Avatar`
- * (initials) + `Chip` (@handle), and the section anchors on real `Counter`
- * outcome stats.
+ * (initials) + `Chip` (@handle), and the section anchors on large, plain
+ * outcome stat typography.
  *
  * Honesty: every quote and number here is an explicit, illustrative PLACEHOLDER.
  * Attributions are role labels with `@placeholder` handles (no fabricated people,
@@ -35,7 +35,7 @@ interface Audience {
 }
 
 interface Stat {
-  /** Bracketed placeholder value, rendered in the real Counter pill. */
+  /** Bracketed placeholder value, rendered as large stat typography. */
   value: string;
   label: string;
 }
@@ -127,19 +127,6 @@ const SUPPORTING_STATS: readonly Stat[] = [
  *  collapses to nothing under reduced motion (and is never scroll-gated). */
 const RISE = "animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out motion-reduce:animate-none";
 
-function QuoteMark() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-8 w-8 text-[var(--accent)] opacity-40"
-    >
-      <path d="M10 7C7.24 7 5 9.24 5 12v5h6v-6H8c0-1.66 .9-2 2-2V7zm9 0c-2.76 0-5 2.24-5 5v5h6v-6h-3c0-1.66 .9-2 2-2V7z" />
-    </svg>
-  );
-}
-
 function QuoteCard({
   quote,
   className,
@@ -161,8 +148,6 @@ function QuoteCard({
         className,
       )}
     >
-      {featured ? <QuoteMark /> : null}
-
       <blockquote
         className={cn(
           "text-pretty text-foreground",
@@ -171,7 +156,7 @@ function QuoteCard({
             : "text-base leading-relaxed",
         )}
       >
-        {featured ? quote.body : `\u201C${quote.body}\u201D`}
+        {`\u201C${quote.body}\u201D`}
       </blockquote>
 
       <figcaption className="mt-auto flex items-center gap-3">
@@ -191,45 +176,40 @@ function QuoteCard({
 export function SocialProof() {
   return (
     <LandingSection id="reviews" width="wide">
-      <div className="mx-auto max-w-2xl text-center">
-        <Eyebrow>What learners say</Eyebrow>
+      <SectionHeading
+        eyebrow="What learners say"
+        title={
+          <>
+            Built for students.{" "}
+            <span className="text-[var(--accent)]">Trusted</span> by the people
+            who care about them.
+          </>
+        }
+        description="Illustrative placeholders for now. Every quote and number here is replaced with a real, verified one before launch."
+      />
 
-        <h2 className="mt-4 text-balance text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-[1.08] tracking-[-0.02em] text-foreground">
-          Built for students.{" "}
-          <span className="text-[var(--accent)]">Trusted</span> by the people who
-          care about them.
-        </h2>
-
-        <p className="mx-auto mt-4 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg">
-          Illustrative placeholders for now. Every quote and number here is
-          replaced with a real, verified one before launch.
-        </p>
-      </div>
-
-      <Tabs defaultSelectedKey="students" className="mt-10 items-center gap-0 sm:mt-12">
-        <Tabs.List
-          aria-label="Reviews by audience"
-          className="mx-auto w-full max-w-md border-2 border-border bg-[var(--surface)] p-1"
-        >
-          {AUDIENCES.map((audience) => (
-            <Tabs.Tab
-              key={audience.id}
-              id={audience.id}
-              className="h-11 text-sm font-semibold"
-            >
-              {audience.label}
-              <Tabs.Indicator className="bg-[var(--surface-tertiary)] shadow-[0_1px_2px_rgba(0,0,0,0.45)]" />
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
+      <Tabs defaultSelectedKey="students" className="mt-10 sm:mt-12">
+        <Tabs.ListContainer>
+          <Tabs.List
+            aria-label="Reviews by audience"
+            className="mx-auto w-full max-w-md"
+          >
+            {AUDIENCES.map((audience) => (
+              <Tabs.Tab key={audience.id} id={audience.id}>
+                {audience.label}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        </Tabs.ListContainer>
 
         {AUDIENCES.map((audience) => {
           const featured = audience.quotes.find((quote) => quote.featured);
           const supporting = audience.quotes.filter((quote) => !quote.featured);
 
           return (
-            <Tabs.Panel key={audience.id} id={audience.id} className="mt-8 w-full p-0">
-              <div className="mx-auto grid max-w-4xl gap-4 sm:gap-5">
+            <Tabs.Panel key={audience.id} id={audience.id} className="w-full p-0">
+              <div className="mx-auto grid max-w-4xl gap-4 pt-4 sm:gap-5">
                 {featured ? <QuoteCard quote={featured} className={RISE} /> : null}
 
                 <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
@@ -256,8 +236,10 @@ export function SocialProof() {
           </Chip>
         </div>
 
-        <div className="mt-6 flex flex-col items-center gap-3 text-center">
-          <Counter value={ANCHOR_STAT.value} className="px-6 py-3 text-3xl" />
+        <div className="mt-6 flex flex-col items-center gap-2 text-center">
+          <span className="text-5xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-6xl">
+            {ANCHOR_STAT.value}
+          </span>
           <p className="max-w-xs text-pretty text-sm text-muted">{ANCHOR_STAT.label}</p>
         </div>
 
@@ -266,7 +248,9 @@ export function SocialProof() {
         <div className="grid gap-7 sm:grid-cols-2 sm:gap-8">
           {SUPPORTING_STATS.map((stat) => (
             <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
-              <Counter value={stat.value} className="text-2xl" />
+              <span className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground">
+                {stat.value}
+              </span>
               <p className="max-w-[16rem] text-pretty text-sm text-muted">{stat.label}</p>
             </div>
           ))}

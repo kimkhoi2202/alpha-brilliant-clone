@@ -8,7 +8,7 @@ import {
   type LessonNodeState,
 } from "../../components/course";
 import { course, getLesson } from "../../content";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 /**
  * Marketing-only progression for the path preview, keyed by the real lesson ids
@@ -63,20 +63,14 @@ export function CoursePath() {
 
   return (
     <LandingSection id="course">
-      <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+      <SectionHeading
+        eyebrow="The chapter"
+        title="One chapter, understood all the way down."
+        description="Five short lessons and a review take you from naming a hypotenuse to measuring distance on a grid. You work one step at a time and master it before moving on, so every new idea rests on the one before it."
+      />
+
+      <div className="mt-12 grid items-center gap-12 lg:mt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
         <div className="flex flex-col items-start gap-6">
-          <Eyebrow>The chapter</Eyebrow>
-
-          <h2 className="text-balance text-[clamp(1.9rem,4vw,2.75rem)] font-extrabold leading-[1.07] tracking-[-0.02em] text-foreground">
-            One chapter, understood all the way down.
-          </h2>
-
-          <p className="max-w-[34rem] text-lg leading-relaxed text-muted">
-            Five short lessons and a review take you from naming a hypotenuse to
-            measuring distance on a grid. You work one step at a time and master
-            it before moving on, so every new idea rests on the one before it.
-          </p>
-
           <div className="mt-1 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
             <LessonProgressMedallion
               current={masteredCount}

@@ -1,6 +1,7 @@
+import { Accordion } from "@heroui/react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { Button, Disclosure } from "../../components/ui";
+import { Button } from "../../components/ui";
 import { Eyebrow, LandingSection } from "../ui/section";
 
 interface FaqItem {
@@ -74,21 +75,21 @@ const FAQ_ITEMS: readonly FaqItem[] = [
 ];
 
 /**
- * Per-row chrome for the real `Disclosure`: a full hairline divider between
- * rows and a clear keyboard focus ring on the trigger button. The component
- * itself is untouched; we only pass `className` (an inset ring avoids any
- * layout shift, and the descendant selector targets its own button).
+ * The most reassuring answer (you do not need the AI) opens by default. Derived
+ * from the data so the copy stays the single source of truth; keys are the item
+ * indices, matching the `id` set on each `Accordion.Item`.
  */
-const ROW_CLASS =
-  "border-b border-border [&>button]:rounded-md [&>button]:focus-visible:outline-none [&>button]:focus-visible:ring-2 [&>button]:focus-visible:ring-inset [&>button]:focus-visible:ring-[var(--accent)]";
+const DEFAULT_EXPANDED_KEYS: string[] = FAQ_ITEMS.flatMap((item, index) =>
+  item.defaultOpen ? [String(index)] : [],
+);
 
 /**
  * FAQ: the anxiety-lowering close before the footer, in the app's real dark
- * skin. A calm heading rail (sticky on desktop) sits beside one divided column
- * of the app's actual `Disclosure` accordions, one per question. The measure is
- * held near 70ch, spacing is generous, and the most reassuring answer (you do
- * not need the AI) is open by default. Composed from real components; no
- * hand-rolled accordion.
+ * skin. A calm heading rail (sticky on desktop) sits beside the HeroUI
+ * `Accordion` (surface variant), one collapsible row per question. The measure
+ * is held near 68ch, spacing is generous, and the most reassuring answer (you
+ * do not need the AI) is open by default. Single-expand keeps the list calm;
+ * composed from real components, no hand-rolled accordion.
  */
 export function FAQ() {
   const navigate = useNavigate();
@@ -101,7 +102,7 @@ export function FAQ() {
 
           <h2
             id="faq-heading"
-            className="text-balance text-[clamp(1.875rem,4vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.02em] text-foreground"
+            className="text-balance text-[clamp(1.875rem,4vw,2.5rem)] font-extrabold leading-[1.1] tracking-[-0.02em] text-foreground"
           >
             There are no silly questions.
           </h2>
@@ -120,24 +121,27 @@ export function FAQ() {
           </div>
         </div>
 
-        <div className="border-t border-border">
-          {FAQ_ITEMS.map((item) => (
-            <Disclosure
-              key={item.question}
-              defaultOpen={item.defaultOpen}
-              className={ROW_CLASS}
-              title={
-                <span className="block py-2 text-base font-semibold leading-snug text-foreground sm:text-[1.0625rem]">
+        <Accordion
+          variant="surface"
+          defaultExpandedKeys={DEFAULT_EXPANDED_KEYS}
+          className="w-full"
+        >
+          {FAQ_ITEMS.map((item, index) => (
+            <Accordion.Item key={item.question} id={String(index)}>
+              <Accordion.Heading>
+                <Accordion.Trigger className="text-left text-base font-semibold leading-snug text-foreground sm:text-[1.0625rem]">
                   {item.question}
-                </span>
-              }
-            >
-              <p className="max-w-[64ch] pb-5 pl-6 text-[0.9375rem] leading-relaxed text-pretty text-muted sm:text-base">
-                {item.answer}
-              </p>
-            </Disclosure>
+                  <Accordion.Indicator />
+                </Accordion.Trigger>
+              </Accordion.Heading>
+              <Accordion.Panel>
+                <Accordion.Body className="max-w-[68ch] text-pretty text-[0.9375rem] leading-relaxed text-muted sm:text-base">
+                  {item.answer}
+                </Accordion.Body>
+              </Accordion.Panel>
+            </Accordion.Item>
           ))}
-        </div>
+        </Accordion>
       </div>
     </LandingSection>
   );

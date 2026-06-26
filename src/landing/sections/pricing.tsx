@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Switch } from "@heroui/react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { PaywallComparison, TrialTimeline } from "../../components/premium";
 import type { PaywallRow, TrialNode } from "../../components/premium";
 import { Button, Chip } from "../../components/ui";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 const FREE_BENEFITS: string[] = [
   "The full Pythagorean chapter: five lessons plus Level Review",
@@ -40,6 +41,9 @@ const TRIAL_NODES: TrialNode[] = [
 
 const TRUST: string[] = ["No credit card", "Cancel anytime", "Works with AI off"];
 
+/** Real Premium pricing: $29.99/mo, or $19.99/mo when billed yearly (save 33%). */
+const PREMIUM_PRICE = { monthly: "$29.99", yearly: "$19.99" } as const;
+
 /**
  * Pricing, in the app's real dark skin. Composes the product's actual premium
  * components verbatim (`PaywallComparison`, `TrialTimeline`) inside two
@@ -53,20 +57,20 @@ export function Pricing() {
   const navigate = useNavigate();
   const goAuth = () => void navigate({ to: "/auth" });
 
+  const [yearly, setYearly] = useState(false);
+  const premiumPrice = yearly ? PREMIUM_PRICE.yearly : PREMIUM_PRICE.monthly;
+
   return (
     <LandingSection id="pricing">
-      <header className="mx-auto max-w-2xl text-center">
-        <Eyebrow>Pricing</Eyebrow>
-        <h2 className="mt-3 text-balance text-[clamp(1.9rem,4vw,2.75rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-foreground">
-          Start free. Add Koji when you want a tutor.
-        </h2>
-        <p className="mt-4 text-pretty text-lg leading-relaxed text-muted">
-          The full course is free, forever. Premium adds your AI tutor and
-          unlimited practice.
-        </p>
-      </header>
+      <SectionHeading
+        eyebrow="Pricing"
+        title="Start free. Add Koji when you want a tutor."
+        description="The full course is free, forever. Premium adds your AI tutor and unlimited practice."
+      />
 
-      <div className="mt-12 grid items-stretch gap-6 md:grid-cols-2">
+      <BillingToggle yearly={yearly} onYearlyChange={setYearly} />
+
+      <div className="mt-10 grid items-stretch gap-6 md:grid-cols-2">
         {/* Free: flat hairline surface, secondary CTA. */}
         <article
           aria-labelledby="plan-free"
@@ -137,15 +141,17 @@ export function Pricing() {
 
             <div className="mt-5 flex items-baseline gap-1.5">
               <span
-                aria-label="Price to be announced"
+                aria-label={`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
                 className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl"
               >
-                $X
+                {premiumPrice}
               </span>
               <span className="text-sm font-medium text-muted">/ month</span>
             </div>
             <p className="mt-1.5 text-xs text-muted">
-              After the 7-day trial. Placeholder, final pricing to be confirmed.
+              {yearly
+                ? "$239.88 billed yearly. After the 7-day trial."
+                : "After the 7-day trial."}
             </p>
 
             <ul className="mt-6 flex flex-col gap-3">
@@ -235,6 +241,56 @@ export function Pricing() {
         </p>
       </div>
     </LandingSection>
+  );
+}
+
+/**
+ * Billing-period selector on the app's real HeroUI `Switch` (controlled).
+ * "Monthly"/"Yearly" labels flank the switch and the active period is
+ * emphasized; a success Chip advertises the annual saving. Off = monthly,
+ * on = yearly. Drives the Premium price shown in the card above.
+ */
+function BillingToggle({
+  yearly,
+  onYearlyChange,
+}: {
+  yearly: boolean;
+  onYearlyChange: (yearly: boolean) => void;
+}) {
+  return (
+    <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
+      <span
+        className={`text-sm font-semibold transition-colors ${
+          yearly ? "text-muted" : "text-foreground"
+        }`}
+      >
+        Monthly
+      </span>
+
+      <Switch
+        aria-label="Bill yearly instead of monthly"
+        isSelected={yearly}
+        onChange={onYearlyChange}
+      >
+        <Switch.Content>
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+        </Switch.Content>
+      </Switch>
+
+      <span
+        className={`text-sm font-semibold transition-colors ${
+          yearly ? "text-foreground" : "text-muted"
+        }`}
+      >
+        Yearly
+      </span>
+
+      <Chip intent="success" variant="soft" size="sm">
+        Save 33%
+      </Chip>
+    </div>
   );
 }
 

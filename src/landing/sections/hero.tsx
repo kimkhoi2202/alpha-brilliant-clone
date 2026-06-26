@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { Button } from "../../components/ui";
 import { RightTriangleFigure } from "../../components/visuals";
-import { Eyebrow, LandingSection, scrollToId } from "../ui/section";
+import { LandingSection, scrollToId } from "../ui/section";
 
 const TRUST = ["Free to start", "No credit card", "Built for mobile"];
 
@@ -31,8 +31,6 @@ export function Hero() {
 
       <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
         <div className="flex flex-col items-start gap-6">
-          <Eyebrow>Learn-by-doing geometry</Eyebrow>
-
           <h1 className="text-balance text-[clamp(2.5rem,6vw,4.5rem)] font-extrabold leading-[1.03] tracking-[-0.03em] text-foreground">
             Learn the Pythagorean theorem by{" "}
             <span className="text-[var(--accent)]">touching it</span>.

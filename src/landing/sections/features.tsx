@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-
 import { StreakCard, type StreakDay } from "../../components/gamification";
-import { Callout, Chip, StateBadge } from "../../components/ui";
-import { RightTriangleFigure, RivePlayer } from "../../components/visuals";
+import { FeedbackToast } from "../../components/lesson/feedback-toast";
+import { KojiMascot } from "../../components/lesson/koji";
+import { Chip, StateBadge } from "../../components/ui";
+import { RightTriangleFigure } from "../../components/visuals";
 import { cn } from "../../lib/cn";
-import { ASK_KOJI_RIV } from "../../lib/rive-runtime";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
 
 // Demo streak for the real StreakCard: Mon to Thu done, Friday in progress,
 // the weekend still ahead.
@@ -22,19 +21,6 @@ const STREAK_DAYS: StreakDay[] = [
 // The four hands-on interaction verbs from the real lessons.
 const INTERACTIONS = ["Drag", "Count", "Plot", "Rearrange"] as const;
 
-/** Track the OS "reduce motion" setting so the one JS-driven animation can rest. */
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-  return reduced;
-}
-
 const tileBase = "flex flex-col rounded-2xl border-2 p-6 sm:p-7";
 const neutralTile =
   "border-border bg-background transition-colors hover:border-[var(--border-hover)]";
@@ -43,35 +29,26 @@ const tileHeading =
 
 /**
  * Features bento, in the app's real dark skin. An asymmetric grid where every
- * tile embeds a genuine product moment: the instant-feedback Callout +
- * StateBadge, the lesson RightTriangleFigure, the Koji mascot (Rive), and the
+ * tile embeds a genuine product moment: the instant-feedback FeedbackToast +
+ * StateBadge, the lesson RightTriangleFigure, the animated KojiMascot, and the
  * real StreakCard. The Koji cell is the single focal accent tile. Nothing here
  * is a hand-rolled stand-in for a product component.
  */
 export function Features() {
-  const reduced = usePrefersReducedMotion();
-
   return (
     <LandingSection id="features" width="wide">
-      <div className="flex flex-col gap-4">
-        <Eyebrow>What you get</Eyebrow>
-        <h2
-          id="features-heading"
-          className="text-balance text-[clamp(2rem,4vw,3rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground"
-        >
-          Everything you need to actually get it.
-        </h2>
-        <p className="max-w-2xl text-pretty text-base leading-relaxed text-muted sm:text-lg">
-          Hands-on problems, instant feedback, a tutor who nudges, and streaks
-          that bring you back.
-        </p>
-      </div>
+      <SectionHeading
+        eyebrow="What you get"
+        title="Everything you need to actually get it."
+        description="Hands-on problems, instant feedback, a tutor who nudges, and streaks that bring you back."
+        id="features-heading"
+      />
 
       <ul
         role="list"
         className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-5"
       >
-        {/* Instant feedback: the real Callout + StateBadge on a graded answer. */}
+        {/* Instant feedback: the real FeedbackToast + StateBadge on a graded answer. */}
         <li
           className={cn(
             tileBase,
@@ -96,14 +73,14 @@ export function Features() {
               </span>
               <StateBadge state="incorrect" />
             </div>
-            <Callout intent="warning" title="Not quite">
+            <FeedbackToast status="retryable">
               You added the legs (3 + 4). Square each one first: 3&#178; + 4&#178;,
               then add.
-            </Callout>
+            </FeedbackToast>
           </div>
         </li>
 
-        {/* Koji, the AI tutor: the focal accent cell, with the real Rive mascot. */}
+        {/* Koji, the AI tutor: the focal accent cell, with the real animated KojiMascot. */}
         <li
           className={cn(
             tileBase,
@@ -121,14 +98,7 @@ export function Features() {
               aria-label="Koji, the AI tutor, idling in a lesson"
               className="relative"
             >
-              <RivePlayer
-                src={ASK_KOJI_RIV}
-                stateMachines="AskKoji"
-                autoBind
-                viewModelBooleans={{ bracketsOn: true }}
-                autoplay={!reduced}
-                className="size-32"
-              />
+              <KojiMascot className="size-32" />
             </div>
           </div>
           <h3 className={cn(tileHeading, "mt-3")}>

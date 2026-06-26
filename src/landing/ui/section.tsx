@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
 
 import { cn } from "../../lib/cn";
 
@@ -46,6 +46,56 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
     >
       {children}
     </span>
+  );
+}
+
+export interface SectionHeadingProps {
+  /** Optional uppercase kicker rendered above the title (reuses `Eyebrow`). */
+  eyebrow?: ReactNode;
+  /** The heading content. */
+  title: ReactNode;
+  /** Optional supporting copy rendered below the title. */
+  description?: ReactNode;
+  /** Element the title renders as. Defaults to `h2`. */
+  as?: ElementType;
+  /** Applied to the title element, e.g. as an `aria-labelledby` target. */
+  id?: string;
+  /** Extra classes for the outer wrapper. */
+  className?: string;
+}
+
+/**
+ * Centered section heading: an optional `Eyebrow`, the title in the shared
+ * display scale, and optional muted supporting copy capped to a readable width.
+ * A drop-in replacement for hand-written heading blocks so every section lines
+ * up identically.
+ */
+export function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  as: TitleTag = "h2",
+  id,
+  className,
+}: SectionHeadingProps) {
+  return (
+    <div className={cn("flex flex-col items-center text-center", className)}>
+      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+      <TitleTag
+        id={id}
+        className={cn(
+          "text-balance text-[clamp(2rem,4vw,3rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground",
+          eyebrow && "mt-3",
+        )}
+      >
+        {title}
+      </TitleTag>
+      {description ? (
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
+          {description}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ConfettiBurst } from "../../components/celebration/confetti-burst";
 import { Button } from "../../components/ui";
 import { CtaConfettiStatic } from "../graphics/cta-confetti-static";
-import { LandingSection, scrollToId } from "../ui/section";
+import { LandingSection, SectionHeading, scrollToId } from "../ui/section";
 
 /** Respect the OS "reduce motion" setting; updates live if the user toggles it. */
 function usePrefersReducedMotion(): boolean {
@@ -105,13 +105,15 @@ export function FinalCTA() {
         ) : null}
 
         <div className="mx-auto flex max-w-2xl flex-col items-center">
-          <h2 className="text-balance text-[clamp(2.25rem,5vw,3.75rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-foreground">
-            Ready to make it <span className="text-[var(--accent)]">click</span>?
-          </h2>
-
-          <p className="mt-5 max-w-xl text-pretty text-lg leading-relaxed text-muted sm:text-xl">
-            Start with one triangle. The rest of the theorem follows.
-          </p>
+          <SectionHeading
+            title={
+              <>
+                Ready to make it{" "}
+                <span className="text-[var(--accent)]">click</span>?
+              </>
+            }
+            description="Start with one triangle. The rest of the theorem follows."
+          />
 
           <div className="mt-9 flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:justify-center">
             <Button
