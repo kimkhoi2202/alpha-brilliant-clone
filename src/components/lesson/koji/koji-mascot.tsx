@@ -18,6 +18,17 @@ export interface KojiMascotProps {
    * Defaults to `true`. Forced off when the user prefers reduced motion.
    */
   loop?: boolean;
+  /**
+   * The expressive reactions cycled on the alive loop. Defaults to a mixed set
+   * (successes + waves). Pass a focused set — e.g. just waves — to theme it.
+   * Pass a stable (module-level) array to avoid re-creating the loop.
+   */
+  reactions?: readonly string[];
+  /**
+   * Fixed interval (ms) between looped reactions. Defaults to a gentle,
+   * slightly randomized ~4–6s cadence.
+   */
+  loopIntervalMs?: number;
 }
 
 /**
@@ -69,6 +80,8 @@ export function KojiMascot({
   size = "size-40",
   className,
   loop = true,
+  reactions = LOOP_REACTIONS,
+  loopIntervalMs,
 }: KojiMascotProps) {
   const riveRef = useRef<Rive | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -84,9 +97,11 @@ export function KojiMascot({
 
   const startLoop = useCallback(() => {
     if (!loop || reducedRef.current || loopIdRef.current !== null) return;
-    const period = LOOP_MIN_MS + Math.random() * (LOOP_MAX_MS - LOOP_MIN_MS);
-    loopIdRef.current = window.setInterval(() => fire(pick(LOOP_REACTIONS)), period);
-  }, [loop, fire]);
+    if (reactions.length === 0) return;
+    const period =
+      loopIntervalMs ?? LOOP_MIN_MS + Math.random() * (LOOP_MAX_MS - LOOP_MIN_MS);
+    loopIdRef.current = window.setInterval(() => fire(pick(reactions)), period);
+  }, [loop, fire, reactions, loopIntervalMs]);
 
   // Swoop Koji in exactly once — only when he's BOTH loaded and in view.
   const tryEnter = useCallback(() => {

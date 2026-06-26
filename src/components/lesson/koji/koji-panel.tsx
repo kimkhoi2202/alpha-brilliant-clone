@@ -35,7 +35,12 @@ import { cn } from "../../../lib/cn";
 import { Button } from "../../ui";
 import { renderMathText } from "../../ui/math";
 import type { StepPhase } from "../step-view";
+import { KojiMascot } from "./koji-mascot";
 import { VoiceControls } from "./voice-controls";
+
+/** The Koji header avatar waves on a fixed ~5s cadence. Module-level so the
+ *  reference stays stable (won't re-arm KojiMascot's loop on re-render). */
+const KOJI_HEADER_WAVE = ["waveLeft", "waveRight"] as const;
 
 export interface KojiPanelProps {
   /** Whether the panel is shown. */
@@ -310,12 +315,12 @@ function KojiSheet({
         )}
       >
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <span
-            aria-hidden
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-mono text-sm font-bold text-accent-soft-foreground"
-          >
-            {"< >"}
-          </span>
+          <KojiMascot
+            size="size-9"
+            className="shrink-0"
+            reactions={KOJI_HEADER_WAVE}
+            loopIntervalMs={5000}
+          />
           <div className="min-w-0">
             <p className="text-sm font-semibold leading-tight text-foreground">Koji</p>
             <p className="truncate text-xs text-muted">Your study buddy</p>
