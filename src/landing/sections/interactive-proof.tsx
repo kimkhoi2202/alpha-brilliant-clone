@@ -79,7 +79,7 @@ export function InteractiveProof() {
 
         {/* Support: the same 3-4-5, counted. The figure resolves to the
             equation and a plain-language cell count. */}
-        <div className="flex flex-col rounded-2xl border-2 border-border bg-background p-6 sm:p-8">
+        <div className="flex flex-col rounded-3xl border-2 border-border bg-[var(--surface)] p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] sm:p-8">
           <p className="mb-6 text-sm font-semibold text-muted">
             Or just count the cells
           </p>
