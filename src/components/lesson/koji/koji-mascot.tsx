@@ -14,8 +14,8 @@ export interface KojiMascotProps {
   /** Extra classes on the wrapper, for placement (margins, alignment, …). */
   className?: string;
   /**
-   * Keep Koji alive with a gentle loop of expressive reactions. Defaults to
-   * `true`. Forced off when the user prefers reduced motion.
+   * Keep Koji alive with a gentle loop of expressive reactions after he enters.
+   * Defaults to `true`. Forced off when the user prefers reduced motion.
    */
   loop?: boolean;
 }
@@ -49,19 +49,21 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * A reusable, animated Koji mascot.
+ * A reusable, animated Koji mascot — the lesson `ask_koji.riv` / `AskKoji`
+ * machine rendered inline, so any surface can drop Koji in.
  *
- * Reuses the same `ask_koji.riv` / `AskKoji` state machine as the in-lesson
- * mascot ({@link AskKoji}), but renders inline/centered instead of pinned to a
- * lesson corner, so marketing/landing surfaces can drop Koji in anywhere.
+ * Mirrors the *dormant in-lesson* Koji (see {@link AskKoji}), NOT the tappable
+ * "Ask Koji" button:
+ *  - `bracketsOn: false` — no "< >" frame. Those brackets are the button
+ *    affordance ("tap me"); a marketing mascot is just Koji himself.
+ *  - Koji swoops in (`playEnter`) the first time he SCROLLS INTO VIEW (via an
+ *    IntersectionObserver), so the entrance lands exactly when the visitor sees
+ *    him rather than firing off-screen on mount. After entering he stays
+ *    expressive on a gentle ~4–6s reaction loop.
  *
- * The default `AskKoji` machine only draws the static "< >" frame — the
- * character doesn't show until an entrance trigger fires. So once the instance
- * loads (`onRive`) we capture it and fire `playEnter`, swooping Koji in, then
- * keep him expressive by firing a random reaction every ~4–6s.
- *
- * Reduced motion: we fire `idle` once (Koji is present and visible, just calm)
- * and never start the loop.
+ * The `AskKoji` machine draws nothing until a trigger fires, so under reduced
+ * motion we fire `idle` once on load (Koji present + visible, just calm) and
+ * never observe or loop.
  */
 export function KojiMascot({
   size = "size-40",
@@ -69,37 +71,81 @@ export function KojiMascot({
   loop = true,
 }: KojiMascotProps) {
   const riveRef = useRef<Rive | null>(null);
-  // Captured once at mount; drives both the entrance choice and whether to loop.
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const reducedRef = useRef<boolean>(prefersReducedMotion());
+  const enteredRef = useRef(false);
+  const inViewRef = useRef(false);
+  const loopIdRef = useRef<number | null>(null);
 
   // Fire a ViewModel trigger on the live instance (no-op until Koji has loaded).
   const fire = useCallback((trigger: string) => {
     riveRef.current?.viewModelInstance?.trigger(trigger)?.trigger();
   }, []);
 
+  const startLoop = useCallback(() => {
+    if (!loop || reducedRef.current || loopIdRef.current !== null) return;
+    const period = LOOP_MIN_MS + Math.random() * (LOOP_MAX_MS - LOOP_MIN_MS);
+    loopIdRef.current = window.setInterval(() => fire(pick(LOOP_REACTIONS)), period);
+  }, [loop, fire]);
+
+  // Swoop Koji in exactly once — only when he's BOTH loaded and in view.
+  const tryEnter = useCallback(() => {
+    if (enteredRef.current || reducedRef.current) return;
+    if (!riveRef.current || !inViewRef.current) return;
+    enteredRef.current = true;
+    fire("playEnter");
+    startLoop();
+  }, [fire, startLoop]);
+
   const onRive = useCallback(
     (rive: Rive) => {
       riveRef.current = rive;
-      // Bring Koji on screen: swoop him in, or just settle into idle under
-      // reduced motion. Without this the canvas only ever shows "< >".
-      fire(reducedRef.current ? "idle" : "playEnter");
+      if (reducedRef.current) {
+        // Present + visible, no motion (the machine shows nothing untriggered).
+        fire("idle");
+        return;
+      }
+      // Enters now if already in view; otherwise the observer will trigger it.
+      tryEnter();
     },
-    [fire],
+    [fire, tryEnter],
   );
 
-  // Keep Koji expressive: cycle random reactions on a gentle loop. Skipped when
-  // looping is off or the user prefers reduced motion.
+  // Reveal-on-scroll: fire the entrance the first time Koji enters the viewport.
   useEffect(() => {
-    if (!loop || reducedRef.current) return;
-    const periodMs = LOOP_MIN_MS + Math.random() * (LOOP_MAX_MS - LOOP_MIN_MS);
-    const id = window.setInterval(() => {
-      fire(pick(LOOP_REACTIONS));
-    }, periodMs);
-    return () => window.clearInterval(id);
-  }, [loop, fire]);
+    if (reducedRef.current) return;
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      // No observer available: enter as soon as Koji has loaded.
+      inViewRef.current = true;
+      tryEnter();
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          inViewRef.current = true;
+          tryEnter();
+          if (enteredRef.current) observer.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tryEnter]);
+
+  // Stop the reaction loop on unmount.
+  useEffect(
+    () => () => {
+      if (loopIdRef.current !== null) window.clearInterval(loopIdRef.current);
+    },
+    [],
+  );
 
   return (
     <div
+      ref={containerRef}
       className={cn("inline-flex items-center justify-center", size, className)}
       aria-hidden
     >
@@ -107,7 +153,7 @@ export function KojiMascot({
         src={ASK_KOJI_RIV}
         stateMachines="AskKoji"
         autoBind
-        viewModelBooleans={{ bracketsOn: true }}
+        viewModelBooleans={{ bracketsOn: false }}
         onRive={onRive}
         className="size-full"
       />
