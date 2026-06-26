@@ -123,7 +123,6 @@ function QuoteCard({
       style={style}
       className={cn(
         "relative flex h-full flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--surface)] p-6",
-        "transition-colors duration-200 ease-out hover:border-[color:var(--border-hover)]",
         featured && "gap-5 p-7 sm:p-8",
         className,
       )}

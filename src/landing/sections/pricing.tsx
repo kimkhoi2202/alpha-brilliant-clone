@@ -112,12 +112,7 @@ export function Pricing() {
         {/* Premium: the app's real emphasized accent card + one gold steer. */}
         <article
           aria-labelledby="plan-premium"
-          className={[
-            "relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7",
-            "transition-[transform,border-color,box-shadow] duration-200 ease-[var(--ease-out-cubic)]",
-            "[@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:border-accent/60 [@media(hover:hover)]:hover:shadow-lg [@media(hover:hover)]:hover:shadow-accent/20",
-            "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-          ].join(" ")}
+          className="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7"
         >
           <div className="relative flex flex-1 flex-col">
             <div className="flex items-center justify-between gap-3">

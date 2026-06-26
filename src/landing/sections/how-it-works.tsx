@@ -42,7 +42,7 @@ function VisualCard({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-border bg-[var(--surface)] p-6 transition-colors hover:border-[color:var(--border-hover)] sm:p-7">
+    <div className="rounded-2xl border-2 border-border bg-[var(--surface)] p-6 sm:p-7">
       <p className="mb-5 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted">
         <span
           aria-hidden
