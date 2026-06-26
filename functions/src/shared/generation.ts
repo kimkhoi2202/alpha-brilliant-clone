@@ -238,6 +238,9 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
 
   let interaction: Interaction;
   let visual: VisualSpec | undefined;
+  // For kinds where the model authors the prompt, we may override it server-side
+  // so the prompt can never desync from the server-owned answer key (W2).
+  let promptOverride: string | undefined;
 
   switch (ctx.kind) {
     case "numeric": {
@@ -275,6 +278,9 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
         correctSide: ctx.targetSide, // server-owned answer key
         sideNames: SIDE_NAMES,
       };
+      // Author the prompt deterministically so it always matches `targetSide`
+      // (a model-written prompt could ask for a different side → desync, W2).
+      promptOverride = `Tap the ${SIDE_NAMES[ctx.targetSide]} of the right triangle.`;
       break;
     }
     case "multiple-choice": {
@@ -313,7 +319,7 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
   const step: ProblemStep = {
     id,
     kind: "problem",
-    prompt: p.prompt,
+    prompt: promptOverride ?? p.prompt,
     interaction,
     feedback: feedbackOf(p),
     source: "ai",

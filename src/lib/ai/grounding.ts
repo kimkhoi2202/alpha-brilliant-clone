@@ -13,6 +13,7 @@ import { correctAnswer } from "../../content/engine";
 import type {
   AnswerValue,
   Choice,
+  Interaction,
   InteractionKind,
   ProblemStep,
   TriangleOrientation,
@@ -61,8 +62,12 @@ export interface Grounding {
   givens: GroundingGivens;
   /** Engine-computed correct answer, so the model never computes a fact (P3). */
   correctAnswer: AnswerValue;
+  /** Human-readable correct answer (for the tutor prompt + server leak check). */
+  correctAnswerText: string;
   /** The learner's current answer, or null if they haven't answered yet. */
   learnerAnswer: AnswerValue | null;
+  /** Human-readable learner answer, or null if unanswered. */
+  learnerAnswerText: string | null;
   /** Attempts recorded on this step so far (drives progressive hinting). */
   attemptNumber: number;
   /** Whether the learner has already used a hint on this step. */
@@ -126,6 +131,89 @@ function buildGivens(step: ProblemStep): GroundingGivens {
 }
 
 /**
+ * Render an answer as human-readable text (labels, side names, value+unit) using
+ * the interaction for context. Used so the tutor never receives opaque ids and
+ * the server's answer-leak check has the real rendered value to look for (W1).
+ */
+function renderAnswer(interaction: Interaction, av: AnswerValue | null): string | null {
+  if (!av) return null;
+  switch (av.kind) {
+    case "numeric":
+    case "slider": {
+      if (av.value === null) return null;
+      const unit =
+        interaction.kind === "numeric" || interaction.kind === "slider"
+          ? interaction.unit
+          : undefined;
+      return unit ? `${av.value} ${unit}` : String(av.value);
+    }
+    case "count-squares":
+      return av.value === null ? null : String(av.value);
+    case "multiple-choice": {
+      if (av.choiceId === null) return null;
+      if (interaction.kind === "multiple-choice") {
+        return (
+          interaction.choices.find((c) => c.id === av.choiceId)?.label ?? av.choiceId
+        );
+      }
+      return av.choiceId;
+    }
+    case "multi-select": {
+      if (interaction.kind === "multi-select") {
+        return av.choiceIds
+          .map((id) => interaction.choices.find((c) => c.id === id)?.label ?? id)
+          .join(", ");
+      }
+      return av.choiceIds.join(", ");
+    }
+    case "tap-bar": {
+      if (av.barId === null) return null;
+      if (interaction.kind === "tap-bar") {
+        return interaction.bars.find((bar) => bar.id === av.barId)?.label ?? av.barId;
+      }
+      return av.barId;
+    }
+    case "pick-side": {
+      if (av.side === null) return null;
+      const name =
+        interaction.kind === "pick-side" ? interaction.sideNames?.[av.side] : undefined;
+      return name ?? `the ${av.side} side`;
+    }
+    case "pick-sides": {
+      return av.sides
+        .map((s) =>
+          interaction.kind === "pick-sides"
+            ? interaction.sideNames?.[s] ?? `the ${s} side`
+            : `the ${s} side`,
+        )
+        .join(", ");
+    }
+    case "pick-angle": {
+      if (av.vertex === null) return null;
+      const name =
+        interaction.kind === "pick-angle"
+          ? interaction.vertexNames?.[av.vertex]
+          : undefined;
+      return name ?? `vertex ${av.vertex}`;
+    }
+    case "tile-expression":
+      return av.filled.every((t) => t === null)
+        ? null
+        : av.filled.map((t) => t ?? "_").join(" ");
+    case "plot-points":
+      return av.points.length === 0
+        ? null
+        : av.points.map((p) => `(${p.x}, ${p.y})`).join(", ");
+    case "categorize": {
+      const entries = Object.entries(av.placement);
+      return entries.length === 0
+        ? null
+        : entries.map(([k, v]) => `${k}->${v ?? "_"}`).join(", ");
+    }
+  }
+}
+
+/**
  * Build the grounding payload for a step. Pass the learner's current answer
  * (or null) and, when available, their `StepRecord` for attempt/hint context.
  */
@@ -134,13 +222,16 @@ export function buildGrounding(
   answer: AnswerValue | null,
   record?: StepRecord,
 ): Grounding {
+  const correct = correctAnswer(step.interaction);
   return {
     concept: COURSE_CONCEPT,
     prompt: step.prompt,
     interactionKind: step.interaction.kind,
     givens: buildGivens(step),
-    correctAnswer: correctAnswer(step.interaction),
+    correctAnswer: correct,
+    correctAnswerText: renderAnswer(step.interaction, correct) ?? "",
     learnerAnswer: answer,
+    learnerAnswerText: renderAnswer(step.interaction, answer),
     attemptNumber: record?.attempts ?? 0,
     priorHints: record?.hintsUsed ?? false,
   };

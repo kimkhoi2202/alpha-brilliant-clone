@@ -12,7 +12,7 @@
  */
 import { httpsCallable } from "firebase/functions";
 
-import type { AnswerValue, ProblemStep } from "../../content/types";
+import type { ProblemStep } from "../../content/types";
 import { functions } from "../firebase";
 import { aiEnabled } from "./flag";
 import type { Grounding, GroundingGivens } from "./grounding";
@@ -150,49 +150,20 @@ function flattenGivens(g: GroundingGivens): Record<string, string | number> {
   return out;
 }
 
-/** Reduce a structured AnswerValue to a single scalar for grounding / leak checks. */
-function scalarAnswer(av: AnswerValue | null): string | number | null {
-  if (!av) return null;
-  switch (av.kind) {
-    case "numeric":
-    case "slider":
-    case "count-squares":
-      return av.value;
-    case "multiple-choice":
-      return av.choiceId;
-    case "tap-bar":
-      return av.barId;
-    case "pick-side":
-      return av.side;
-    case "pick-angle":
-      return av.vertex;
-    case "multi-select":
-      return av.choiceIds.join(", ");
-    case "pick-sides":
-      return av.sides.join(", ");
-    case "tile-expression":
-      return av.filled.map((t) => t ?? "_").join(" ");
-    case "plot-points":
-      return av.points.map((p) => `(${p.x},${p.y})`).join(", ");
-    case "categorize":
-      return Object.entries(av.placement)
-        .map(([k, v]) => `${k}->${v ?? "_"}`)
-        .join(", ");
-  }
-}
-
 /** Grounded text tutor: a progressive hint or a personalized explanation. */
 export async function runTutor(input: RunTutorInput): Promise<RunTutorResult> {
   if (!aiEnabled()) return EMPTY_TUTOR_RESULT;
   const g = input.grounding;
-  // Map the structured grounding to the callable's flat, scalar wire contract.
+  // Map the structured grounding to the callable's flat wire contract. We send a
+  // HUMAN-READABLE answer (label / side name / value+unit), not internal ids, so
+  // the explanation reads correctly and the server's leak check is meaningful (W1).
   const payload = {
     concept: g.concept,
     prompt: g.prompt,
     interactionKind: g.interactionKind,
     givens: flattenGivens(g.givens),
-    correctAnswer: scalarAnswer(g.correctAnswer) ?? "",
-    learnerAnswer: scalarAnswer(g.learnerAnswer),
+    correctAnswer: g.correctAnswerText,
+    learnerAnswer: g.learnerAnswerText,
     attemptNumber: g.attemptNumber,
     mode: input.kind === "explanation" ? "explain" : "hint",
     hintTier: input.hintLevel,
