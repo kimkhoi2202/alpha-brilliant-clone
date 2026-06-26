@@ -116,7 +116,7 @@ export function HowItWorks() {
       title: "Play before you name it",
       body: "Drag a right triangle, plot points, and count the squares on its sides. You act first, before any formula shows up.",
       visual: (
-        <VisualCard intent="accent" tag="Lesson 1 · The right triangle">
+        <VisualCard intent="accent" tag="The right triangle">
           <RightTriangleFigure
             a={4}
             b={3}
@@ -139,7 +139,7 @@ export function HowItWorks() {
       title: "Every wrong answer teaches",
       body: "Each answer is checked on your device in under a tenth of a second. A wrong one gets a specific hint, never a bare red X.",
       visual: (
-        <VisualCard intent="warning" tag="Lesson 3 · Find the hypotenuse">
+        <VisualCard intent="warning" tag="Find the hypotenuse">
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted">Your answer</span>
             <AnswerChoice
