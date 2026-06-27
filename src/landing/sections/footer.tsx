@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 
 import { Brand } from "../../components/chrome/brand";
-import { scrollToId } from "../ui/section";
+import { scrollToId } from "../ui/scroll-to-id";
 
 interface FooterLink {
   label: string;

@@ -4,7 +4,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { SliderInput } from "../../components/interactions";
 import { Button } from "../../components/ui";
 import { RightTriangleFigure } from "../../components/visuals";
-import { LandingSection, scrollToId } from "../ui/section";
+import { LandingSection } from "../ui/section";
+import { scrollToId } from "../ui/scroll-to-id";
 
 const TRUST = ["Free to start", "No credit card", "Built for mobile"];
 

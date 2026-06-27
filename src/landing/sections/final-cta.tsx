@@ -2,7 +2,8 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { Button } from "../../components/ui";
 import { Meteors } from "../../components/ui/meteors";
-import { LandingSection, SectionHeading, scrollToId } from "../ui/section";
+import { LandingSection, SectionHeading } from "../ui/section";
+import { scrollToId } from "../ui/scroll-to-id";
 
 /**
  * Final CTA — the page's climax. A self-contained, accent-lit band (set apart

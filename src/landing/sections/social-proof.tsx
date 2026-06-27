@@ -1,207 +1,126 @@
-import type { CSSProperties } from "react";
-import { Tabs } from "@heroui/react";
+import { useNavigate } from "@tanstack/react-router";
 
-import { Avatar } from "../../components/ui";
+import { Button } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import { LandingSection, SectionHeading } from "../ui/section";
 
 /**
- * Social proof — credibility staged for the student and the people who buy for
- * them, in the app's real dark skin. Audience-segmented quotes ride on the real
- * HeroUI `Tabs` (segmented control), each quote uses the app's real `Avatar`
- * (initials) + `Chip` (@handle), and the section anchors on large, plain
- * outcome stat typography.
- *
- * Honesty: every quote and number here is an explicit, illustrative PLACEHOLDER.
- * Attributions are role labels with `@placeholder` handles (no fabricated people,
- * photos, press logos, or measured stats). Replace before launch.
+ * "What you'll be able to do" — the honest stand-in for testimonials. The
+ * product is pre-launch, so rather than ship fabricated (or labeled-placeholder)
+ * quotes, this section proves value by specificity: the concrete skill you walk
+ * away with from each of the five real lessons, plus the Level Review capstone.
+ * Every line maps 1:1 to a real lesson in `content/course.ts`. When real learner
+ * quotes exist, they can be added back as a separate, attributed block.
  */
-
-interface Quote {
-  /** The testimonial body. Placeholder copy, grounded in real product moments. */
-  body: string;
-  /** Role label (doubles as the Avatar initial + deterministic color). */
-  name: string;
-  /** Illustrative descriptor, e.g. a grade level. */
-  detail: string;
-  /** The lead quote for an audience gets the larger, featured treatment. */
-  featured?: boolean;
+interface Outcome {
+  /** The real lesson this capability comes from (from course.ts). */
+  lesson: string;
+  /** What the learner can do after it. Plain, specific, verifiable. */
+  text: string;
+  /** The chapter-ending review: the "prove it" capstone, styled with accent. */
+  capstone?: boolean;
 }
 
-interface Audience {
-  id: string;
-  label: string;
-  quotes: readonly Quote[];
-}
-
-const AUDIENCES: readonly Audience[] = [
+const OUTCOMES: readonly Outcome[] = [
   {
-    id: "students",
-    label: "Students",
-    quotes: [
-      {
-        body: "I dragged the triangle around for a minute and the squares just made sense.",
-        name: "Student",
-        detail: "9th grade",
-        featured: true,
-      },
-      {
-        body: "The hint showed me I added the legs instead of squaring them, so I fixed it on the next try.",
-        name: "Learner",
-        detail: "Test prep",
-      },
-      {
-        body: "I kept a streak going just to finish the last lesson.",
-        name: "Beginner",
-        detail: "Just started",
-      },
-    ],
+    lesson: "The Right Triangle",
+    text: "Name every part of a right triangle: the two legs, the hypotenuse, and the right angle.",
   },
   {
-    id: "teachers",
-    label: "Teachers",
-    quotes: [
-      {
-        body: "It builds the intuition my lectures can't, one triangle at a time.",
-        name: "Teacher",
-        detail: "Geometry",
-        featured: true,
-      },
-      {
-        body: "Students arrive already understanding why the squares add up.",
-        name: "Educator",
-        detail: "High school",
-      },
-      {
-        body: "Instant feedback saves me from re-teaching the same slip every week.",
-        name: "Mentor",
-        detail: "After school",
-      },
-    ],
+    lesson: "Discover the Theorem",
+    text: "Prove a\u00B2 + b\u00B2 = c\u00B2 yourself by counting unit squares and rearranging four triangles.",
   },
   {
-    id: "parents",
-    label: "Parents",
-    quotes: [
-      {
-        body: "She actually wants to do her geometry now. The streak is doing something right.",
-        name: "Parent",
-        detail: "9th grader",
-        featured: true,
-      },
-      {
-        body: "No videos to sit through, so the homework actually gets done.",
-        name: "Family",
-        detail: "10th grader",
-      },
-      {
-        body: "I can see which lessons are solid and which need another pass.",
-        name: "Guardian",
-        detail: "First year",
-      },
-    ],
+    lesson: "Find the Hypotenuse",
+    text: "Find the hypotenuse: square the legs, add them, then take the square root.",
+  },
+  {
+    lesson: "Find a Missing Leg",
+    text: "Find a missing leg, and tell whether any triangle is a right triangle.",
+  },
+  {
+    lesson: "Distance Between Points",
+    text: "Measure the straight-line distance between two points on a grid.",
+  },
+  {
+    lesson: "Level Review",
+    text: "Then prove it: the chapter ends with a Level Review of ten mixed questions. Score eight of ten to pass.",
+    capstone: true,
   },
 ];
 
-/** Entrance for the active panel's cards: a gentle, staggered rise that
- *  collapses to nothing under reduced motion (and is never scroll-gated). */
-const RISE = "animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out motion-reduce:animate-none";
-
-function QuoteCard({
-  quote,
-  className,
-  style,
-}: {
-  quote: Quote;
-  className?: string;
-  style?: CSSProperties;
-}) {
-  const featured = quote.featured ?? false;
-
+/** The accent check used across the page (hero / pricing), reused here. */
+function CheckDot({ capstone }: { capstone?: boolean }) {
   return (
-    <figure
-      style={style}
+    <span
+      aria-hidden
+      className="grid size-7 shrink-0 place-items-center rounded-full"
+      style={{
+        backgroundColor: capstone
+          ? "color-mix(in oklab, var(--warning) 24%, transparent)"
+          : "color-mix(in oklab, var(--accent) 22%, transparent)",
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 13l4 4 10-10"
+          stroke={capstone ? "var(--warning)" : "var(--accent)"}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function OutcomeCard({ outcome }: { outcome: Outcome }) {
+  return (
+    <li
       className={cn(
-        "relative flex h-full flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--surface)] p-6",
-        featured && "gap-5 p-7 sm:p-8",
-        className,
+        "flex h-full flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--surface)] p-6",
+        outcome.capstone && "border-[color:var(--warning)]/40 bg-[var(--warning-soft)]/20",
       )}
     >
-      <blockquote
-        className={cn(
-          "text-pretty text-foreground",
-          featured
-            ? "text-xl font-medium leading-relaxed sm:text-2xl"
-            : "text-base leading-relaxed",
-        )}
-      >
-        {`\u201C${quote.body}\u201D`}
-      </blockquote>
-
-      <figcaption className="mt-auto flex items-center gap-3">
-        <Avatar name={quote.name} size={featured ? "md" : "sm"} />
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-sm font-semibold text-foreground">{quote.name}</span>
-          <span className="text-xs text-muted">{quote.detail}</span>
-        </div>
-      </figcaption>
-    </figure>
+      <CheckDot capstone={outcome.capstone} />
+      <p className="text-base leading-relaxed text-foreground">{outcome.text}</p>
+      <span className="mt-auto text-xs font-semibold uppercase tracking-wide text-muted">
+        {outcome.lesson}
+      </span>
+    </li>
   );
 }
 
 export function SocialProof() {
+  const navigate = useNavigate();
+
   return (
     <LandingSection id="reviews" width="wide">
       <SectionHeading
-        eyebrow="What learners say"
-        title={
-          <>
-            Built for students.{" "}
-            <span className="text-[var(--accent)]">Trusted</span> by the people
-            who care about them.
-          </>
-        }
-        description="Illustrative placeholders for now. Every quote and number here is replaced with a real, verified one before launch."
+        eyebrow="By the end of the chapter"
+        title="What you'll be able to do."
+        description="No testimonials to take on faith. Here is exactly what you can do by the time you finish, one real lesson at a time."
       />
 
-      <Tabs defaultSelectedKey="students" className="mt-10 sm:mt-12">
-        <Tabs.ListContainer className="flex justify-center">
-          <Tabs.List
-            aria-label="Reviews by audience"
-            className="w-fit border border-border"
-          >
-            {AUDIENCES.map((audience) => (
-              <Tabs.Tab key={audience.id} id={audience.id}>
-                {audience.label}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs.ListContainer>
+      <ul
+        role="list"
+        className="mx-auto mt-10 grid max-w-5xl gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3"
+      >
+        {OUTCOMES.map((outcome) => (
+          <OutcomeCard key={outcome.lesson} outcome={outcome} />
+        ))}
+      </ul>
 
-        {AUDIENCES.map((audience) => {
-          const featured = audience.quotes.find((quote) => quote.featured);
-          const supporting = audience.quotes.filter((quote) => !quote.featured);
-
-          return (
-            <Tabs.Panel key={audience.id} id={audience.id} className="w-full p-0">
-              <div className="mx-auto grid max-w-4xl gap-4 pt-4 sm:gap-5">
-                {featured ? <QuoteCard quote={featured} className={RISE} /> : null}
-
-                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-                  {supporting.map((quote, index) => (
-                    <QuoteCard
-                      key={quote.name}
-                      quote={quote}
-                      className={RISE}
-                      style={{ animationDelay: `${(index + 1) * 90}ms` }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </Tabs.Panel>
-          );
-        })}
-      </Tabs>
+      <div className="mt-10 flex flex-col items-center gap-3">
+        <Button
+          variant="accent"
+          size="lg"
+          onPress={() => void navigate({ to: "/auth" })}
+        >
+          Start learning, free
+        </Button>
+        <p className="text-sm text-muted">Free to start. No card required.</p>
+      </div>
     </LandingSection>
   );
 }

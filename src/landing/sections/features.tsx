@@ -1,9 +1,16 @@
+import { useState } from "react";
+
 import { StreakCard, type StreakDay } from "../../components/gamification";
+import {
+  CountSquaresFigure,
+  PlotPointsGrid,
+  SliderInput,
+} from "../../components/interactions";
 import { AnswerChoice } from "../../components/lesson";
 import { FeedbackToast } from "../../components/lesson/feedback-toast";
 import { KojiMascot } from "../../components/lesson/koji";
-import { Chip } from "../../components/ui";
-import { RightTriangleFigure } from "../../components/visuals";
+import { RearrangementProof, RightTriangleFigure } from "../../components/visuals";
+import type { GridPoint } from "../../content/types";
 import { cn } from "../../lib/cn";
 import { LandingSection, SectionHeading } from "../ui/section";
 
@@ -19,8 +26,199 @@ const STREAK_DAYS: StreakDay[] = [
   { label: "S", state: "upcoming" },
 ];
 
-// The four hands-on interaction verbs from the real lessons.
-const INTERACTIONS = ["Drag", "Count", "Plot", "Rearrange"] as const;
+// Each verb in the "Problems you do, not watch" tile maps to a REAL lesson
+// interaction, made fully usable inline. Selecting a verb swaps in its demo.
+type VerbId = "drag" | "count" | "plot" | "rearrange";
+
+const VERBS: { id: VerbId; label: string; hint: string }[] = [
+  { id: "drag", label: "Drag", hint: "Drag a leg — the squares and c update live." },
+  { id: "count", label: "Count", hint: "Type how many cells fill the gold square." },
+  { id: "plot", label: "Plot", hint: "Tap the grid to plot a point." },
+  {
+    id: "rearrange",
+    label: "Rearrange",
+    hint: "Press play to slide the four triangles.",
+  },
+];
+
+// Legs stay whole numbers in a friendly range so the figure always reads
+// clearly and the squares stay countable (mirrors the hero playground).
+const LEG_MIN = 2;
+const LEG_MAX = 8;
+
+/**
+ * Drag — the hero pattern, reused: the real `RightTriangleFigure` reshaped live
+ * by two design-system `SliderInput`s, with an a² + b² = c² readout that
+ * recomputes as you drag. A fixed-height stage keeps the card from jumping.
+ */
+function DragDemo() {
+  const [a, setA] = useState(4);
+  const [b, setB] = useState(3);
+  const sum = a * a + b * b;
+  const c = Math.sqrt(sum);
+  const cText = Number.isInteger(c) ? String(c) : `√${sum} ≈ ${c.toFixed(2)}`;
+
+  return (
+    <div className="flex w-full max-w-[15rem] flex-col gap-3">
+      <div className="flex h-40 items-center justify-center">
+        <RightTriangleFigure
+          a={a}
+          b={b}
+          showSquares
+          className="h-full w-full max-w-none"
+        />
+      </div>
+      <p
+        aria-live="polite"
+        className="text-center text-xs tabular-nums text-muted"
+      >
+        <span className="font-semibold text-[var(--accent)]">
+          {a}² + {b}²
+        </span>{" "}
+        = <span className="font-semibold text-[var(--warning)]">{sum}</span>, c ={" "}
+        {cText}
+      </p>
+      <div className="flex flex-col gap-2">
+        <SliderInput
+          compact
+          label="Base"
+          min={LEG_MIN}
+          max={LEG_MAX}
+          step={1}
+          value={a}
+          onChange={setA}
+        />
+        <SliderInput
+          compact
+          label="Height"
+          min={LEG_MIN}
+          max={LEG_MAX}
+          step={1}
+          value={b}
+          onChange={setB}
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Count — the real `CountSquaresFigure`: type the cell count straight into the
+ * gold square (the 3×3 on leg a → 9). It grades to green the instant it matches.
+ */
+function CountDemo() {
+  const a = 3;
+  const b = 4;
+  const target = a * a; // the gold square sits on leg a → 9 unit cells
+  const [value, setValue] = useState<number | null>(null);
+  const state =
+    value === null ? "default" : value === target ? "correct" : "incorrect";
+
+  return (
+    <div className="w-full max-w-[17rem]">
+      <CountSquaresFigure
+        a={a}
+        b={b}
+        countSide="a"
+        value={value}
+        state={state}
+        onChange={setValue}
+      />
+    </div>
+  );
+}
+
+/**
+ * Plot — the real `PlotPointsGrid`: tap lattice points to drop dots, each
+ * drawing a guide line from the origin. Keeps the latest three points.
+ */
+function PlotDemo() {
+  const target = 3;
+  const [placed, setPlaced] = useState<GridPoint[]>([]);
+
+  return (
+    <div className="w-full max-w-[15rem]">
+      <PlotPointsGrid
+        size={5}
+        placed={placed}
+        targetCount={target}
+        onPlace={(p) =>
+          setPlaced((prev) =>
+            prev.some((q) => q.x === p.x && q.y === p.y)
+              ? prev
+              : [...prev, p].slice(-target),
+          )
+        }
+        onClear={() => setPlaced([])}
+      />
+    </div>
+  );
+}
+
+/**
+ * Rearrange — the self-contained `RearrangementProof`: press play and the four
+ * triangles slide between the c² and a² + b² arrangements (it owns its own
+ * reduced-motion handling).
+ */
+function RearrangeDemo() {
+  return (
+    <div className="w-full max-w-[14rem]">
+      <RearrangementProof a={3} b={4} />
+    </div>
+  );
+}
+
+/**
+ * The interactive heart of the "Problems you do, not watch" tile: a segmented
+ * verb selector (static selected style, no sliding indicator) that swaps in the
+ * matching REAL lesson interaction. Each demo is fully usable right here and
+ * owns its own local state.
+ */
+function ProblemsPlayground() {
+  const [verb, setVerb] = useState<VerbId>("drag");
+  const active = VERBS.find((v) => v.id === verb) ?? VERBS[0];
+
+  return (
+    <div className="mt-5 flex flex-1 flex-col">
+      <div
+        role="group"
+        aria-label="Choose an interaction to try"
+        className="flex flex-wrap gap-2"
+      >
+        {VERBS.map((v) => {
+          const selected = v.id === verb;
+          return (
+            <button
+              key={v.id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setVerb(v.id)}
+              className={cn(
+                "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                selected
+                  ? "border-accent bg-accent/15 text-foreground ring-1 ring-inset ring-accent"
+                  : "border-border text-muted hover:border-[var(--border-hover)] hover:bg-surface hover:text-foreground",
+              )}
+            >
+              {v.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-3 text-xs text-muted" aria-live="polite">
+        {active.hint}
+      </p>
+
+      <div className="mt-4 flex min-h-[20rem] flex-1 items-center justify-center">
+        {verb === "drag" ? <DragDemo /> : null}
+        {verb === "count" ? <CountDemo /> : null}
+        {verb === "plot" ? <PlotDemo /> : null}
+        {verb === "rearrange" ? <RearrangeDemo /> : null}
+      </div>
+    </div>
+  );
+}
 
 const tileBase = "flex flex-col rounded-2xl border-2 p-6 sm:p-7";
 const neutralTile =
@@ -117,7 +315,8 @@ export function Features() {
           </p>
         </li>
 
-        {/* Interactive problems: the real lesson figure, the tall left anchor. */}
+        {/* Interactive problems: a live playground of the real lesson
+            interactions (drag / count / plot / rearrange), the tall left anchor. */}
         <li
           className={cn(
             tileBase,
@@ -131,27 +330,7 @@ export function Features() {
             rearrange four triangles into a proof. Every lesson has at least one
             hands-on problem.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {INTERACTIONS.map((label) => (
-              <Chip key={label} intent="neutral" size="sm">
-                {label}
-              </Chip>
-            ))}
-          </div>
-          <div className="mt-6 flex flex-1 flex-col items-center justify-center">
-            <RightTriangleFigure
-              a={4}
-              b={3}
-              showSquares
-              labels
-              showHypotenuseValue
-              className="w-full max-w-[17rem]"
-            />
-            <p className="mt-4 text-center text-xs text-muted">
-              The two leg squares, 9 and 16, fill the 25 of the hypotenuse
-              exactly.
-            </p>
-          </div>
+          <ProblemsPlayground />
         </li>
 
         {/* Progress and streaks: the real StreakCard as a live product moment. */}

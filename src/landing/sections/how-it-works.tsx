@@ -63,14 +63,16 @@ function VisualCard({
  */
 function ChapterProgressVisual() {
   const target = 60;
-  const [value, setValue] = useState(0);
+  // Reduced-motion users start on the final value (no animation); everyone else
+  // starts at 0 and fills once after paint. Deriving the initial value here keeps
+  // the same end state without a synchronous setState inside the effect.
+  const [value, setValue] = useState(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ? target : 0,
+  );
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setValue(target);
-      return;
-    }
+    if (reduce) return;
     const id = window.requestAnimationFrame(() => setValue(target));
     return () => window.cancelAnimationFrame(id);
   }, []);

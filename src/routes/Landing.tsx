@@ -14,7 +14,7 @@ import { InteractiveProof } from "../landing/sections/interactive-proof";
 import { KojiTutor } from "../landing/sections/koji";
 import { Pricing } from "../landing/sections/pricing";
 import { SocialProof } from "../landing/sections/social-proof";
-import { scrollToId } from "../landing/ui/section";
+import { scrollToId } from "../landing/ui/scroll-to-id";
 
 const NAV = [
   { id: "how-it-works", label: "How it works" },
