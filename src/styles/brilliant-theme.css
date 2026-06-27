@@ -285,14 +285,16 @@
   --button-fg: var(--danger-foreground);
 }
 
-/* Brilliant's hover/active feel: dim the whole control, uniformly, no hue shift. */
+/* Brilliant's hover/active feel: dim the whole control uniformly via brightness,
+   no hue shift. NOT opacity — opacity makes the control see-through, so an
+   overlapping floating CTA would reveal the content behind it on hover. */
 .button--primary,
 .button--accent,
 .button--success,
 .button--warning,
 .button--danger {
   transition:
-    opacity 130ms ease,
+    filter 130ms ease,
     transform 90ms var(--ease-out-quad, ease),
     box-shadow 90ms var(--ease-out-quad, ease);
 }
@@ -301,7 +303,7 @@
 .button--success:not(:disabled):not([aria-disabled="true"]):hover,
 .button--warning:not(:disabled):not([aria-disabled="true"]):hover,
 .button--danger:not(:disabled):not([aria-disabled="true"]):hover {
-  opacity: 0.85;
+  filter: brightness(0.9);
 }
 .button--primary:not(:disabled):not([aria-disabled="true"]):active,
 .button--accent:not(:disabled):not([aria-disabled="true"]):active,
@@ -313,7 +315,7 @@
 .button--success[data-pressed="true"],
 .button--warning[data-pressed="true"],
 .button--danger[data-pressed="true"] {
-  opacity: 0.7;
+  filter: brightness(0.8);
 }
 
 /* The "clicky" 3D press-down: opt in via the Button `clicky` prop, which adds
@@ -330,7 +332,7 @@
   transition:
     transform 90ms var(--ease-out-quad, ease),
     box-shadow 90ms var(--ease-out-quad, ease),
-    opacity 130ms ease;
+    filter 130ms ease;
 }
 
 .button--clicky:not(:disabled):not([aria-disabled="true"]):active,

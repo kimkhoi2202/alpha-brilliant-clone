@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { cn } from "../../lib/cn";
 
 import "./meteors.css";
@@ -17,10 +19,19 @@ export interface MeteorsProps {
  * so they read clearly on the dark `--surface` card while staying subtle.
  */
 export function Meteors({ number = 20, className }: MeteorsProps) {
-  const meteors = new Array(number).fill(true);
+  // The per-streak delay/duration is decorative randomness that must stay fixed
+  // across re-renders — rolling it during render is impure and would re-jitter
+  // every streak on any parent update. A lazy initializer computes it once.
+  const [meteors] = useState(() =>
+    Array.from({ length: number }, (_, idx) => ({
+      left: (idx / number) * 100 + "%",
+      animationDelay: (Math.random() * 0.6 + 0.2).toFixed(2) + "s",
+      animationDuration: Math.floor(Math.random() * (10 - 4) + 4) + "s",
+    })),
+  );
   return (
     <>
-      {meteors.map((_, idx) => (
+      {meteors.map((meteor, idx) => (
         <span
           key={"meteor" + idx}
           className={cn(
@@ -31,10 +42,9 @@ export function Meteors({ number = 20, className }: MeteorsProps) {
           )}
           style={{
             top: 0,
-            left: (idx / number) * 100 + "%",
-            animationDelay: (Math.random() * 0.6 + 0.2).toFixed(2) + "s",
-            animationDuration:
-              Math.floor(Math.random() * (10 - 4) + 4) + "s",
+            left: meteor.left,
+            animationDelay: meteor.animationDelay,
+            animationDuration: meteor.animationDuration,
           }}
         />
       ))}

@@ -13,8 +13,10 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <App />
-      {/* App-wide toast region, pinned bottom-left (e.g. Koji voice errors). */}
-      <ToastProvider placement="bottom start" />
+      {/* App-wide toast region. Pinned top-center and above the panel z-index so
+          it clears the bottom-left Koji sheet (a bottom-start toast renders
+          behind it and looks like it instantly vanishes). */}
+      <ToastProvider placement="top" className="z-[80]" />
     </AuthProvider>
   </StrictMode>,
 );

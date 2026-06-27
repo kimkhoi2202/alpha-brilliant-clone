@@ -16,8 +16,16 @@ export function SignInForm({ onSubmit, onReset, onSignUp }: SignInFormProps) {
     <>
       <ProviderButton icon="G">Continue with Google</ProviderButton>
       <DividerOr />
-      <Input type="email" placeholder="Email" />
-      <Input type="password" placeholder="Password" />
+      <Input
+        type="email"
+        placeholder="Email"
+        className="focus:border-accent focus:ring-0"
+      />
+      <Input
+        type="password"
+        placeholder="Password"
+        className="focus:border-accent focus:ring-0"
+      />
       <Button fullWidth onPress={onSubmit}>
         Sign in
       </Button>

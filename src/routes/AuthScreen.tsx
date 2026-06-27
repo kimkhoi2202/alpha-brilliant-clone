@@ -25,6 +25,7 @@ function friendlyError(err: unknown): string {
       case "auth/popup-closed-by-user":
         return "Google sign-in was cancelled.";
       case "auth/operation-not-allowed":
+      case "auth/admin-restricted-operation":
         return "This sign-in method isn't enabled yet (Firebase console → Authentication).";
       case "auth/unauthorized-domain":
         return "This domain isn't authorized for sign-in (Firebase console → Authentication → Settings → Authorized domains).";
@@ -105,7 +106,8 @@ function AuthButton({
 }
 
 export function AuthScreen() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInAsGuest } =
+    useAuth();
   const [mode, setMode] = useState<Mode>("social");
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState("");
@@ -121,6 +123,20 @@ export function AuthScreen() {
     setBusy(true);
     try {
       await signInWithGoogle();
+    } catch (err) {
+      setError(friendlyError(err));
+      setBusy(false);
+    }
+  }
+
+  // DEV-ONLY: guest sign-in via Firebase Anonymous auth so QA / headless
+  // browsers can reach the lessons without a real account. Tree-shaken out of
+  // production builds (the only call site is gated on `import.meta.env.DEV`).
+  async function handleGuest() {
+    setError(null);
+    setBusy(true);
+    try {
+      await signInAsGuest();
     } catch (err) {
       setError(friendlyError(err));
       setBusy(false);
@@ -165,6 +181,11 @@ export function AuthScreen() {
             <AuthButton onClick={() => { setError(null); setMode("email"); }}>
               Sign in with email
             </AuthButton>
+            {import.meta.env.DEV ? (
+              <AuthButton disabled={busy} onClick={() => void handleGuest()}>
+                Continue as guest (dev)
+              </AuthButton>
+            ) : null}
             {error ? (
               <p className="text-center text-sm font-medium text-danger" role="alert">
                 {error}
@@ -182,6 +203,7 @@ export function AuthScreen() {
                 aria-label="Display name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                className="focus:border-accent focus:ring-0"
               />
             ) : null}
             <Input
@@ -192,6 +214,7 @@ export function AuthScreen() {
               aria-label="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="focus:border-accent focus:ring-0"
             />
             <Input
               fullWidth
@@ -201,6 +224,7 @@ export function AuthScreen() {
               aria-label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="focus:border-accent focus:ring-0"
             />
             {error ? (
               <p className="text-center text-sm font-medium text-danger" role="alert">

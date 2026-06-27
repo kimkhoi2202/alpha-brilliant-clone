@@ -131,10 +131,11 @@ export function AskKoji({
     [fire],
   );
 
-  // AI on: a tappable "Ask Koji" entry point. Brackets are off (Koji shows as
-  // himself, not the "< >" frame); the tap affordance comes from the wrapping
-  // button — hover/active scale, a focus ring, and an accessible name. The canvas
-  // stays non-interactive so the tap always lands on the button.
+  // AI on: a tappable "Ask Koji" entry point. Koji stays in his calm resting
+  // pose with no hover move or scale (the "< >" brackets, the upward shift, and
+  // the size bump are one Rive state, so we simply leave it off). The tap
+  // affordance is the pointer cursor, a focus ring, and a small press (active)
+  // scale; the canvas stays non-interactive so the tap always lands on the button.
   if (interactive) {
     return (
       <div className="absolute bottom-1 left-1 z-40 lg:bottom-2 lg:left-2">
@@ -142,7 +143,7 @@ export function AskKoji({
           type="button"
           onClick={onAsk}
           aria-label="Ask Koji for help"
-          className="block touch-manipulation rounded-full outline-none transition-transform duration-150 ease-[var(--ease-out-cubic)] focus-visible:ring-2 focus-visible:ring-accent active:scale-95 [@media(hover:hover)]:hover:scale-105 motion-reduce:transition-none"
+          className="block cursor-pointer touch-manipulation rounded-full outline-none transition-transform duration-150 ease-[var(--ease-out-cubic)] focus-visible:ring-2 focus-visible:ring-accent active:scale-95 motion-reduce:transition-none"
         >
           <RivePlayer
             src={ASK_KOJI_RIV}

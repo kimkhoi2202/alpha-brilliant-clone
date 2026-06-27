@@ -79,12 +79,30 @@ export interface KojiWaveformProps {
   listening: boolean;
   /** Session is connected — drives breathing (vs. dormant) when not capturing. */
   connected: boolean;
+  /**
+   * Reports the live mic peak (0–1, gained) each frame while capturing real
+   * levels — reused by the composer as the "did the learner actually speak?"
+   * signal that arms the send button. Only fires on the real-mic path (not for
+   * the idle "breathing" animation), so a silent/idle mic never arms a send.
+   */
+  onLevel?: (level: number) => void;
   className?: string;
 }
 
-export function KojiWaveform({ listening, connected, className }: KojiWaveformProps) {
+export function KojiWaveform({
+  listening,
+  connected,
+  onLevel,
+  className,
+}: KojiWaveformProps) {
   const barsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const reducedRef = useRef(prefersReducedMotion());
+  // Keep the latest callback without re-running the audio effect (which would
+  // reopen the mic stream); refs are updated in an effect per codebase convention.
+  const onLevelRef = useRef(onLevel);
+  useEffect(() => {
+    onLevelRef.current = onLevel;
+  });
 
   useEffect(() => {
     const bars = barsRef.current;
@@ -148,7 +166,18 @@ export function KojiWaveform({ listening, connected, className }: KojiWaveformPr
           const loop = () => {
             if (cancelled) return;
             analyser.getByteFrequencyData(data);
-            applyLevels(bars, micLevels(data));
+            const lvls = micLevels(data);
+            applyLevels(bars, lvls);
+            // Report the loudest band as the speech-activity signal (no extra
+            // allocation: a plain max over the 5 precomputed levels).
+            const report = onLevelRef.current;
+            if (report) {
+              let peak = 0;
+              for (let i = 0; i < lvls.length; i++) {
+                if (lvls[i] > peak) peak = lvls[i];
+              }
+              report(peak);
+            }
             raf = requestAnimationFrame(loop);
           };
           raf = requestAnimationFrame(loop);
@@ -180,7 +209,7 @@ export function KojiWaveform({ listening, connected, className }: KojiWaveformPr
     <div
       aria-hidden
       className={cn(
-        "flex h-12 items-center justify-center gap-[3px] rounded-full border border-border bg-surface/60 px-4",
+        "flex h-12 items-center justify-center gap-[3px] rounded-full bg-surface/60 px-4",
         className,
       )}
     >

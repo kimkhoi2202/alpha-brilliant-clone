@@ -1,11 +1,28 @@
-import { useState } from "react";
-import type { KeyboardEvent } from "react";
+import { useEffect, useState } from "react";
+import type { KeyboardEvent, RefObject } from "react";
 
 import type { TriangleOrientation, TriangleSide } from "../../content/types";
+import {
+  TRIANGLE_CANVAS_TARGETS,
+  type CanvasColor,
+  type CanvasComponentHandle,
+} from "../../lib/ai/tools/canvas";
 import { cn } from "../../lib/cn";
 
 type Pt = { x: number; y: number };
 type Anchor = "start" | "middle" | "end";
+
+/** One Koji annotation on a target: a tint, a tag, and/or an attention pulse. */
+type CanvasAnnotation = { color?: CanvasColor; label?: string; point?: boolean };
+
+/** Map the contract's pedagogical colors onto the app's theme tokens. */
+const CANVAS_COLOR_VAR: Record<CanvasColor, string> = {
+  accent: "var(--accent)",
+  warning: "var(--warning)",
+  success: "var(--success)",
+  danger: "var(--danger)",
+  muted: "var(--muted)",
+};
 
 /** Grading lifecycle, mirroring the lesson runner's StepPhase. */
 export type PickSidePhase = "answering" | "correct" | "wrong" | "revealed";
@@ -37,6 +54,14 @@ export interface PickSideTriangleProps {
   /** Caption shown while nothing is selected. */
   emptyHint?: string;
   onSelect: (side: TriangleSide) => void;
+  /**
+   * Koji's canvas handle sink (the `KojiReactions` pattern). When provided, the
+   * component publishes its `CanvasComponentHandle` here so the host's
+   * `LessonCanvas` can highlight / label / point at the triangle's sides and
+   * right angle. Omit (or pass undefined) and the component is byte-for-byte its
+   * old self — no handle, no annotations.
+   */
+  canvasRef?: RefObject<CanvasComponentHandle | null>;
   className?: string;
 }
 
@@ -83,15 +108,61 @@ export function PickSideTriangle({
   correctSides,
   phase,
   sideNames,
-  emptyHint = "Tap a side to choose it.",
+  emptyHint = "",
   onSelect,
+  canvasRef,
   className,
 }: PickSideTriangleProps) {
   const [active, setActive] = useState<TriangleSide | null>(null);
+  // Koji's annotations (highlight / label / point), keyed by target id. Additive
+  // overlay only — never disturbs the selection / grading visuals below.
+  const [annotations, setAnnotations] = useState<Record<string, CanvasAnnotation>>(
+    {},
+  );
   const locked = phase !== "answering";
   const names = { ...DEFAULT_NAMES[orientation], ...sideNames };
   const selectedSet = new Set(selected);
   const isSel = (id: TriangleSide) => selectedSet.has(id);
+
+  // Publish the canvas handle so Koji's tools can drive the figure. Visual ops
+  // are pure setState (the geometry is read at render time from `annotations`),
+  // so the handle is stable and only re-published if the sink ref changes. The
+  // host clears annotations on step change and the cleanup nulls the ref on
+  // unmount, so highlights never leak across steps.
+  useEffect(() => {
+    if (!canvasRef) return;
+    const handle: CanvasComponentHandle = {
+      listTargets: () => TRIANGLE_CANVAS_TARGETS.map((target) => ({ ...target })),
+      highlight: (targetId, opts) =>
+        setAnnotations((prev) => ({
+          ...prev,
+          [targetId]: {
+            ...prev[targetId],
+            color: opts?.color ?? prev[targetId]?.color ?? "accent",
+            ...(opts?.label !== undefined ? { label: opts.label } : {}),
+          },
+        })),
+      label: (targetId, text) =>
+        setAnnotations((prev) => ({
+          ...prev,
+          [targetId]: { ...prev[targetId], label: text },
+        })),
+      point: (targetId) =>
+        setAnnotations((prev) => ({
+          ...prev,
+          [targetId]: {
+            ...prev[targetId],
+            point: true,
+            color: prev[targetId]?.color ?? "accent",
+          },
+        })),
+      clear: () => setAnnotations({}),
+    };
+    canvasRef.current = handle;
+    return () => {
+      if (canvasRef.current === handle) canvasRef.current = null;
+    };
+  }, [canvasRef]);
 
   // Geometry. Both orientations are drawn in the same a x b box; only which
   // corner holds the right angle changes - and with it the side->segment map,
@@ -179,9 +250,10 @@ export function PickSideTriangle({
     };
   }
 
-  // Paint the hovered/selected side last so it sits above its neighbours: its
-  // caps shouldn't be overlapped by another line at a shared vertex.
-  const zIndex = (id: TriangleSide) => (id === active ? 2 : isSel(id) ? 1 : 0);
+  // Paint the selected side on top of everything (above a hovered side, above
+  // the rest) so where blue overlaps a white edge at a shared vertex, the
+  // selection stays on top instead of being covered by a neighbour's cap.
+  const zIndex = (id: TriangleSide) => (isSel(id) ? 2 : id === active ? 1 : 0);
   const painted = [...sides].sort((p, q) => zIndex(p.id) - zIndex(q.id));
 
   // Opaque greys (mixed with the canvas) rather than translucent white, so the
@@ -234,6 +306,95 @@ export function PickSideTriangle({
     }
   }
 
+  // Koji's annotation overlay (only present once Koji has drawn something). A
+  // small rounded tag near a part, tinted to match its highlight.
+  const annotationEntries = Object.entries(annotations);
+  const tagFont = Math.max(11, fontSize * 0.8);
+  const tag = (cx: number, cy: number, text: string, colorVar: string) => {
+    const w = text.length * tagFont * 0.62 + tagFont;
+    const h = tagFont * 1.7;
+    return (
+      <g pointerEvents="none">
+        <rect
+          x={cx - w / 2}
+          y={cy - h / 2}
+          width={w}
+          height={h}
+          rx={h / 2}
+          fill={`color-mix(in srgb, ${colorVar} 20%, var(--background))`}
+          stroke={colorVar}
+          strokeWidth={1}
+        />
+        <text
+          x={cx}
+          y={cy}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={tagFont}
+          fontWeight={700}
+          style={{ fill: colorVar }}
+        >
+          {text}
+        </text>
+      </g>
+    );
+  };
+
+  // Resolve each annotation to its geometry + style ONCE so the attention layer
+  // (the highlight stroke + pulse) can paint BEHIND the triangle while the text
+  // tag is drawn separately on top. Z-FIX: the sides + right-angle square must
+  // stay legible, so the pulse sits behind the geometry, never over the lines.
+  const resolvedAnnotations = annotationEntries
+    .map(([targetId, ann]) => {
+      const colorVar = CANVAS_COLOR_VAR[ann.color ?? "accent"];
+      const showStroke = ann.color !== undefined || ann.point === true;
+      const pulse = ann.point ? "koji-canvas-pulse" : undefined;
+      if (targetId === "angle-right") {
+        const cx = corner.reduce((s, p) => s + p.x, 0) / corner.length;
+        const cy = corner.reduce((s, p) => s + p.y, 0) / corner.length;
+        return {
+          targetId,
+          label: ann.label,
+          colorVar,
+          showStroke,
+          pulse,
+          kind: "angle" as const,
+          cx,
+          cy,
+        };
+      }
+      const sideId = targetId.replace("side-", "") as TriangleSide;
+      const seg = sides.find((s) => s.id === sideId);
+      if (!seg) return null;
+      const c = mid(seg.p1, seg.p2);
+      return {
+        targetId,
+        label: ann.label,
+        colorVar,
+        showStroke,
+        pulse,
+        kind: "side" as const,
+        seg,
+        c,
+      };
+    })
+    .filter((a): a is NonNullable<typeof a> => a !== null);
+
+  // Push Koji's text tags OUTWARD from the triangle's centroid so a label sits
+  // beside its side (clear of the line AND its a/b/c caption) instead of centered
+  // on top of it — adjacent, not overlapping. Only the tag's position moves; the
+  // attention stroke/pulse still paints behind the geometry (z-order unchanged).
+  const centroid = {
+    x: (verts[0].x + verts[1].x + verts[2].x) / 3,
+    y: (verts[0].y + verts[1].y + verts[2].y) / 3,
+  };
+  const outwardTag = (from: Pt, gap: number): Pt => {
+    const dx = from.x - centroid.x;
+    const dy = from.y - centroid.y;
+    const len = Math.hypot(dx, dy) || 1;
+    return { x: from.x + (dx / len) * gap, y: from.y + (dy / len) * gap };
+  };
+
   return (
     <div className={cn("flex flex-col items-center gap-3", className)}>
       <svg
@@ -248,6 +409,50 @@ export function PickSideTriangle({
           fill="color-mix(in srgb, var(--foreground), transparent 93%)"
           pointerEvents="none"
         />
+
+        {/* Koji's attention layer (the highlight stroke + pulse), painted BEHIND
+            the triangle so the sides and the right-angle square always stay on
+            top and legible. The matching text tags are drawn last (below). */}
+        {resolvedAnnotations.length > 0 ? (
+          <g aria-hidden>
+            {resolvedAnnotations.map((a) => {
+              if (!a.showStroke) return null;
+              if (a.kind === "angle") {
+                return (
+                  <polyline
+                    key={a.targetId}
+                    points={corner
+                      .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+                      .join(" ")}
+                    fill="none"
+                    stroke={a.colorVar}
+                    strokeWidth={sw * 1.8}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    className={a.pulse}
+                    pointerEvents="none"
+                  />
+                );
+              }
+              return (
+                <line
+                  key={a.targetId}
+                  x1={a.seg.p1.x}
+                  y1={a.seg.p1.y}
+                  x2={a.seg.p2.x}
+                  y2={a.seg.p2.y}
+                  stroke={a.colorVar}
+                  strokeWidth={sw * 2.2}
+                  strokeLinecap="round"
+                  strokeOpacity={0.9}
+                  className={a.pulse}
+                  pointerEvents="none"
+                />
+              );
+            })}
+          </g>
+        ) : null}
+
         <polyline
           points={corner.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
           fill="none"
@@ -310,11 +515,32 @@ export function PickSideTriangle({
             </text>
           ))}
         </g>
+
+        {/* Koji's annotation TAGS — drawn last so the label text stays readable
+            above the figure. The attention stroke/pulse is painted behind the
+            triangle (above); only the text tag sits on top. Never interactive
+            (pointerEvents none), so taps still land on the side hit areas. */}
+        {resolvedAnnotations.length > 0 ? (
+          <g aria-hidden>
+            {resolvedAnnotations.map((a) => {
+              if (!a.label) return null;
+              // Side: offset off the line, past its caption letter. Right angle:
+              // a shorter push, out beyond the corner marker.
+              const anchor = a.kind === "angle" ? { x: a.cx, y: a.cy } : a.c;
+              const gap =
+                a.kind === "angle" ? fontSize + tagFont : fontSize * 1.5 + tagFont;
+              const p = outwardTag(anchor, gap);
+              return <g key={a.targetId}>{tag(p.x, p.y, a.label, a.colorVar)}</g>;
+            })}
+          </g>
+        ) : null}
       </svg>
 
-      <p className={cn("text-sm font-medium", captionClass)} aria-live="polite">
-        {caption}
-      </p>
+      {caption ? (
+        <p className={cn("text-sm font-medium", captionClass)} aria-live="polite">
+          {caption}
+        </p>
+      ) : null}
     </div>
   );
 }

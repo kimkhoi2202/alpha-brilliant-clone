@@ -10,10 +10,10 @@ export interface LevelHeaderProps {
   /** Learning objectives: when present, the banner becomes a "view details"
    *  button that opens a dialog (Brilliant's pattern). */
   objectives?: string[];
-  /** When every lesson in the level is done, surface a destructive reset action
-   *  at the bottom of the dialog. */
-  allCompleted?: boolean;
-  /** Wipes lesson progress (only surfaced when `allCompleted`). */
+  /** When the learner has any progress, surface a destructive reset action at
+   *  the bottom of the dialog (available mid-course, not only at 100%). */
+  canReset?: boolean;
+  /** Wipes lesson progress (only surfaced when `canReset`). */
   onReset?: () => void;
   className?: string;
 }
@@ -55,7 +55,7 @@ export function LevelHeader({
   level,
   title,
   objectives,
-  allCompleted,
+  canReset,
   onReset,
   className,
 }: LevelHeaderProps) {
@@ -148,9 +148,9 @@ export function LevelHeader({
             ))}
           </ul>
 
-          {/* When the level is fully completed, offer a red "Reset" action
-              (styled like the lesson "Quit") to wipe progress and replay. */}
-          {allCompleted && onReset ? (
+          {/* Whenever there's progress to wipe, offer a red "Reset" action
+              (styled like the lesson "Quit") to restart the level mid-course. */}
+          {canReset && onReset ? (
             <Button
               fullWidth
               variant="ghost"

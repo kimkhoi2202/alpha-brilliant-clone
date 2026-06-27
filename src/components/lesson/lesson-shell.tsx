@@ -37,6 +37,16 @@ export interface LessonShellProps {
   children: ReactNode;
   /** Bottom row inside the lesson frame: a <FooterCtaBar> (Check, Continue, etc.). */
   footer: ReactNode;
+  /** AI-only Koji popup, rendered INSIDE the lesson frame so it lines up with the
+   *  border (like the calculator) instead of floating against the viewport. */
+  koji?: ReactNode;
+  /**
+   * Whether the Koji panel is currently open. Drives the feedback callout's
+   * position: closed → it sits bottom-left over the mascot (the default); open →
+   * it slides to the center of the content column (in the gap above the CTA) so
+   * it never hides under the left-docked panel. Defaults to closed.
+   */
+  panelOpen?: boolean;
   /** Swoop Koji in on his first appearance (true only for map launches). */
   kojiSwoop?: boolean;
   /** Receives Koji's reaction handle so the runner can react to grading. */
@@ -48,6 +58,14 @@ export interface LessonShellProps {
   kojiInteractive?: boolean;
   /** Tapped the "Ask Koji" affordance (only when `kojiInteractive`). */
   onAskKoji?: () => void;
+  /** Step back to review an already-completed step (top-bar back chevron). */
+  onBack?: () => void;
+  /** Step forward through already-reached steps (top-bar forward chevron). */
+  onForward?: () => void;
+  /** Whether an earlier step exists to go back to. */
+  canGoBack?: boolean;
+  /** Whether an already-reached forward step exists to advance to. */
+  canGoForward?: boolean;
   className?: string;
 }
 
@@ -67,10 +85,16 @@ export function LessonShell({
   toast,
   children,
   footer,
+  koji,
+  panelOpen = false,
   kojiSwoop = false,
   kojiRef,
   kojiInteractive = false,
   onAskKoji,
+  onBack,
+  onForward,
+  canGoBack = false,
+  canGoForward = false,
   className,
 }: LessonShellProps) {
   // The callout adapts to its content: a compact bubble centered over Koji for
@@ -134,6 +158,10 @@ export function LessonShell({
         onClose={onClose}
         endContent={energy}
         checkpoints={checkpoints}
+        onBack={onBack}
+        onForward={onForward}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
       />
       <main className="flex min-h-0 flex-1 px-3 pb-3 pt-3 sm:px-6 sm:pb-6 md:px-10 md:pb-8 md:pt-4 xl:px-12">
         <h1 className="sr-only">Lesson</h1>
@@ -164,27 +192,45 @@ export function LessonShell({
             <div className="m-auto w-full max-w-3xl">{children}</div>
           </div>
           {/* Footer owns the toast for vertical placement (just above the CTA
-              row). Both layouts share the bottom-left anchor at Koji's left edge
-              and grow upward; horizontally the compact bubble is centered over
-              Koji (transform), while the roomy banner stays left-aligned so its
-              prefix is never clipped off the frame's left edge. */}
+              row). It always grows upward from just above the CTA; horizontally
+              its anchor depends on the Koji panel. CLOSED: bottom-left at Koji's
+              edge — the compact bubble centers over Koji (transform), the roomy
+              banner stays left-aligned so its prefix is never clipped. OPEN: it
+              slides to the center of the content column so it never sits under the
+              left-docked panel. The positioner animates `left` between the two; the
+              inner element animates its own horizontal transform, so the slide is
+              smooth (and instant under reduced motion). */}
           <div className="relative z-10 shrink-0">
             {toast ? (
-              <CalloutReveal className="pointer-events-none absolute bottom-full left-1 z-50 mb-12 lg:left-2">
-                {/* Re-enable pointer events on the toast itself so its text is
-                    selectable, while the wrapper stays non-blocking. The compact
-                    bubble centers over Koji via a transform (80px = half of his
-                    size-40). */}
-                <div
-                  ref={toastMeasureRef}
-                  className={cn(
-                    "pointer-events-auto w-fit",
-                    !roomy && "translate-x-[calc(80px_-_50%)]",
-                  )}
-                >
-                  {renderedToast}
-                </div>
-              </CalloutReveal>
+              <div
+                className={cn(
+                  "pointer-events-none absolute bottom-full z-50 mb-12",
+                  "transition-[left] duration-300 ease-out motion-reduce:transition-none",
+                  panelOpen ? "left-1/2" : "left-1 lg:left-2",
+                )}
+              >
+                <CalloutReveal>
+                  {/* Re-enable pointer events on the toast itself so its text is
+                      selectable, while the wrapper stays non-blocking. Horizontal
+                      placement lives here: open → centered on the positioner's
+                      left-1/2 anchor; closed compact → centered over Koji (80px =
+                      half of his size-40); closed roomy → left-aligned. */}
+                  <div
+                    ref={toastMeasureRef}
+                    className={cn(
+                      "pointer-events-auto w-fit",
+                      "transition-transform duration-300 ease-out motion-reduce:transition-none",
+                      panelOpen
+                        ? "-translate-x-1/2"
+                        : !roomy
+                          ? "translate-x-[calc(80px_-_50%)]"
+                          : undefined,
+                    )}
+                  >
+                    {renderedToast}
+                  </div>
+                </CalloutReveal>
+              </div>
             ) : null}
             {footer}
           </div>
@@ -200,6 +246,10 @@ export function LessonShell({
 
           {/* Pop-up calculator, pinned bottom-right to mirror the mascot. */}
           <LessonCalculator />
+
+          {/* AI Koji popup — mounted inside the frame (not the viewport) so it
+              lines up with the lesson border, like the calculator. */}
+          {koji}
         </div>
       </main>
     </div>

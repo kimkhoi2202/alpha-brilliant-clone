@@ -5,6 +5,25 @@ import { cn } from "../../../lib/cn";
 import { ASK_KOJI_RIV } from "../../../lib/rive-runtime";
 import { RivePlayer } from "../../visuals";
 
+/**
+ * A one-shot signal to fire a reaction on the mascot imperatively from a parent:
+ * set `name` to a Rive trigger (e.g. `"successMedium"`, `"incorrect"`), stamp `ts`
+ * with the issue time, and bump `nonce` to fire it. The `nonce` dedupes within a
+ * mounted instance (so an effect re-run / StrictMode double-invoke can't
+ * double-fire the same reaction), while `ts` gates the FIRST fire after (re)mount:
+ * a RECENT reaction plays — so the first wrong answer that auto-opens the panel
+ * still reacts — but a long-past one never replays when the panel is merely
+ * re-opened later. See {@link REACTION_FRESH_MS}.
+ */
+export interface MascotReactionSignal {
+  /** Rive trigger name to fire on the live instance. */
+  name: string;
+  /** Bumped per request so a repeated reaction still re-fires. */
+  nonce: number;
+  /** Wall-clock time (ms, `Date.now()`) the reaction was issued — see above. */
+  ts: number;
+}
+
 export interface KojiMascotProps {
   /**
    * Tailwind size utility for the mascot box (e.g. `"size-40"`, `"size-64"`).
@@ -29,6 +48,14 @@ export interface KojiMascotProps {
    * slightly randomized ~4–6s cadence.
    */
   loopIntervalMs?: number;
+  /**
+   * Imperative outcome reaction: when its `nonce` changes the mascot fires `name`
+   * via the same trigger path the idle loop uses, so a parent can drive
+   * success/miss reactions without disturbing the entrance or the idle loop. A
+   * reaction still pending at (re)mount fires only if it's recent (so the
+   * first-wrong auto-open reacts; a stale one on a later re-open doesn't). Optional.
+   */
+  reactionSignal?: MascotReactionSignal;
 }
 
 /**
@@ -46,6 +73,14 @@ const LOOP_REACTIONS = [
 /** Gentle, slightly randomized cadence for the alive loop (~4–6s). */
 const LOOP_MIN_MS = 4000;
 const LOOP_MAX_MS = 6000;
+
+/**
+ * How recent a {@link MascotReactionSignal} may be to still fire on the mascot's
+ * (re)mount. Long enough to cover the first-wrong auto-open (the panel + mascot
+ * mount a frame or two after the grade), short enough that re-opening the panel
+ * later never replays a stale reaction.
+ */
+const REACTION_FRESH_MS = 1500;
 
 function pick<T>(xs: readonly T[]): T {
   return xs[Math.floor(Math.random() * xs.length)];
@@ -82,6 +117,7 @@ export function KojiMascot({
   loop = true,
   reactions = LOOP_REACTIONS,
   loopIntervalMs,
+  reactionSignal,
 }: KojiMascotProps) {
   const riveRef = useRef<Rive | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -89,6 +125,10 @@ export function KojiMascot({
   const enteredRef = useRef(false);
   const inViewRef = useRef(false);
   const loopIdRef = useRef<number | null>(null);
+  // The last reaction nonce this mounted instance has already handled. Starts null
+  // (NOT the mount-time nonce) so a still-pending reaction at mount is eligible —
+  // it's then gated on freshness below — instead of being silently absorbed.
+  const lastReactionNonceRef = useRef<number | null>(null);
 
   // Fire a ViewModel trigger on the live instance (no-op until Koji has loaded).
   const fire = useCallback((trigger: string) => {
@@ -149,6 +189,26 @@ export function KojiMascot({
     observer.observe(el);
     return () => observer.disconnect();
   }, [tryEnter]);
+
+  // Imperative outcome reactions (success / miss), driven by the parent via
+  // `reactionSignal`. Fire `name` for each nonce we haven't handled yet. The
+  // nonce-dedupe makes this idempotent within a mounted instance, so an effect
+  // re-run / StrictMode double-invoke can't double-fire. We mark the nonce handled
+  // BEFORE the freshness check so a stale reaction is skipped permanently (never
+  // fired later either). On (re)mount the ref is null, so a still-pending reaction
+  // is eligible — but only fires if it's RECENT: this lets the FIRST wrong answer
+  // react as the panel auto-opens (it mounts the mascot a frame or two after the
+  // grade) while never replaying a stale reaction when the panel is merely
+  // re-opened later. `fire()` is a no-op until Koji has loaded; the entrance + idle
+  // loop are untouched.
+  useEffect(() => {
+    if (!reactionSignal) return;
+    if (lastReactionNonceRef.current === reactionSignal.nonce) return;
+    lastReactionNonceRef.current = reactionSignal.nonce;
+    if (Date.now() - reactionSignal.ts < REACTION_FRESH_MS) {
+      fire(reactionSignal.name);
+    }
+  }, [reactionSignal, fire]);
 
   // Stop the reaction loop on unmount.
   useEffect(

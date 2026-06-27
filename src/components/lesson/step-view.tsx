@@ -1,9 +1,12 @@
+import type { RefObject } from "react";
+
 import type {
   AnswerValue,
   Interaction,
   Step,
   VisualSpec,
 } from "../../content/types";
+import type { CanvasComponentHandle } from "../../lib/ai/tools/canvas";
 import { cn } from "../../lib/cn";
 import { renderMathText } from "../ui/math";
 import {
@@ -40,6 +43,13 @@ export interface StepViewProps {
   phase: StepPhase;
   /** Lets numeric entry grade on Enter. */
   onSubmit?: () => void;
+  /**
+   * Sink for the mounted interaction's `CanvasComponentHandle` (Koji's canvas
+   * tools). The host passes its interaction-handle ref here only when AI is on;
+   * `InteractionView` forwards it to interactions that implement the handle
+   * (currently `pick-side` / `pick-sides`). Omitted = no canvas wiring.
+   */
+  canvasRef?: RefObject<CanvasComponentHandle | null>;
 }
 
 function VisualView({ visual }: { visual: VisualSpec }) {
@@ -92,6 +102,7 @@ function InteractionView({
   phase,
   onSubmit,
   stepVisual,
+  canvasRef,
 }: {
   interaction: Interaction;
   answer: AnswerValue | null;
@@ -99,6 +110,7 @@ function InteractionView({
   phase: StepPhase;
   onSubmit?: () => void;
   stepVisual?: VisualSpec;
+  canvasRef?: RefObject<CanvasComponentHandle | null>;
 }) {
   const locked = phase !== "answering";
 
@@ -189,6 +201,7 @@ function InteractionView({
           placeholder={interaction.placeholder}
           disabled={locked}
           state={numericState}
+          canvasRef={canvasRef}
           onChange={(v) => onAnswer({ kind: "numeric", value: v })}
           onEnter={onSubmit}
         />
@@ -204,6 +217,7 @@ function InteractionView({
           value={value}
           unit={interaction.unit}
           disabled={locked}
+          canvasRef={canvasRef}
           onChange={(v) => onAnswer({ kind: "slider", value: v })}
         />
       );
@@ -219,7 +233,9 @@ function InteractionView({
           markers={markers}
           placed={placed}
           targetCount={target}
+          targets={interaction.targets}
           disabled={locked}
+          canvasRef={canvasRef}
           onPlace={(p) => {
             if (placed.some((q) => q.x === p.x && q.y === p.y)) return;
             const next = [...placed, p].slice(-target);
@@ -258,6 +274,7 @@ function InteractionView({
           selected={side ? [side] : []}
           phase={phase}
           sideNames={interaction.sideNames}
+          canvasRef={canvasRef}
           onSelect={(s) =>
             onAnswer({ kind: "pick-side", side: side === s ? null : s })
           }
@@ -276,6 +293,7 @@ function InteractionView({
           phase={phase}
           sideNames={interaction.sideNames}
           emptyHint="Tap each leg to choose it."
+          canvasRef={canvasRef}
           onSelect={(s) =>
             onAnswer({
               kind: "pick-sides",
@@ -297,6 +315,7 @@ function InteractionView({
           phase={phase}
           vertexNames={interaction.vertexNames}
           emptyHint="Tap the corner with the right angle."
+          canvasRef={canvasRef}
           onSelect={(v) =>
             onAnswer({ kind: "pick-angle", vertex: vertex === v ? null : v })
           }
@@ -319,6 +338,7 @@ function InteractionView({
           value={value}
           state={countState}
           disabled={locked}
+          canvasRef={canvasRef}
           onChange={(v) => onAnswer({ kind: "count-squares", value: v })}
           onEnter={onSubmit}
         />
@@ -369,7 +389,14 @@ function InteractionView({
 }
 
 /** Renders one lesson step (concept or problem) from the content model. */
-export function StepView({ step, answer, onAnswer, phase, onSubmit }: StepViewProps) {
+export function StepView({
+  step,
+  answer,
+  onAnswer,
+  phase,
+  onSubmit,
+  canvasRef,
+}: StepViewProps) {
   if (step.kind === "concept") {
     return (
       <div className="flex flex-col items-center gap-5 px-4 py-6">
@@ -420,6 +447,7 @@ export function StepView({ step, answer, onAnswer, phase, onSubmit }: StepViewPr
         phase={phase}
         onSubmit={onSubmit}
         stepVisual={step.visual}
+        canvasRef={canvasRef}
       />
     </div>
   );

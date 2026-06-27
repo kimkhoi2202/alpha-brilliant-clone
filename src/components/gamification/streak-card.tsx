@@ -1,5 +1,5 @@
 import { cn } from "../../lib/cn";
-import { StreakBolt } from "../chrome";
+import { StreakBolt, StreakDayDisc } from "../chrome";
 
 export interface StreakDay {
   label: string;
@@ -31,19 +31,10 @@ export function StreakCard({ count, message, days, className }: StreakCardProps)
       <div className="mt-4 flex justify-between">
         {days.map((d, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
-            <span
-              className={cn(
-                "grid size-8 place-items-center rounded-full text-xs",
-                d.state === "completed"
-                  ? "bg-success text-success-foreground"
-                  : d.state === "current"
-                    ? "border-2 border-accent text-foreground"
-                    : "bg-default text-muted",
-              )}
-              aria-hidden
-            >
-              <StreakBolt completed={d.state !== "upcoming"} className="size-4" />
-            </span>
+            <StreakDayDisc
+              state={d.state === "completed" ? "done" : d.state}
+              className="size-8"
+            />
             <span
               className={cn(
                 "text-xs",

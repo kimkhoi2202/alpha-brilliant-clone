@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { cn } from "../../lib/cn";
+import { iconButtonClass } from "../chrome/icon-button";
 import { Button, type ButtonVariant } from "../ui";
 
 /* -------------------------------------------------------------------------------------------------
@@ -793,16 +794,14 @@ export function LessonCalculator({ className }: LessonCalculatorProps) {
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
             Calculator
           </span>
-          <Button
-            isIconOnly
-            variant="ghost"
-            pill={false}
+          <button
+            type="button"
             aria-label="Close calculator"
-            onPress={() => setOpen(false)}
-            className="size-7 min-h-0 min-w-0 rounded-lg text-muted hover:text-foreground"
+            onClick={() => setOpen(false)}
+            className={iconButtonClass({ size: "size-8" })}
           >
             <CloseIcon className="size-4" />
-          </Button>
+          </button>
         </div>
         <div className="mb-3 rounded-xl border border-border/60 bg-[#2b2b2f] px-3 py-2">
           <div className="flex h-4 items-center">

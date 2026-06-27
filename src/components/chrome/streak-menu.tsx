@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/cn";
 import { Counter } from "../ui/counter";
 import { StreakBolt } from "./streak-bolt";
+import { StreakDayDisc } from "./streak-day-disc";
 
 export interface StreakMenuProps {
   currentStreak: number;
@@ -16,33 +17,6 @@ const WEEKDAYS = ["M", "T", "W", "Th", "F"] as const;
 function todayWeekday(): { idx: number; isWeekday: boolean } {
   const mon0 = (new Date().getDay() + 6) % 7; // 0 Mon … 6 Sun
   return mon0 <= 4 ? { idx: mon0, isWeekday: true } : { idx: 4, isWeekday: false };
-}
-
-/** One day in the streak week: a pear disc + bolt when done, else a faint ring. */
-function DayDisc({ done }: { done: boolean }) {
-  return (
-    <svg viewBox="0 0 32 32" className="size-10" aria-hidden>
-      {done ? (
-        <rect width="32" height="32" rx="16" fill="var(--streak)" />
-      ) : (
-        <rect
-          x="1"
-          y="1"
-          width="30"
-          height="30"
-          rx="15"
-          fill="none"
-          stroke="var(--foreground)"
-          strokeOpacity={0.08}
-          strokeWidth={1.5}
-        />
-      )}
-      <path
-        d="M10.2903 16.2252L16.5654 8.24794C16.9417 7.76964 17.7079 8.10483 17.612 8.70578L16.7061 14.3834H20.5934C21.3322 14.3834 21.7459 15.2351 21.2891 15.8159L15.014 23.7931C14.6378 24.2714 13.8716 23.9362 13.9674 23.3353L14.8734 17.6577H10.9861C10.2472 17.6577 9.83354 16.8059 10.2903 16.2252Z"
-        fill={done ? "var(--background)" : "var(--bp-wa-400)"}
-      />
-    </svg>
-  );
 }
 
 function Stat({ value, label }: { value: number; label: string }) {
@@ -163,7 +137,7 @@ export function StreakMenu({
                     className="streak-disc flex flex-col items-center gap-2"
                     style={{ animationDelay: `${i * 45}ms` }}
                   >
-                    <DayDisc done={done} />
+                    <StreakDayDisc state={done ? "done" : "upcoming"} />
                     <span
                       className={cn(
                         "text-sm",

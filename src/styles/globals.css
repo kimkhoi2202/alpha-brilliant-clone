@@ -240,16 +240,12 @@
    * fallback below. Easing pulls the shared tokens defined in @theme.
    * ===================================================================== */
 
-  /* Koji bottom-sheet + its backdrop — a paired enter/exit (shared easing). The
-     panel stays mounted through its exit animation, then onAnimationEnd unmounts
-     it. Reduced motion keeps a quick opacity-only fade (NOT `none`) so the exit
-     still fires animationend and the sheet actually unmounts. */
-  .koji-backdrop[data-state="open"] {
-    animation: koji-fade-in 240ms var(--ease-out-cubic) both;
-  }
-  .koji-backdrop[data-state="closed"] {
-    animation: koji-fade-out 200ms var(--ease-out-cubic) both;
-  }
+  /* Koji bottom-sheet — a self-contained enter/exit (shared easing). The panel is
+     non-modal, so there is NO backdrop; this animates the sheet alone. It stays
+     mounted through its exit animation, then onAnimationEnd unmounts it. Reduced
+     motion keeps a quick opacity-only fade (NOT `none`) so the exit still fires
+     animationend and the sheet actually unmounts — the koji-fade-in/out keyframes
+     below are reused by that fallback. */
   .koji-sheet[data-state="open"] {
     animation: koji-sheet-in 240ms var(--ease-out-cubic) both;
   }
@@ -356,6 +352,22 @@
     }
   }
 
+  /* Koji "point at this" — a gentle opacity pulse on a canvas annotation
+     (a highlighted side / right angle), so `pointToElement` draws the eye
+     without moving layout. Reduced-motion turns it off (a steady highlight). */
+  .koji-canvas-pulse {
+    animation: koji-canvas-pulse 1.2s var(--ease-in-out-cubic) infinite;
+  }
+  @keyframes koji-canvas-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
   /* Infinite Practice — each generated problem (and the loading/error stage)
      settles in on mount; the per-problem remount re-arms it. */
   .practice-stage-in {
@@ -377,18 +389,76 @@
     .koji-typing-dot,
     .koji-mic-ring,
     .koji-eq-bar,
+    .koji-canvas-pulse,
     .practice-stage-in {
       animation: none;
     }
     /* Keep a minimal fade (not `none`) so the sheet's exit still completes and
        its onAnimationEnd unmounts it. */
-    .koji-sheet[data-state="open"],
-    .koji-backdrop[data-state="open"] {
+    .koji-sheet[data-state="open"] {
       animation: koji-fade-in 120ms linear both;
     }
-    .koji-sheet[data-state="closed"],
-    .koji-backdrop[data-state="closed"] {
+    .koji-sheet[data-state="closed"] {
       animation: koji-fade-out 120ms linear both;
+    }
+  }
+}
+
+@layer components {
+  /* =====================================================================
+   * SliderInput thumb press/release microinteraction
+   * ---------------------------------------------------------------------
+   * The native <input type="range"> thumb is a pseudo-element, so JS/Motion
+   * can't target it directly. Instead `SliderInput` drives a `--thumb-scale`
+   * custom property on the input with a Motion spring (press → ~0.9, release →
+   * slight overshoot → 1) and the thumb reads it here via `transform: scale()`.
+   *
+   * Because the input is `appearance: none`, WebKit only renders/styles a real
+   * thumb — and only honours `transform` on it — when the thumb itself is
+   * `-webkit-appearance: none` with an explicit size. So we draw an on-brand
+   * accent disc (this also restores a crisp, visible thumb that bare
+   * `accent-color` can't provide under `appearance: none`).
+   *
+   * `transform-origin` defaults to the disc's own center → it scales in place
+   * with zero layout shift. `transition: none` because Motion owns the timing
+   * (the variable is rewritten every frame, so a CSS transition would only fight
+   * the spring). The `.alpha-slider` marker class scopes all of this to
+   * SliderInput; `will-change` hints the tiny disc onto its own compositor layer
+   * for jank-free scaling.
+   * ===================================================================== */
+  input[type="range"].alpha-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    margin-top: -5px; /* center the 18px disc on the 8px (h-2) track */
+    border-radius: 9999px;
+    background: var(--accent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    transform: scale(var(--thumb-scale, 1));
+    transition: none;
+    will-change: transform;
+  }
+  input[type="range"].alpha-slider::-moz-range-thumb {
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    border: none;
+    border-radius: 9999px;
+    background: var(--accent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    transform: scale(var(--thumb-scale, 1));
+    transition: none;
+    will-change: transform;
+  }
+
+  /* Reduced motion: never scale. SliderInput also skips the animation in JS, so
+     this is a belt-and-suspenders guarantee of a perfectly still thumb. */
+  @media (prefers-reduced-motion: reduce) {
+    input[type="range"].alpha-slider::-webkit-slider-thumb,
+    input[type="range"].alpha-slider::-moz-range-thumb {
+      transform: none;
+      will-change: auto;
     }
   }
 }

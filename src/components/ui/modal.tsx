@@ -36,8 +36,11 @@ export function Modal({
   return (
     <HeroModal isOpen={isOpen} onOpenChange={onOpenChange}>
       {trigger ? <HeroModal.Trigger>{trigger}</HeroModal.Trigger> : null}
-      <HeroModal.Backdrop isDismissable={isDismissable}>
-        <HeroModal.Container size={size} placement={placement}>
+      {/* z-[70] keeps the dialog + its backdrop above the Koji panel (z-[60])
+          and the calculator (z-50), below toasts (z-[80]) — so a modal blurs out
+          everything, including an open Koji chat. */}
+      <HeroModal.Backdrop isDismissable={isDismissable} className="z-[70]">
+        <HeroModal.Container size={size} placement={placement} className="z-[70]">
           <HeroModal.Dialog className={className}>{children}</HeroModal.Dialog>
         </HeroModal.Container>
       </HeroModal.Backdrop>

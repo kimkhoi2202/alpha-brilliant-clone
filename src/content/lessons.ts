@@ -46,15 +46,15 @@ const rightTriangle: Lesson = {
         hints: [
           {
             selectionId: "a",
-            hint: "That's a leg, one of the two sides that form the right angle. The hypotenuse is the slanted side opposite it.",
+            hint: "This side helps form the square corner. Does the hypotenuse touch the right angle, or sit across from it?",
           },
           {
             selectionId: "b",
-            hint: "That's the other leg. Look for the side facing the 90° corner.",
+            hint: "This side meets the right angle too. Which single side faces the 90° corner from across the triangle?",
           },
         ],
         default:
-          "Look for the side opposite the right angle, it's the longest, slanted one.",
+          "Find the right-angle corner first. Which side is the only one that doesn't touch it — the one lying straight across from it?",
       },
     },
     {
@@ -73,11 +73,11 @@ const rightTriangle: Lesson = {
         hints: [
           {
             selectionId: "c",
-            hint: "c is the hypotenuse, not a leg. The legs are the two sides that form the square corner.",
+            hint: "Does that slanted side touch the right-angle corner? Remember, the legs are the two sides that actually meet to form the 90° angle.",
           },
         ],
         default:
-          "The legs are the two shorter sides that meet at the 90° corner, not the slanted side opposite it.",
+          "Which two sides meet to form the right angle itself? Those are the legs — the slanted side opposite the corner isn't one of them.",
       },
     },
     {
@@ -91,15 +91,15 @@ const rightTriangle: Lesson = {
         hints: [
           {
             selectionId: "B",
-            hint: "That's where a leg meets the hypotenuse. The right angle is where the two legs meet.",
+            hint: "At this corner a leg meets the slanted side. Where do the two legs meet each other instead?",
           },
           {
             selectionId: "C",
-            hint: "That's where a leg meets the hypotenuse. The right angle is where the two legs meet.",
+            hint: "Here a leg meets the slanted side. Which corner is where the two legs come together to make the square angle?",
           },
         ],
         default:
-          "The right angle is the corner where the two legs meet, opposite the hypotenuse.",
+          "Which corner is where the two legs meet each other — the one sitting opposite the slanted side?",
       },
     },
     {
@@ -140,10 +140,10 @@ const discoverTheorem: Lesson = {
       feedback: {
         correct: "Yes! A $3 \\times 3$ grid holds 9 unit squares, so the square on leg a has area 9.",
         hints: [
-          { equals: 12, hint: "12 is the perimeter. Count the cells inside: 3 rows of 3." },
-          { equals: 6, hint: "That's the two sides added, but a square's area is one side times itself." },
+          { equals: 12, hint: "That's the distance around the square (its perimeter). How many cells fill the inside — how many rows, and how many in each row?" },
+          { equals: 6, hint: "That looks like one side plus another. To fill a square you multiply a side by itself, not add — what does that give?" },
         ],
-        default: "Count the cells along one edge, then multiply edge by edge.",
+        default: "How many unit cells run along one edge? Stack that many identical rows to fill the square — how many cells in all?",
       },
     },
     {
@@ -153,8 +153,8 @@ const discoverTheorem: Lesson = {
       interaction: { kind: "count-squares", a: 3, b: 4, countSide: "b" },
       feedback: {
         correct: "Right! A $4 \\times 4$ grid is 16 unit squares.",
-        hints: [{ equals: 8, hint: "8 is $4 + 4$. Count the grid: 4 rows of 4." }],
-        default: "Count the cells along one edge, then multiply edge by edge.",
+        hints: [{ equals: 8, hint: "That's $4 + 4$, adding the side to itself. Filling a square multiplies a side by itself instead — what does that come to?" }],
+        default: "How many unit cells run along one edge? Stack that many identical rows to fill the square — how many cells in all?",
       },
     },
     {
@@ -166,9 +166,9 @@ const discoverTheorem: Lesson = {
         correct:
           "25 cells. Now look closely: $9 + 16 = 25$. The two leg squares hold exactly as many cells as the hypotenuse square!",
         hints: [
-          { equals: 5, hint: "5 is the side length. Count the cells: it's a $5 \\times 5$ tilted grid." },
+          { equals: 5, hint: "That's the length of one side of this tilted square. How many cells fill it when you multiply that side by itself?" },
         ],
-        default: "Measure one side of this square, then multiply it by itself.",
+        default: "How long is one edge of this tilted square? Multiply that length by itself to count every cell.",
       },
     },
     {
@@ -180,8 +180,8 @@ const discoverTheorem: Lesson = {
       feedback: {
         correct:
           "100, which is exactly $10^2$, the hypotenuse squared. The pattern holds again.",
-        hints: [{ equals: 14, hint: "14 is $6 + 8$. Square each one first: $36 + 64$." }],
-        default: "Square each leg, then add the two results, like the last example.",
+        hints: [{ equals: 14, hint: "That's $6 + 8$, the legs added. Square each leg first — what are $6^2$ and $8^2$, and then their sum?" }],
+        default: "Square each leg on its own first, then add the two results — just like the last example.",
       },
     },
     {
@@ -214,15 +214,15 @@ const discoverTheorem: Lesson = {
         hints: [
           {
             selectionId: "sum",
-            hint: "It's the squares (areas) that are equal, not the side lengths themselves.",
+            hint: "Close — but is it the side lengths that add up, or the areas of the squares built on those sides?",
           },
           {
             selectionId: "equal",
-            hint: "You've got the right idea, the two smaller squares together match the big one.",
+            hint: "The four triangles are congruent, true. But what did the rearrangement show about the two leg-squares versus the big square?",
           },
         ],
         default:
-          "Think about how the two leg-squares relate to the big hypotenuse-square, then pick the statement that captures it.",
+          "What did the matching gold areas show — how do the two leg-squares compare to the square on the hypotenuse?",
       },
     },
     {
@@ -269,7 +269,7 @@ const findHypotenuse: Lesson = {
         correct:
           "Yes! c is the hypotenuse, so $c^2$ is the hypotenuse multiplied by itself.",
         default:
-          "Recall which side c stands for, then think about what squaring that side means.",
+          "Which side does c stand for? And what does squaring that side — multiplying it by itself — give you?",
       },
     },
     {
@@ -286,7 +286,7 @@ const findHypotenuse: Lesson = {
       feedback: {
         correct: "That's it! $a^2 + b^2 = c^2$.",
         default:
-          "Square each leg for the left side and set the sum equal to the hypotenuse squared, the 2ab tile is just a distractor.",
+          "The left side should be the two legs' squares added together. What should that equal on the right? (One tile here is only a distractor.)",
       },
     },
     {
@@ -297,10 +297,10 @@ const findHypotenuse: Lesson = {
       feedback: {
         correct: "Right! $3^2 = 3 \\times 3 = 9$.",
         hints: [
-          { equals: 6, hint: "6 is $3 + 3$. Squaring means $3 \\times 3$, not $3 + 3$." },
-          { equals: 3, hint: "That's just the side. $a^2$ means $3 \\times 3$." },
+          { equals: 6, hint: "That's $3 + 3$. Squaring isn't adding — what is $3$ times $3$?" },
+          { equals: 3, hint: "That's just the side itself. What does $3^2$ — three multiplied by itself — come to?" },
         ],
-        default: "Remember that $a^2$ means $a \\times a$, so multiply the side length by itself.",
+        default: "What does $a^2$ mean? It's the side multiplied by itself, not added to itself.",
       },
     },
     {
@@ -312,10 +312,10 @@ const findHypotenuse: Lesson = {
       feedback: {
         correct: "Nice! $3^2 + 4^2 = 9 + 16 = 25$, and that number is $c^2$.",
         hints: [
-          { equals: 7, hint: "7 is $3 + 4$. Square each leg first: $9 + 16$." },
-          { equals: 12, hint: "12 is $3 \\times 4$. You want $3^2 + 4^2 = 9 + 16$." },
+          { equals: 7, hint: "That's $3 + 4$, the legs added. Square each one first — what are $3^2$ and $4^2$, and then their total?" },
+          { equals: 12, hint: "That's $3 \\times 4$, the legs multiplied. The theorem wants $3^2 + 4^2$ instead — what does each square come to?" },
         ],
-        default: "Square each leg first, then add the two results together.",
+        default: "Square each leg on its own first, then add those two squares together.",
       },
     },
     {
@@ -327,10 +327,10 @@ const findHypotenuse: Lesson = {
       feedback: {
         correct: "Exactly! $c = \\sqrt{25} = 5$.",
         hints: [
-          { equals: 25, hint: "25 is $c^2$. Take the square root to get c itself." },
-          { equals: 12.5, hint: "Don't halve it, the hypotenuse is the square root of 25, not half of it." },
+          { equals: 25, hint: "That's $c^2$ — the area, not the side. What operation undoes squaring to get $c$ back?" },
+          { equals: 12.5, hint: "Halving isn't the opposite of squaring. What number, multiplied by itself, gives 25?" },
         ],
-        default: "Take the square root of 25 to find the hypotenuse length.",
+        default: "You have $c^2 = 25$. What number times itself makes 25?",
       },
     },
     {
@@ -342,10 +342,10 @@ const findHypotenuse: Lesson = {
       feedback: {
         correct: "Correct! $6^2 + 8^2 = 36 + 64 = 100$, and $\\sqrt{100} = 10$.",
         hints: [
-          { equals: 14, hint: "14 is $6 + 8$. Square first: $36 + 64 = 100$, then $\\sqrt{100}$." },
-          { equals: 100, hint: "That's $c^2$, you're one step from the answer, take its square root." },
+          { equals: 14, hint: "That's $6 + 8$, the legs added. Square each first instead — what's $6^2 + 8^2$, and what undoes that final square?" },
+          { equals: 100, hint: "You've found $c^2$ — one step to go. What operation turns $c^2$ back into $c$?" },
         ],
-        default: "Square each leg, add the two results, then take the square root of that total.",
+        default: "Square each leg and add them to get $c^2$ — then what do you do to $c^2$ to find $c$ itself?",
       },
     },
   ],
@@ -375,7 +375,7 @@ const findALeg: Lesson = {
       feedback: {
         correct:
           "Yes! $a^2 = c^2 - b^2$. Subtract the known leg's square from the hypotenuse's square.",
-        default: "Start from $a^2 + b^2 = c^2$, then move $b^2$ to the other side so $a^2$ stands alone.",
+        default: "Start from $a^2 + b^2 = c^2$. To get $a^2$ alone, what has to move to the other side — and how does its sign change?",
       },
     },
     {
@@ -394,10 +394,10 @@ const findALeg: Lesson = {
       feedback: {
         correct: "Yes! $13^2 - 5^2 = 169 - 25 = 144$, and $\\sqrt{144} = 12$.",
         hints: [
-          { equals: 8, hint: "That's $13 - 5$. Instead subtract the squares of the two known sides, then take the square root of what's left." },
-          { equals: 144, hint: "Close! You found the leg squared, now take its square root to get the leg." },
+          { equals: 8, hint: "That's $13 - 5$, subtracting the sides directly. The theorem works with squares — what is $13^2 - 5^2$, and what undoes that square at the end?" },
+          { equals: 144, hint: "That's the missing leg squared. What operation turns a squared length back into the length itself?" },
         ],
-        default: "Subtract the smaller square from the hypotenuse's square, then take the square root of the result.",
+        default: "Use $a^2 = c^2 - b^2$: subtract the known square from the hypotenuse's square — then how do you get the leg from its square?",
       },
     },
     {
@@ -423,15 +423,15 @@ const findALeg: Lesson = {
         hints: [
           {
             selectionId: "always",
-            hint: "Try it: $6 + 8 = 14$, but the real hypotenuse is 10. They're not equal.",
+            hint: "Test that claim: does $6 + 8$ really match the straight-across distance? Compare walking both legs with cutting straight across.",
           },
           {
             selectionId: "bigger",
-            hint: "Rethink the direction, can a straight shortcut really be longer than going around two sides?",
+            hint: "Think about direction: can a straight shortcut ever be longer than going around two sides?",
           },
         ],
         default:
-          "Picture a straight shortcut versus walking along both legs, then compare which route is longer.",
+          "Compare two routes between the same points — straight across versus along both legs. Which is shorter, and which one is the hypotenuse?",
       },
     },
     {
@@ -456,7 +456,7 @@ const findALeg: Lesson = {
         correct:
           "Nicely sorted. 3-4-5, 6-8-10, and 5-12-13 each pass $a^2 + b^2 = c^2$. 4-5-6 ($16 + 25 \\neq 36$) and 6-7-8 ($36 + 49 \\neq 64$) fail.",
         default:
-          "Check each set with $a^2 + b^2 = c^2$, squaring the two shorter sides and comparing to the longest, the balanced ones are right triangles.",
+          "For each set, square the two shorter numbers and compare their sum to the square of the largest. When does $a^2 + b^2 = c^2$ actually hold?",
       },
     },
   ],
@@ -495,7 +495,7 @@ const directDistance: Lesson = {
       visual: { kind: "coordinate-grid", size: 6, markers: [{ x: 0, y: 0 }] },
       feedback: {
         correct: "That's the spot! 3 across, then 4 up.",
-        default: "Count 3 to the right along the x-axis, then 4 up the y-axis.",
+        default: "Read the point as (x, y): how far across the x-axis, then how far up the y-axis? Place it where those meet.",
       },
     },
     {
@@ -514,8 +514,8 @@ const directDistance: Lesson = {
       },
       feedback: {
         correct: "Right! The legs are 3 and 4, so the distance is $\\sqrt{9 + 16} = 5$.",
-        hints: [{ equals: 7, hint: "7 is $3 + 4$ (walking the corner). Cut straight across instead: $\\sqrt{3^2 + 4^2}$." }],
-        default: "The legs are 3 and 4, so square each, add them, then take the square root of that total.",
+        hints: [{ equals: 7, hint: "That's $3 + 4$ — walking along both legs. The straight-line distance cuts the corner: what is $\\sqrt{3^2 + 4^2}$ asking you to do?" }],
+        default: "The horizontal and vertical gaps are the legs (3 and 4). Square each, add them — then what undoes that square to give the distance?",
       },
     },
     {
@@ -534,8 +534,8 @@ const directDistance: Lesson = {
       },
       feedback: {
         correct: "Yes! $\\sqrt{6^2 + 8^2} = \\sqrt{100} = 10$.",
-        hints: [{ equals: 14, hint: "14 is $6 + 8$. Cut the corner instead: $\\sqrt{36 + 64}$." }],
-        default: "The gaps are 6 and 8, so square each, add them, then take the square root of that total.",
+        hints: [{ equals: 14, hint: "That's $6 + 8$, the two legs walked end to end. Cutting straight across uses $\\sqrt{6^2 + 8^2}$ — what does that come to?" }],
+        default: "The gaps across and up are 6 and 8. Square each, add them for the distance squared — then how do you get the distance itself?",
       },
     },
     {
@@ -555,10 +555,10 @@ const directDistance: Lesson = {
       feedback: {
         correct: "Right! The gaps are $4 - 1 = 3$ and $6 - 2 = 4$, so the distance is $\\sqrt{9 + 16} = 5$.",
         hints: [
-          { equals: 7, hint: "Find the gaps first: $4 - 1 = 3$ across, $6 - 2 = 4$ up. Then $\\sqrt{3^2 + 4^2}$." },
-          { equals: 9, hint: "Don't add the coordinates. Use the differences: 3 and 4." },
+          { equals: 7, hint: "First find the gaps: how far apart are the x-values, and the y-values? Those gaps are your legs — then cut the corner with the theorem." },
+          { equals: 9, hint: "Adding the coordinates isn't it. What are the differences in x and in y? Use those as the legs." },
         ],
-        default: "Horizontal gap 3, vertical gap 4, so square each, add them, then take the square root of that total.",
+        default: "Find the horizontal and vertical gaps between the points by subtracting coordinates. Those are the legs — now apply the distance idea.",
       },
     },
     {
@@ -577,10 +577,10 @@ const directDistance: Lesson = {
       feedback: {
         correct: "Yes! Square the two gaps, add them, then take one square root over the whole sum.",
         hints: [
-          { selectionId: "sum", hint: "Adding the raw gaps walks the corner. Square them, add, then square-root." },
-          { selectionId: "split", hint: "The square root goes over the whole sum, not each term separately." },
+          { selectionId: "sum", hint: "Does adding the raw gaps give a straight-line distance, or does that just walk the corner? What has to happen to each gap first?" },
+          { selectionId: "split", hint: "Look closely at where the square root sits: should it cover each term separately, or the whole sum at once?" },
         ],
-        default: "Square each gap, add them, then take one square root over the whole sum, then pick the option that does exactly that.",
+        default: "Which option squares each gap, adds them, and takes a single square root over the whole sum? Match the steps to the formula.",
       },
     },
   ],

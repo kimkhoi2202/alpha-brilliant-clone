@@ -1,11 +1,12 @@
 /**
- * `HintCards` — progressive hint tiers as a click-to-advance flip card
+ * `HintCards` — progressive hint tiers behind a single "Give me a Hint" button
  * (PRD-phase-2 §4.1 "progressive hints, no spoilers").
  *
- * The learner taps the card to reveal Hint 1, taps again for Hint 2, then Hint 3
- * (capped at three). Each tier flips in with Motion (the Pingo flip-card pattern,
- * but click-triggered, not swipe). The host's auto-offer token reveals the first
- * hint automatically after ≥2 wrong attempts.
+ * The learner taps the button to reveal Hint 1, taps again ("Give me another
+ * hint") for Hint 2, then Hint 3 (capped at three); after the last tier the
+ * button gives way to a quiet "give it a go" line. The revealed hint renders as
+ * plain (KaTeX-aware) text above the button, fading in with Motion. The host's
+ * auto-offer token reveals the first hint automatically after ≥2 wrong attempts.
  *
  * Each tier's text comes from the same grounded `giveHint` tool the voice agent
  * uses, then through the W1 client-side leak gate: a model hint that names the
@@ -24,13 +25,20 @@ import {
   type ToolContext,
 } from "../../../lib/ai/tools";
 import { hintLeaksAnswer } from "../../../lib/ai/verify";
-import { cn } from "../../../lib/cn";
+import { Button } from "../../ui/button";
 import { renderMathText } from "../../ui/math";
 
-/** Hint tiers cap at three (tier 0 is the pre-hint invitation card). */
+/** Hint tiers cap at three (tier 0 = no hint revealed yet). */
 const MAX_TIER = 3;
 /** Shared easing token (Emil Kowalski blueprint), inlined for Motion. */
 const EASE_OUT_CUBIC = [0.215, 0.61, 0.355, 1] as const;
+
+/**
+ * Temporarily hidden per request: the whole hint UI (the "Give me a Hint" button,
+ * the progressive tiers, and the auto-offer after wrong attempts) is off so
+ * learners can't use hints for now. Flip to `true` to restore the feature.
+ */
+const HINTS_ENABLED = false;
 
 export interface HintCardsProps {
   /** Live tool context (learner + step + grounding + engagement). */
@@ -45,7 +53,7 @@ export interface HintCardsProps {
 }
 
 export function HintCards({ ctx, step, autoHintToken }: HintCardsProps) {
-  // 0 = invitation; 1–3 = the hint tier on display.
+  // 0 = no hint shown yet; 1–3 = the hint tier on display.
   const [tier, setTier] = useState(0);
   const [hints, setHints] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
@@ -66,7 +74,11 @@ export function HintCards({ ctx, step, autoHintToken }: HintCardsProps) {
 
   // Auto-offer the first hint when the host bumps the token (≥2 wrong attempts).
   useEffect(() => {
-    if (autoHintToken > 0 && autoHintToken !== autoHandledRef.current) {
+    if (
+      HINTS_ENABLED &&
+      autoHintToken > 0 &&
+      autoHintToken !== autoHandledRef.current
+    ) {
       autoHandledRef.current = autoHintToken;
       setTier((t) => (t < 1 ? 1 : t));
     }
@@ -120,88 +132,59 @@ export function HintCards({ ctx, step, autoHintToken }: HintCardsProps) {
   }, []);
 
   const atLast = tier >= MAX_TIER;
-  const canAdvance = !busy && !atLast;
   const loadingTier = tier >= 1 && hints[tier] === undefined;
 
-  // The card body already shows "Thinking…" while a tier loads, so the affordance
-  // stays quiet during a fetch to avoid duplicating it.
-  const affordance = busy
-    ? ""
-    : atLast
-      ? "That's the last hint — give it a go."
-      : tier === 0
-        ? "Tap for a hint"
-        : "Tap for the next hint";
-
+  const buttonLabel = tier === 0 ? "Give me a Hint" : "Give me another hint";
   const ariaLabel =
     tier === 0
-      ? "Show a hint"
-      : atLast
-        ? `Hint ${tier} of ${MAX_TIER}. That's the last hint.`
-        : `Hint ${tier} of ${MAX_TIER}. Tap to show the next hint.`;
+      ? "Give me a hint"
+      : `Hint ${tier} of ${MAX_TIER}. Show the next hint.`;
 
-  return (
+  return HINTS_ENABLED ? (
     <section
       aria-label="Hints"
-      className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)_+_0.75rem)]"
+      className="shrink-0 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)_+_0.75rem)]"
     >
-      <button
-        type="button"
-        onClick={advance}
-        disabled={!canAdvance}
-        aria-label={ariaLabel}
-        className={cn(
-          "block w-full rounded-2xl border border-border bg-default/60 p-4 text-left outline-none",
-          "transition-colors focus-visible:ring-2 focus-visible:ring-accent",
-          canAdvance ? "cursor-pointer" : "cursor-default",
-        )}
-        style={{ perspective: 900 }}
-      >
-        <AnimatePresence mode="wait" initial={false}>
+      {/* Revealed hint — plain (KaTeX-aware) text, fading in per tier. */}
+      <AnimatePresence mode="wait" initial={false}>
+        {tier >= 1 ? (
           <motion.div
             key={tier}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, rotateY: -90 }}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, rotateY: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, rotateY: 90 }}
-            transition={{ duration: reduce ? 0.12 : 0.28, ease: EASE_OUT_CUBIC }}
-            style={{ transformOrigin: "center" }}
+            initial={reduce ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduce ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.24, ease: EASE_OUT_CUBIC }}
+            className="mb-3"
           >
-            {tier === 0 ? (
-              <>
-                <p className="text-[0.7rem] font-bold uppercase tracking-wider text-muted">
-                  Hints
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-foreground">
-                  Stuck? Tap for a nudge — I&apos;ll start small and build up, no
-                  spoilers.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-[0.7rem] font-bold uppercase tracking-wider tabular-nums text-accent-soft-foreground">
-                  Hint {tier} of {MAX_TIER}
-                </p>
-                <p
-                  className="mt-1 min-h-[1.25rem] text-sm leading-relaxed text-foreground"
-                  aria-live="polite"
-                >
-                  {loadingTier ? "Thinking…" : renderMathText(hints[tier] ?? "")}
-                </p>
-              </>
-            )}
+            <p
+              className="min-h-[1.25rem] text-sm leading-relaxed text-foreground"
+              aria-live="polite"
+            >
+              {loadingTier ? "Thinking…" : renderMathText(hints[tier] ?? "")}
+            </p>
           </motion.div>
-        </AnimatePresence>
+        ) : null}
+      </AnimatePresence>
 
-        <p
-          className={cn(
-            "mt-3 text-xs font-medium",
-            canAdvance ? "text-accent" : "text-muted",
-          )}
+      {atLast ? (
+        // Last tier reached: drop the button. Stay quiet while it's still
+        // loading (the text above shows "Thinking…"), then nudge them on.
+        busy ? null : (
+          <p className="text-xs font-medium text-muted">
+            That&apos;s the last hint — give it a go.
+          </p>
+        )
+      ) : (
+        <Button
+          variant="secondary"
+          fullWidth
+          isDisabled={busy}
+          onPress={advance}
+          aria-label={ariaLabel}
         >
-          {affordance}
-          {canAdvance ? <span aria-hidden> →</span> : null}
-        </p>
-      </button>
+          {buttonLabel}
+        </Button>
+      )}
     </section>
-  );
+  ) : null;
 }

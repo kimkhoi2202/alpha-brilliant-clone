@@ -16,11 +16,17 @@ export function Forms() {
           <label htmlFor="ds-name" className="block text-sm font-medium">
             Display name
           </label>
-          <Input id="ds-name" fullWidth placeholder="Ada Lovelace" />
+          <Input
+            id="ds-name"
+            fullWidth
+            placeholder="Ada Lovelace"
+            className="focus:border-accent focus:ring-0"
+          />
           <Input
             fullWidth
             placeholder="Lower-emphasis (secondary)"
             variant="secondary"
+            className="focus:border-accent focus:ring-0"
           />
         </div>
 

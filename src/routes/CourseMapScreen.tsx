@@ -38,8 +38,10 @@ export function CourseMapScreen() {
   };
 
   const rec = recommendation();
-  const courseAllCompleted = lessonOrder.every(
-    (id) => lessonStatus(id) === "completed",
+  // Offer reset whenever there's progress to wipe (any lesson started or
+  // completed), so a learner can restart mid-course — not only at 6/6.
+  const anyProgress = lessonOrder.some(
+    (id) => lessonStatus(id) !== "available",
   );
   // Infinite Practice (Pillar B) is reached AFTER the level review, and only
   // with AI on — otherwise the entry point stays hidden so the AI-off path is
@@ -141,7 +143,7 @@ export function CourseMapScreen() {
                     level={idx + 1}
                     title={lvl.title}
                     objectives={lvl.objectives}
-                    allCompleted={courseAllCompleted}
+                    canReset={anyProgress}
                     onReset={() => void resetProgress()}
                   />
                 }

@@ -15,13 +15,25 @@ export function SignUpForm({ onSubmit, onSignIn }: SignUpFormProps) {
     <>
       <ProviderButton icon="G">Continue with Google</ProviderButton>
       <DividerOr />
-      <Input type="email" placeholder="Email" />
-      <Input type="password" placeholder="Password" />
+      <Input
+        type="email"
+        placeholder="Email"
+        className="focus:border-accent focus:ring-0"
+      />
+      <Input
+        type="password"
+        placeholder="Password"
+        className="focus:border-accent focus:ring-0"
+      />
       <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="First name" />
-        <Input placeholder="Last name" />
+        <Input placeholder="First name" className="focus:border-accent focus:ring-0" />
+        <Input placeholder="Last name" className="focus:border-accent focus:ring-0" />
       </div>
-      <Input type="number" placeholder="Age" />
+      <Input
+        type="number"
+        placeholder="Age"
+        className="focus:border-accent focus:ring-0"
+      />
       <Button fullWidth onPress={onSubmit}>
         Create account
       </Button>
