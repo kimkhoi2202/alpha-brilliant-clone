@@ -22,7 +22,11 @@ export type HintLevel = 1 | 2 | 3;
 
 export interface GiveHintResult {
   ok: boolean;
-  /** The tier delivered (1 names the idea … 3 sets it up). */
+  /**
+   * The Socratic tier delivered: 1 = a guiding question / name the idea,
+   * 2 = narrow it to the relevant part, 3 = set it up with their numbers —
+   * always stopping before the final move.
+   */
   level: HintLevel;
   /** Hint text, or null when none could be produced. */
   text: string | null;
@@ -68,8 +72,10 @@ const giveHintParams = z.object({
 export const giveHint = defineTool({
   name: "giveHint",
   description:
-    "Give a progressive hint for the current problem (tier 1 names the idea, tier 2 the next step, " +
-    "tier 3 sets it up with their numbers — never the final answer). Omit level to escalate automatically.",
+    "Give a progressive, Socratic hint for the current problem: tier 1 asks a guiding question or " +
+    "names the underlying idea, tier 2 narrows it to the relevant part (pair it with the canvas " +
+    "tools to show that part), tier 3 sets it up with their own numbers — never the final answer. " +
+    "Omit level to escalate automatically from attempts so far.",
   parameters: giveHintParams,
   handler: async (args, ctx): Promise<GiveHintResult> => {
     // Asking Koji for a hint is engagement — record it even if the call fails.

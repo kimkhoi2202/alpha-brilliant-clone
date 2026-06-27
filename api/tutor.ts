@@ -1,25 +1,26 @@
 /**
- * `runTutor` — grounded text tutoring (PRD §4.1): progressive hints and
+ * POST /api/tutor — grounded text tutoring (PRD §4.1): progressive hints and
  * personalized wrong-answer explanations.
+ *
+ * Ported from `functions/src/handlers/tutor.ts` (Firebase callable → Vercel Node
+ * serverless). The tutoring logic + the hint leak firewall are preserved exactly;
+ * only the transport changes: a raw `Authorization: Bearer <Firebase ID token>`
+ * is verified with `jose` instead of trusting the callable's `request.auth`.
  *
  * The model PHRASES; our code stays the source of truth. We pass the
  * engine-computed `correctAnswer` as grounding, but in hint mode we post-check
- * the output and never let the final answer leak (P4). The mistake itself is
- * classified deterministically upstream (client) from `AnswerValue` vs.
- * `correctAnswer()`; here we just turn that grounded state into warm prose.
+ * the output and never let the final answer leak (P4).
+ *
+ * Contract (matches src/lib/ai/client.ts): 200 JSON `{ text: string | null }`.
  *
  * OpenAI endpoint (verified against openai@6.45.0):
  *   POST /v1/responses  ⇢  client.responses.create()  → `.output_text`
- *   (see node_modules/openai/resources/responses/responses.d.ts)
  */
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import OpenAI from "openai";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { z } from "zod";
-import { OPENAI_API_KEY } from "../shared/secrets.js";
-import { MODELS, type TextModel } from "../shared/openai.js";
-import { requireUid } from "../shared/auth.js";
-import { trackUsage } from "../shared/usage.js";
-import type { InteractionKind } from "../content/types.js";
+import { getOpenAI, MODELS, type TextModel } from "./_lib/openai.js";
+import { guardPost, readJsonBody } from "./_lib/http.js";
+import type { InteractionKind } from "./_lib/content/types.js";
 
 export type TutorMode = "hint" | "explain";
 
@@ -95,8 +96,6 @@ function mentionsNumericValue(text: string, value: number): boolean {
  * the value robustly so a leak like "it's 5." can't slip through the substring
  * path (C1). Non-numeric answers keep the case-insensitive substring check.
  */
-// Exported for unit testing (the smoke test exercises the real leak firewall);
-// behavior is unchanged — this is the same private helper `runTutor` calls.
 export function mentionsAnswer(
   text: string,
   answer: string | number,
@@ -182,8 +181,7 @@ const INTERACTION_KINDS = [
 
 /**
  * Bound the untrusted request (defence-in-depth, PRD §3.6). Mirrors the
- * known-kind gate in `generate.ts`; rejects anything out of range with
- * `invalid-argument`.
+ * known-kind gate in `generate.ts`; rejects anything out of range.
  */
 const runTutorSchema = z.object({
   concept: z.string().min(1).max(200),
@@ -200,58 +198,68 @@ const runTutorSchema = z.object({
   hintTier: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
 });
 
-export const runTutor = onCall<RunTutorRequest>(
-  { secrets: [OPENAI_API_KEY] },
-  async (request): Promise<RunTutorResponse> => {
-    const uid = requireUid(request);
+/**
+ * Core tutoring logic (thin HTTP wrapper below). Returns the firewall-checked
+ * hint / explanation text for a validated request.
+ */
+async function runTutor(req: RunTutorRequest): Promise<RunTutorResponse> {
+  const client = getOpenAI();
 
-    const parsed = runTutorSchema.safeParse(request.data);
-    if (!parsed.success) {
-      throw new HttpsError(
-        "invalid-argument",
-        parsed.error.issues[0]?.message ?? "Invalid runTutor request.",
-      );
-    }
-    const req: RunTutorRequest = parsed.data;
+  if (req.mode === "hint") {
+    const tier = resolveTier(req);
+    // Cheap, fast model for quick Tier-1 hints; flagship for deeper tiers.
+    const model: TextModel = tier === 1 ? MODELS.hintMini : MODELS.text;
 
-    const client = new OpenAI({ apiKey: OPENAI_API_KEY.value() });
-
-    if (req.mode === "hint") {
-      const tier = resolveTier(req);
-      // Cheap, fast model for quick Tier-1 hints; flagship for deeper tiers.
-      const model: TextModel = tier === 1 ? MODELS.hintMini : MODELS.text;
-
-      const response = await client.responses.create({
-        model,
-        instructions: HINT_SYSTEM,
-        input: buildHintPrompt(req, tier),
-        max_output_tokens: 300,
-      });
-
-      const draft = (response.output_text ?? "").trim();
-      // Verification firewall: a hint must never leak the answer.
-      const leaked =
-        draft.length === 0 ||
-        mentionsAnswer(draft, req.correctAnswer, req.correctAnswerValue);
-      const text = leaked ? FALLBACK_HINTS[tier] : draft;
-
-      await trackUsage(uid, "tutorHints");
-      return { text };
-    }
-
-    // explain mode
-    const model: TextModel = MODELS.text;
     const response = await client.responses.create({
       model,
-      instructions: EXPLAIN_SYSTEM,
-      input: buildExplainPrompt(req),
-      max_output_tokens: 400,
+      instructions: HINT_SYSTEM,
+      input: buildHintPrompt(req, tier),
+      max_output_tokens: 300,
     });
-    const text =
-      (response.output_text ?? "").trim() ||
-      "Let's look again: check whether you squared each side before combining them.";
 
-    await trackUsage(uid, "tutorExplains");
+    const draft = (response.output_text ?? "").trim();
+    // Verification firewall: a hint must never leak the answer.
+    const leaked =
+      draft.length === 0 ||
+      mentionsAnswer(draft, req.correctAnswer, req.correctAnswerValue);
+    const text = leaked ? FALLBACK_HINTS[tier] : draft;
     return { text };
-  },
-);
+  }
+
+  // explain mode
+  const model: TextModel = MODELS.text;
+  const response = await client.responses.create({
+    model,
+    instructions: EXPLAIN_SYSTEM,
+    input: buildExplainPrompt(req),
+    max_output_tokens: 400,
+  });
+  const text =
+    (response.output_text ?? "").trim() ||
+    "Let's look again: check whether you squared each side before combining them.";
+  return { text };
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
+  const uid = await guardPost(req, res);
+  if (uid === null) return;
+
+  const parsed = runTutorSchema.safeParse(readJsonBody(req));
+  if (!parsed.success) {
+    res.status(400).json({
+      error: parsed.error.issues[0]?.message ?? "Invalid runTutor request.",
+    });
+    return;
+  }
+
+  try {
+    const result = await runTutor(parsed.data);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("runTutor failed", err);
+    res.status(500).json({ error: "Tutor request failed." });
+  }
+}

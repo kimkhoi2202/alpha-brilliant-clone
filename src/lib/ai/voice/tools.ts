@@ -1,12 +1,18 @@
 /**
  * Voice tool binding (PRD-phase-2 §3.2 "tools execute in the browser" / §3.3).
  *
- * Adapts every typed `AppTool` in the shared `appTools` catalog into an
- * `@openai/agents-realtime` function tool so Koji can navigate, hint, explain,
- * generate practice, set difficulty, read progress, reveal, and celebrate by
- * voice — the *same* catalog the text agent uses, against the *same* live
- * `ToolContext`. The model only ever sees the tool name/description/Zod schema;
- * our handler runs the real logic locally with the current context.
+ * Adapts the typed `AppTool`s in the shared `appTools` catalog into
+ * `@openai/agents-realtime` function tools so Koji can sense state, drive the
+ * canvas, navigate, generate practice, set difficulty, read progress, reveal,
+ * and celebrate — against the *same* live `ToolContext` the text/UI surfaces
+ * use. The model only ever sees the tool name/description/Zod schema; our
+ * handler runs the real logic locally with the current context.
+ *
+ * The hint-UI tools `giveHint` / `explainMiss` are deliberately EXCLUDED from
+ * the realtime set (see `HINT_UI_TOOL_NAMES`): they produce coaching TEXT for
+ * Koji to read back, which made him tool-chatty and looped him into re-emitting a
+ * "final" answer. He now coaches in his OWN single reply (sensing with readState,
+ * showing with the canvas tools). They stay in `appTools` for the hint-card UI.
  *
  * The realtime `tool()` validates the model's arguments against each tool's Zod
  * schema before our handler runs, and (in strict mode) transparently maps
@@ -14,8 +20,9 @@
  *
  * Results are summarized to a compact string for the model to read back. Two
  * safety rules apply here (defense-in-depth, matching the Koji text panel):
- *  - `giveHint` / `explainMiss`: AI-phrased text that leaks the engine answer is
- *    swapped for the static fallback before it can be spoken (W1).
+ *  - `giveHint` / `explainMiss` (excluded from the realtime set above, but the
+ *    guard stays in case they're ever re-added): AI-phrased text that leaks the
+ *    engine answer is swapped for the static fallback before it can be spoken (W1).
  *  - `generatePractice`: only counts are returned (the verified problems surface
  *    through the app UI, not the spoken channel).
  */
@@ -129,12 +136,27 @@ function toRealtimeTool(appTool: AnyAppTool, getContext: () => ToolContext) {
 }
 
 /**
- * Build the realtime tool set from the shared `appTools` catalog. `getContext`
- * is read on every call so tools always act on the learner's current
- * step/answer/engagement, even though the voice session is created once.
+ * Tools that exist for the (now-hidden) hint UI and whose whole job is to produce
+ * coaching TEXT for Koji to read back. They are EXCLUDED from the realtime agent:
+ * the model narrating a fetched hint/explanation made Koji tool-chatty and looped
+ * him into re-emitting a "final" answer. Without them Koji coaches in his OWN
+ * single reply — sensing the learner with `readState` and showing with the canvas
+ * tools (all kept). They remain in `appTools` for the text/hint-card surface
+ * (`HintCards` calls `giveHint` directly, gated behind its own visibility flag).
+ */
+const HINT_UI_TOOL_NAMES: ReadonlySet<string> = new Set([
+  "giveHint",
+  "explainMiss",
+]);
+
+/**
+ * Build the realtime tool set from the shared `appTools` catalog, minus the
+ * hint-UI-only tools ({@link HINT_UI_TOOL_NAMES}). `getContext` is read on every
+ * call so tools always act on the learner's current step/answer/engagement, even
+ * though the voice session is created once.
  */
 export function buildRealtimeTools(getContext: () => ToolContext) {
-  return (appTools as readonly AnyAppTool[]).map((appTool) =>
-    toRealtimeTool(appTool, getContext),
-  );
+  return (appTools as readonly AnyAppTool[])
+    .filter((appTool) => !HINT_UI_TOOL_NAMES.has(appTool.name))
+    .map((appTool) => toRealtimeTool(appTool, getContext));
 }

@@ -19,6 +19,7 @@ import { useNavigate } from "@tanstack/react-router";
 import type { AnswerValue, LessonId, Step } from "../../../content/types";
 import { useLearner, type StepRecord } from "../../learner";
 import { aiEnabled } from "../flag";
+import type { LessonCanvas } from "./canvas";
 import { createStepContext } from "./context";
 import type { RevealAllowed } from "./reveal";
 import type {
@@ -102,6 +103,12 @@ export interface UseToolContextInput {
   record: StepRecord | null;
   /** The mascot reaction handle, or null when no mascot is mounted. */
   koji: KojiReactions | null;
+  /**
+   * The lesson-canvas surface (visual ops delegate to the mounted interaction's
+   * handle; `prefillAnswer` routes to the answer setter), or null when AI is off
+   * or no interactive component is mounted. Pass a stable (memoized) value.
+   */
+  canvas: LessonCanvas | null;
   /** The per-step engagement signal (from `useEngagement`). */
   engagement: EngagementSignal;
   /**
@@ -119,7 +126,8 @@ export interface UseToolContextInput {
  * produced identically to every other surface (P2).
  */
 export function useToolContext(input: UseToolContextInput): ToolContext {
-  const { lessonId, step, answer, record, koji, engagement, onReveal } = input;
+  const { lessonId, step, answer, record, koji, canvas, engagement, onReveal } =
+    input;
   const learner = useLearner();
   const navigate = useNavigate();
   const ai = aiEnabled();
@@ -161,9 +169,10 @@ export function useToolContext(input: UseToolContextInput): ToolContext {
       learner,
       step: stepCtx,
       koji,
+      canvas,
       engagement,
       onReveal,
     }),
-    [ai, navTo, learner, stepCtx, koji, engagement, onReveal],
+    [ai, navTo, learner, stepCtx, koji, canvas, engagement, onReveal],
   );
 }

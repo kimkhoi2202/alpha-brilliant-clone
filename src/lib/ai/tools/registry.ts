@@ -17,6 +17,7 @@ import type { z } from "zod";
 
 import type { AnswerValue, LessonId, Step } from "../../../content/types";
 import type { Grounding } from "../grounding";
+import type { LessonCanvas } from "./canvas";
 import type { RevealAllowed } from "./reveal";
 import type {
   LearnerProfile,
@@ -157,6 +158,14 @@ export interface ToolContext {
   readonly step: ToolStepContext | null;
   /** The mascot reaction handle, or null when no mascot is mounted. */
   readonly koji: KojiReactions | null;
+  /**
+   * The lesson-canvas surface Koji's canvas tools drive (highlight / label /
+   * point / clear / prefillAnswer), or null when AI is off OR no interactive
+   * component is mounted (a concept step). The host assembles it so visual ops
+   * delegate to the mounted interaction's handle and `prefillAnswer` routes to
+   * the lesson player's answer setter (see `./canvas`). Null = tools no-op.
+   */
+  readonly canvas: LessonCanvas | null;
   /** Per-step "has the learner engaged Koji?" signal (drives the reveal gate). */
   readonly engagement: EngagementSignal;
   /**

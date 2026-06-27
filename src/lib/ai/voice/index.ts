@@ -8,7 +8,6 @@ export {
   KojiVoiceSession,
   isVoiceSupported,
   type VoiceErrorReason,
-  type VoiceMode,
   type VoicePhase,
   type VoiceSnapshot,
   type KojiVoiceSessionOptions,
@@ -18,7 +17,15 @@ export {
   type RealtimeVoiceApi,
   type UseRealtimeVoiceOptions,
 } from "./use-realtime-voice";
-export { toTranscript, hasUserSpoken, type VoiceTranscriptEntry, type VoiceRole } from "./transcript";
+export {
+  toTranscript,
+  collapseConsecutiveAssistant,
+  hasUserSpoken,
+  toRealtimeHistory,
+  type VoiceTranscriptEntry,
+  type VoiceRole,
+} from "./transcript";
 export { createKojiRealtimeAgent, type CreateKojiAgentOptions } from "./agent";
 export { buildRealtimeTools, summarizeToolResult } from "./tools";
 export { VOICE_MODEL, VOICE_NAME, BASE_SESSION_CONFIG } from "./constants";
+export { VOICE_ENABLED, CHAT_BACKEND, type ChatBackend } from "./flags";
