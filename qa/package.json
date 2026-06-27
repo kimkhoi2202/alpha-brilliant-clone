@@ -1,0 +1,21 @@
+{
+  "name": "alphabrilliant-qa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Stagehand (TypeScript) QA harness for the AlphaBrilliant math-lesson app, driven via Browserbase.",
+  "scripts": {
+    "qa": "tsx qa.ts",
+    "start": "tsx qa.ts"
+  },
+  "dependencies": {
+    "@browserbasehq/stagehand": "^3.6.0",
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

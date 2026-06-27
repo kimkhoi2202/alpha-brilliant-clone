@@ -4,8 +4,12 @@ rules_version = '2';
 // AlphaBrilliant — Firestore Security Rules
 // ===============================================================
 // Data model:
-//   users/{uid}                         -> profile, streak, milestones (PII: email)
-//   users/{uid}/progress/{lessonId}     -> per-lesson progress & mastery
+//   users/{uid}                          -> profile, streak, milestones (PII: email)
+//   users/{uid}/progress/{lessonId}      -> per-lesson progress & mastery
+//   users/{uid}/kojiConversations/{conversationId}
+//                                        -> saved in-lesson Koji conversations
+//                                           (many per lesson; lessonId is a field;
+//                                           transcript history)
 //
 // A learner can only ever read or write their own subtree.
 // ===============================================================
@@ -17,9 +21,18 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // A user owns their profile and everything nested under it (progress, etc.).
+    // A user owns their profile and everything nested under it (progress, Koji
+    // conversation history, etc.). The recursive `{document=**}` match below
+    // already secures `kojiConversations/{conversationId}`; an explicit per-user
+    // match is added for clarity/intent. The doc key is opaque to the rule (it
+    // matches any id), so the lessonId → conversationId key change needs no edit.
     match /users/{userId} {
       allow read, write: if isOwner(userId);
+
+      // Koji conversation history — strictly per-user (see conversation-history.ts).
+      match /kojiConversations/{conversationId} {
+        allow read, write: if isOwner(userId);
+      }
 
       match /{document=**} {
         allow read, write: if isOwner(userId);

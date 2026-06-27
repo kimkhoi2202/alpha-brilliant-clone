@@ -37,3 +37,5 @@ public/course-art-prototypes/
 
 # Ralph orchestration runtime state (RALPH_TASK.md itself is tracked)
 .ralph/
+.vercel
+.env*
