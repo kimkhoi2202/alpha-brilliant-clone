@@ -42,10 +42,10 @@ export function KojiCompanion() {
   const measure = () => {
     if (typeof window === "undefined") return { top: 0, height: 0 };
     const h = window.innerHeight;
-    const top = Math.round(h * 0.16);
-    const bottom = Math.round(h * 0.14);
-    const kojiPx = 64; // size-16
-    return { top, height: Math.max(0, h - top - bottom - kojiPx) };
+      const top = Math.round(h * 0.16);
+      const bottom = Math.round(h * 0.14);
+      const kojiPx = 128; // size-32 ceiling (companion grows on very wide screens)
+      return { top, height: Math.max(0, h - top - bottom - kojiPx) };
   };
   const [rail, setRail] = useState(measure);
   useEffect(() => {
@@ -83,11 +83,15 @@ export function KojiCompanion() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed right-3 z-30 hidden min-[1320px]:block"
+      className="pointer-events-none fixed right-4 z-30 hidden min-[1400px]:block"
       style={{ top: rail.top }}
     >
-      <motion.div style={{ y }} className="drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
-        <KojiMascot size="size-16" loop={motionEnabled} reactionSignal={reaction} />
+      <motion.div style={{ y }} className="drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+        <KojiMascot
+          size="size-28 min-[1600px]:size-32"
+          loop={motionEnabled}
+          reactionSignal={reaction}
+        />
       </motion.div>
     </div>
   );
