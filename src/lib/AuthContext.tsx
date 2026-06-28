@@ -8,15 +8,22 @@ import {
 } from "react";
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInAnonymously,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   updateProfile,
   type User,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "./firebase";
 
 export type AuthContextValue = {
@@ -36,6 +43,26 @@ export type AuthContextValue = {
    */
   signInAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
+  /** Update the signed-in user's display name (Auth profile + Firestore mirror). */
+  updateDisplayName: (name: string) => Promise<void>;
+  /**
+   * Change the password for an email/password account. Reauthenticates with the
+   * current password first (Firebase requires a recent login for this).
+   */
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<void>;
+  /** Send a verification email to the signed-in user's address. */
+  sendVerificationEmail: () => Promise<void>;
+  /** Send a password-reset email to the given address (defaults to the user's). */
+  sendPasswordReset: (email?: string) => Promise<void>;
+  /**
+   * Permanently delete the signed-in account. Reauthenticates first
+   * (password credential or Google popup) since Firebase requires a recent
+   * login, then removes the Firestore profile doc and the Auth user.
+   */
+  deleteAccount: (currentPassword?: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -141,6 +168,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   }
 
+  async function updateDisplayName(name: string): Promise<void> {
+    const current = auth.currentUser;
+    if (!current) throw new Error("You're not signed in.");
+    await updateProfile(current, { displayName: name });
+    await upsertUserProfile(current);
+    // Reflect the new name locally; the Firestore snapshot also picks it up.
+    setUser(auth.currentUser);
+  }
+
+  async function changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const current = auth.currentUser;
+    if (!current?.email) {
+      throw new Error("This account doesn't use a password.");
+    }
+    const credential = EmailAuthProvider.credential(
+      current.email,
+      currentPassword,
+    );
+    await reauthenticateWithCredential(current, credential);
+    await updatePassword(current, newPassword);
+  }
+
+  async function sendVerificationEmail(): Promise<void> {
+    const current = auth.currentUser;
+    if (!current) throw new Error("You're not signed in.");
+    await sendEmailVerification(current);
+  }
+
+  async function sendPasswordReset(email?: string): Promise<void> {
+    const target = email ?? auth.currentUser?.email;
+    if (!target) throw new Error("No email address on file.");
+    await sendPasswordResetEmail(auth, target);
+  }
+
+  async function deleteAccount(currentPassword?: string): Promise<void> {
+    const current = auth.currentUser;
+    if (!current) throw new Error("You're not signed in.");
+
+    // Firebase requires a recent login before deletion. Reauthenticate with
+    // whichever method the account uses.
+    const providerId = current.providerData[0]?.providerId;
+    if (providerId === "password") {
+      if (!current.email || !currentPassword) {
+        throw new Error("Enter your current password to confirm.");
+      }
+      const credential = EmailAuthProvider.credential(
+        current.email,
+        currentPassword,
+      );
+      await reauthenticateWithCredential(current, credential);
+    } else if (providerId === "google.com") {
+      await reauthenticateWithPopup(current, googleProvider);
+    }
+
+    // Best-effort: drop the profile mirror before removing the auth user.
+    await deleteDoc(doc(db, "users", current.uid)).catch((error) =>
+      console.error("Failed to delete user profile doc", error),
+    );
+    await deleteUser(current);
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -151,6 +242,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUpWithEmail,
         signInAsGuest,
         logout,
+        updateDisplayName,
+        changePassword,
+        sendVerificationEmail,
+        sendPasswordReset,
+        deleteAccount,
       }}
     >
       {children}

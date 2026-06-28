@@ -23,6 +23,32 @@ export interface QuizRunnerProps {
   introTitle?: string;
   /** Final lesson of the path → Koji waves goodbye before the celebration. */
   isFinalLesson?: boolean;
+  /**
+   * "quiz" (default) gates a lesson behind a passing score; "review" reuses the
+   * same one-at-a-time runner as a spaced-review session: no pass gate (every
+   * retrieval already counts), review-framed copy, and a per-question callback.
+   */
+  mode?: "quiz" | "review";
+  /**
+   * Preserve the caller's question order instead of shuffling each attempt.
+   * Spaced reviews and the cumulative level review are pre-interleaved by their
+   * builders (round-robin across skills), so a re-shuffle would destroy that
+   * deliberate alternation. Defaults to true in review mode; recap quizzes still
+   * shuffle. The level review opts in explicitly (it runs in "quiz" mode for its
+   * pass gate, but its order is still builder-interleaved).
+   */
+  preserveOrder?: boolean;
+  /**
+   * Overrides the intro screen's body copy. The review session uses this so a
+   * single-skill "Practice" session reads correctly ("Focused practice on X")
+   * rather than the multi-skill "across your due skills" default.
+   */
+  introBody?: string;
+  /**
+   * Fires once per graded question with its outcome (Phase 3). The review
+   * session uses this to feed each skill's FSRS memory via `recordReview`.
+   */
+  onQuestionGraded?: (question: ProblemStep, correct: boolean) => void;
   /** Learner passed → proceed to the lesson-complete celebration; gets the score. */
   onPassed: (score: number) => void;
   /** Leave the quiz (back to the course map). */
@@ -59,12 +85,19 @@ export function QuizRunner({
   passThreshold = QUIZ_PASS_THRESHOLD,
   introTitle = "Lesson quiz",
   isFinalLesson = false,
+  mode = "quiz",
+  preserveOrder = mode === "review",
+  introBody,
+  onQuestionGraded,
   onPassed,
   onExit,
 }: QuizRunnerProps) {
+  const isReview = mode === "review";
   const total = questions.length;
   const [phase, setPhase] = useState<QuizPhase>("intro");
-  const [order, setOrder] = useState<ProblemStep[]>(() => shuffle(questions));
+  const [order, setOrder] = useState<ProblemStep[]>(() =>
+    preserveOrder ? questions : shuffle(questions),
+  );
   const [current, setCurrent] = useState(0);
   const [results, setResults] = useState<boolean[]>([]);
   const [answer, setAnswer] = useState<AnswerValue | null>(null);
@@ -78,7 +111,9 @@ export function QuizRunner({
 
   const question = phase === "question" ? order[current] : null;
   const score = results.filter(Boolean).length;
-  const passed = score >= passThreshold;
+  // A review session has no pass gate: finishing it always "passes" (each
+  // retrieval already counted toward the schedule).
+  const passed = isReview || score >= passThreshold;
   const isLast = current === total - 1;
   const graded = qPhase !== "answering";
 
@@ -101,7 +136,7 @@ export function QuizRunner({
   }, [isFinalLesson, phase, passed]);
 
   function beginAttempt() {
-    const next = shuffle(questions);
+    const next = preserveOrder ? questions : shuffle(questions);
     setOrder(next);
     setCurrent(0);
     setResults([]);
@@ -122,6 +157,8 @@ export function QuizRunner({
       copy[current] = correct;
       return copy;
     });
+    // Phase 3: report each outcome so a review session can feed FSRS per skill.
+    onQuestionGraded?.(question, correct);
     if (correct) kojiRef.current?.success();
     else kojiRef.current?.incorrect();
   }
@@ -236,8 +273,10 @@ export function QuizRunner({
           {introTitle}
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted">
-          Answer {total} quick questions to finish the lesson. Score{" "}
-          {passThreshold} out of {total} to pass. You can retry if you miss it.
+          {introBody ??
+            (isReview
+              ? `Recall ${total} question${total === 1 ? "" : "s"} from memory across your due skills. No hints — pulling the answer out is the point.`
+              : `Answer ${total} quick questions to finish the lesson. Score ${passThreshold} out of ${total} to pass. You can retry if you miss it.`)}
         </p>
       </div>
     );
@@ -249,7 +288,7 @@ export function QuizRunner({
           className={PRIMARY_CTA}
           onPress={beginAttempt}
         >
-          Start quiz
+          {isReview ? "Start review" : "Start quiz"}
         </Button>
       </FooterCtaBar>
     );
@@ -260,6 +299,7 @@ export function QuizRunner({
         total={total}
         passThreshold={passThreshold}
         passed={passed}
+        mode={mode}
       />
     );
     footer = passed ? (

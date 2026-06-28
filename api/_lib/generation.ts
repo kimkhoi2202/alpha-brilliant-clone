@@ -261,11 +261,19 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
     }
     case "count-squares": {
       const countSide = "countSide" in p ? p.countSide : "c";
-      interaction = { kind: "count-squares", a, b, countSide };
+      // Counting is a small-number *discovery* exercise, not a difficulty-scaled
+      // one: keep the figure countable regardless of difficulty (a 12×12 = 144
+      // hypotenuse square is absurd to count). Cap the legs so the highlighted
+      // square stays small — ≤ 36 cells for a leg square, and tighter for the
+      // hypotenuse square (a²+b²), which grows fastest.
+      const cap = countSide === "c" ? 4 : 6;
+      const ca = Math.max(2, Math.min(Math.round(a), cap));
+      const cb = Math.max(2, Math.min(Math.round(b), cap));
+      interaction = { kind: "count-squares", a: ca, b: cb, countSide };
       visual = {
         kind: "right-triangle",
-        a,
-        b,
+        a: ca,
+        b: cb,
         gridSquares: true,
         highlightSquare: countSide,
       };
@@ -346,6 +354,10 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
 /**
  * The gate (P3/P4): the engine must grade the engine's own `correctAnswer` as
  * correct, plus kind-specific structural checks. Returns true iff the step is safe.
+ *
+ * Counterpart: the CLIENT re-runs an equivalent firewall (`verifyGeneratedProblem`
+ * in `src/lib/ai/verify.ts`) before rendering. Keep the two in sync — divergence
+ * would make the client silently drop steps this gate passed.
  */
 export function verify(step: ProblemStep): boolean {
   const { interaction } = step;

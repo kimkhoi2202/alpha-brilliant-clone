@@ -6,6 +6,11 @@
  * `math.js`. The model only *proposes*; this code *decides*. Nothing AI-proposed
  * reaches the learner until it passes here. This module is read-only with
  * respect to the engine — it never changes Phase 1 grading behavior.
+ *
+ * Counterpart: the SERVER runs an equivalent firewall (`verify` in
+ * `api/_lib/generation.ts`) before returning a generated step; this client check
+ * is the independent second gate. Keep the two in sync — if they diverge, a step
+ * the server passed could be silently dropped here.
  */
 import { evaluate } from "mathjs";
 

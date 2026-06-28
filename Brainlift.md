@@ -1,4 +1,4 @@
-# BrainLift for AlphaBrilliant Phase 2: Koji, the Voice-First AI Tutor
+# BrainLift for AlphaBrilliant Phases 2–3: Koji, the Voice-First AI Tutor, and the Learning-Science Layer That Makes It Stick
 
 ## Owners
 
@@ -10,7 +10,9 @@ Khoi Lam (Primary Owner)
 
 **Primary Purpose:** To articulate the pedagogical and architectural thesis behind **Phase 2 of AlphaBrilliant** (a Brilliant.org-style, learn-by-doing course on the Pythagorean theorem) as it grows an AI layer on top of a deliberately zero-AI Phase 1 engine. The central bet is that the right way to put a large language model into a *teaching* product is **voice-first, answer-withholding, and architecturally subordinate to a deterministic truth engine**. The AI companion, **Koji**, can *talk and listen*, *see the lesson's typed state*, and *operate the app* via tools, but he is never allowed to be the source of mathematical truth, and the app must still teach completely with AI switched off.
 
-This document captures the *thinking*: the spiky points of view, the learning science that grounds them, and the experts whose work shaped them, not the build log.
+**Phase 3, making it stick.** Phase 3 extends the thesis from *teaching a concept once* to *making it last*. It layers four evidence-based learning-science techniques onto the very same deterministic engine: **spaced repetition** (a faithful TypeScript port of **FSRS-6**, the modern scheduler Anki now ships, *not* legacy SM-2), **retrieval practice**, **durable mastery learning**, and **sharpened, AI-off explanatory feedback**, and holds every one of them to the two rules Phase 2 lived by: each is **additive** (it rides the existing primitives and adds *no* AI dependency) and **AI-off-safe** (it works byte-for-byte with the model switched off). The central new bet is a redefinition: **mastery is not a one-time pass; it is *survival of a spaced review*.** Phase 3 therefore fuses the mastery gate with the forgetting curve instead of treating spacing, mastery, and feedback as three separate features, and in doing so it delivers exactly the items Phase 2 named and deferred (spaced repetition, mastery scheduling, adaptive sequencing; see Appendix A.3).
+
+This document captures the *thinking* across both phases: the spiky points of view, the learning science that grounds them, and the experts whose work shaped them, not the build log (the *making* lives in Appendices A and B).
 
 
 
@@ -22,6 +24,11 @@ This document captures the *thinking*: the spiky points of view, the learning sc
 - **Grounding / context engineering**: feeding the model typed lesson state rather than scraped screen text.
 - **Additivity**: why "AI-native" must be a leverage claim, not a dependency claim.
 - Verified, adaptive problem generation ("Infinite Practice") as an application of the same firewall principle.
+- **Spaced repetition as the spine of retention (Phase 3):** an FSRS-6 scheduler applied *per skill*, a home/course-map **"Reviews due (N)"** hub with a due-soon forecast, and a one-tap review session that resurfaces wrong/assisted skills soonest.
+- **Retrieval practice over recognition (Phase 3):** spaced recall, a *cumulative* level review, an opening recall warm-up before new lessons, and reviews that favor *generative* inputs with the scaffold dropped.
+- **Durable, gated mastery (Phase 3):** a per-skill **mastery meter**, the "mastery = survives a spaced review" rule, a Bloom-style corrective loop (formative → corrective → re-test), and a level gate that locks the next level until its skills are mastered.
+- **Explanatory feedback that teaches with AI off (Phase 3):** the deterministic misconception classifier ported *out* of the AI path into the hand-authored static feedback, so wrong answers teach even with the model off.
+- A small **skill taxonomy (~7 skills)** that underpins the spacing, retrieval, and mastery layers.
 
 
 
@@ -29,7 +36,7 @@ This document captures the *thinking*: the spiky points of view, the learning sc
 
 - Building a general-purpose chatbot or open-ended conversational agent. Koji is grounded and tool-scoped, not a chat box.
 - AI-authored **pedagogy**: new lessons, new interaction kinds, AI-generated figures, or AI-rewritten feedback. Generation is restricted to *problems within the proven schema*.
-- **Learning-science scheduling**: spaced repetition, mastery sequencing, and full adaptive *sequencing* are deferred to Phase 3. Phase 2 adapts only *difficulty*.
+- **Per-learner ML training and open-ended adaptive *sequencing*.** Phase 3 delivers the scheduling Phase 2 deferred (spaced repetition, durable mastery, mastery-driven next steps), but deliberately stops short of three things: **training FSRS's parameters per learner** (we ship the published defaults, see SPOV 7), **interleaving as a headline feature** (it is folded into mixed/cumulative review sessions, not sold as its own mode), and **full cross-lesson adaptive *sequencing*** beyond what mastery and the scheduler already drive. The fixed, hand-authored lesson path still defines *what* is taught and in what order.
 - Subjects beyond the Pythagorean theorem; multi-learner / classroom features; a parent/teacher analytics dashboard.
 - Claims about voice that this build does not yet earn, e.g. measured retention lifts. Where the science is contested, this document says so rather than overclaiming.
 
@@ -112,6 +119,60 @@ In Phase 2:
 
 Smaller prompts, lower cost, fewer hallucinations, and (because the givens are typed) the diagnosis and verification layers can reason about the same objects the model sees. Prompt engineering tunes *how* the model talks; context engineering controls *what it knows*, and what it knows is what makes it correct.
 
+> **Phase 3 SPOVs (6–9): making it stick.** The five above are about putting AI into a teaching product safely. The four below are about *retention*: how to make what's taught survive past the lesson. They ride the same architecture (additive, AI-off-safe, deterministic where it counts), and so they sharpen, rather than complicate, the Phase-2 thesis.
+
+### SPOV 6: Mastery is conventionally scored as *completion*: pass the check, unlock the next thing. In reality, **a one-time pass isn't mastery; mastery is *surviving a spaced review***, so the gate must key off durable, spaced success, not a single correct attempt.
+
+**The consensus counter-view, stated honestly and at full strength.** Mastery learning's standard operationalization is a high-bar check at the end of a unit (commonly 80–90%) before advancing, and that is already a real improvement over time-based promotion: Bloom's mastery learning is worth roughly +1 SD on its own (Bloom, 1984). The natural, near-universal way to *measure* that bar, the way most apps and even Bloom's own corrective loop do it, is an **immediate** post-test: answer correctly now, and you've shown mastery. It is simple, legible, and instantly motivating, and it avoids punishing a learner who has, in fact, just understood the idea.
+
+**The spiky case for durable mastery.** An immediate pass measures *performance*, not *learning*, and the two routinely diverge: Soderstrom & Bjork (2015) draw exactly this line, and the spacing effect (Cepeda, Pashler, Vul, Wixted & Rohrer, 2006) is the proof: a fact you can produce today can be gone in a week. A mastery gate scored on the immediate attempt is therefore measuring the wrong variable: it certifies that the skill was *available a moment after it was taught*, which is nearly guaranteed and nearly worthless as a retention signal. So Phase 3 redefines the bar: a skill counts as mastered only once it is produced correctly **after a spacing delay**, once it survives at least one scheduled review. This fuses two techniques the literature treats separately (mastery learning and spacing) into a single rule, and it is enforced structurally:
+
+- A visible **per-skill mastery meter** gives the "clear mastery signal" the assignment (and Bloom) calls for, and it deliberately distinguishes **provisional** (passed immediately) from **mastered** (survived a spaced review), so the signal can't be gamed by a single lucky attempt.
+- The gate requires *both* a first-try-correct demonstration *and* survival of ≥1 spaced FSRS review (SPOV 7). A lapse on review knocks the skill back to provisional.
+- A **corrective loop** runs Bloom's formative → corrective → re-test cycle: a weak or lapsed skill routes to targeted Infinite-Practice on *that* skill, then is re-assessed on review rather than simply repeated.
+- The next level and the **level review lock** until the level's skills are durably mastered. This is a deliberate reversal of Phase 2's design (which had *no* sequential locking, every lesson was freely accessible); Phase 3 adds the gate **only at level boundaries**, not per lesson, so exploration within a level is preserved while the *promotion* between levels is earned.
+
+This is Bloom honored more faithfully than the usual implementation, with Bjork's learning-vs-performance distinction supplying the correction: the gate certifies durable learning, not a moment of performance.
+
+### SPOV 7: The intuitive way to review is "come back to it when you feel like it", or a fixed Monday/Wednesday/Friday cadence. In fact, **an evidence-based scheduler that models the forgetting curve beats both**: resurface each skill as predicted recall decays to a target retention, and resurface *missed* skills soonest. We are honest that we ship FSRS's *default* weights, not per-learner-trained ones.
+
+**The consensus counter-view, stated honestly and at full strength.** Any spacing beats cramming, and you don't need much machinery to get most of the benefit: a Leitner box or legacy **SM-2** (an ease-factor × interval-multiplier) captures the bulk of the spacing effect with a few lines of code. For a course with only ~7 skills, reaching for a 21-parameter, benchmark-tuned scheduler looks like textbook over-engineering, the kind of thing the project's own complexity passes exist to cut. On that framing, the marginal accuracy of FSRS over a Leitner box on seven items is genuinely small, and the simpler tool is the responsible default.
+
+**The spiky case for a modeled scheduler.** The win isn't squeezing the last few percent of accuracy out of seven skills; it's **correctness of the model** and a **clean mapping from our outcomes to memory updates.** FSRS-6 models each item's **Difficulty, Stability, and Retrievability**, fits a **power-law forgetting curve**, and schedules each skill to resurface when predicted retrievability decays to a **target retention of 0.9**, so "when to review" is a *prediction from a memory model*, not a hand-tuned multiplier with no notion of recall (which is precisely what SM-2 is). And it answers the one question we care about most with no hand-waving: a skill the learner **couldn't produce unaided**, wrong, or revealed via Koji's assisted path, is graded a **lapse** (FSRS's "Again"), which collapses its stability and brings it back *soon*. That is the assignment's "resurface ones a learner got wrong sooner," derived from the model rather than bolted on. It is enforced in code:
+
+- A faithful **TypeScript port of FSRS-6** with its published default weights (sourced from `ankitects/anki`, `open-spaced-repetition/fsrs-rs`, and the FSRS algorithm spec).
+- Memory state (D/S/R) persisted **per skill** under `users/{uid}/…`, updated only through the single outcome chokepoint (`recordStep`), so AI-on and AI-off write the same truth.
+- The outcome→grade map made explicit: **first-try correct = pass; wrong or assisted = lapse.**
+- A **"Reviews due (N)"** hub + due-soon forecast + one-tap session; Phase 3 also captures **Infinite-Practice misses**, which Phase 2 dropped on the floor.
+
+**The honesty that earns the SPOV.** We ship **default** weights, not per-learner-trained ones, and say so plainly. The tradeoff is real and the direction is favorable: on the public benchmark (`srs-benchmark`, ~10,000 user collections / ~350M reviews) FSRS beats SM-2 for ~99.5% of users **even with defaults**, and per-user optimization only trims error further, but it needs a review history we won't have on day one and adds ML infrastructure we judged not yet worth it. We are equally honest about the benchmark's limits: SM-2 was never designed to emit probabilities (the benchmark adapts it to compare), and the widely-quoted "20–30% fewer reviews" figure comes from *simulation*, not a controlled classroom trial. So this BrainLift treats "FSRS beats SM-2" as a strong **directional** claim, the same posture it takes toward Bloom's 2-sigma, a north star, not a measured promise.
+
+### SPOV 8: A "review" is usually built to *feel* like review, re-read the summary, recognize the right option, get a confidence bump. But **a review should force *retrieval*, not *recognition***: generative input, scaffold dropped, cumulative, because effortful recall (a desirable difficulty) is what actually rebuilds the memory.
+
+**The consensus counter-view, stated honestly and at full strength.** Re-exposure does *something*, and recognition tasks (multiple-choice, "does this look right?") are cheap to build, fast to answer, and feel productive, which is not nothing, given SPOV 1's whole argument that the binding constraint is engagement. A friendly, low-friction recognition review keeps the learner coming back, and a learner who reviews easily beats one who doesn't review at all.
+
+**The spiky case for retrieval over recognition.** Recognition lets the learner coast on familiarity without ever *producing* the answer, and producing the answer is the entire mechanism: Roediger & Karpicke (2006) show retrieval practice trounces restudy for durable retention, and, damningly, learners are *blind* to it, so left to choose they will pick the comfortable recognition review that teaches least. Bjork's **desirable difficulties** says the harder recall *is* the point. So Phase 3's reviews are engineered to be generative and unscaffolded, and the system makes that choice on the learner's behalf:
+
+- Review item selection **favors generative interaction kinds**, e.g., a numeric "find c" over a multiple-choice "which value is c?" for the same skill, so the answer is *produced*, not spotted.
+- The **scaffold is dropped**: the hints, worked structure, and visual aids that supported first acquisition are faded on review (scaffolding → desirable difficulty), so the skill stands on its own.
+- The **level review is cumulative**, it interleaves *all* of the level's skills, so the learner must *select* the right approach, not merely repeat the last one drilled. (This is where interleaving lives: folded into the review, not sold as a headline mode.)
+- An **opening recall warm-up** pulls the prerequisite skill from memory *before* a new lesson builds on it.
+
+**The honest bound.** This raises difficulty on purpose, and a desirable difficulty taken too far becomes a discouraging one, exactly the cognitive-load boundary Mayer and the desirable-difficulties literature warn about. So the harder reviews keep their safety nets: the corrective loop (SPOV 6) catches a skill that's slipping, and Koji (AI on) is there to scaffold a learner who's stuck, the difficulty is *desirable*, not punishing.
+
+### SPOV 9: The reflex is that the *AI* gives the smartest feedback, a model reads the wrong answer and explains it. But **the sharpest explanatory feedback belongs in the deterministic layer, not the model.** Porting the misconception diagnoser into the hand-authored static feedback makes wrong answers teach *with AI off*, and keeps the model (when on) a phrasing layer over the same diagnosis.
+
+**The consensus counter-view, stated honestly and at full strength.** Explanatory feedback ("why it's wrong," not a bare red X) beats verification feedback, and the obvious Phase-2 way to get it is to let the LLM generate it, tuned to what the learner actually did, the assignment even lists "explain a wrong answer in plain language, tuned to what the learner actually did" as a prime AI candidate. And the model genuinely is good at this: warm, fluent, adaptive phrasing is exactly its strength, and Phase 2 already paired it with a deterministic diagnosis to ground Koji's reveal.
+
+**The spiky case for deterministic feedback.** This is a direct corollary of **SPOV 2 (the verification firewall)** and **SPOV 4 (AI-off-first)**: if the *diagnosis*, the identification of which misconception produced this wrong answer, is the valuable part, then it should not live on the AI path at all, because the AI path is exactly the one that can be off, slow, or wrong. The "why" of a Pythagorean mistake is *computable* from typed state, so Phase 3 ports the deterministic classifier (`diagnosis.ts`, added-the-legs, forgot-the-square-root, subtracted-legs, counted-one-square, picked-a-leg-not-the-hypotenuse, …) out of the AI tools and into the hand-authored static **`Feedback`**, structured as **what you did → why it's wrong → the principle → a nudge to retry** (never the answer):
+
+- The classifier becomes a **pure function** the static-feedback layer calls, no network, sub-100ms, living right next to the deterministic grading engine.
+- Its output is **answer-free** by construction, so it can never leak the value: it teaches the *principle*, consistent with the answer-withholding firewall (SPOV 3).
+- With AI **on**, Koji phrases warmly *over the identical diagnosis*, one source of truth for "why wrong," so the two paths can never disagree about the math.
+- The result: the AI-**off** experience is now as *diagnostically* sharp as AI-on; the model adds tone and dialogue, not correctness.
+
+**The honest bound.** Deterministic diagnosis only covers misconceptions we can characterize from typed state; a genuinely novel error falls back to a general "let's walk through it" nudge (the engine still owns correctness), and Koji, when on, can extemporize beyond the catalog, but never past the firewall.
+
 ---
 
 
@@ -147,6 +208,22 @@ Smaller prompts, lower cost, fewer hallucinations, and (because the givens are t
 **Insight 7: Mayer's modality boundary condition is a *design constraint*, not a refutation of voice.** Printed words can beat spoken words for symbol-heavy, technical material, and math is symbol-heavy. The correct reading isn't "don't use voice"; it's "keep the *symbols* visual and make the *conversation* audio." Koji talks; the equation and triangle stay on screen. Voice and visuals are split along exactly the channel boundary Mayer's theory prescribes.
 
 > **SPOV Connection:** Strengthens and honestly bounds **SPOV 1 (voice-first)**; an application of the dual-channel basis from the Multimedia & Modality knowledge category.
+
+**Insight 8: Mastery should be measured by *durability*, not by a single correct moment.** Performance during or just after study is a poor proxy for retention (Soderstrom & Bjork, 2015), and the spacing effect proves a fact you can produce today can vanish in a week. Fusing the mastery gate with a spaced review turns "mastery" from a screenshot into a time-series: you have mastered a skill when it *survives* a delay, not when you pass once.
+
+> **SPOV Connection:** Core of **SPOV 6 (durable mastery)**; depends on the scheduler of **SPOV 7** and the retrieval emphasis of **SPOV 8**; extends Bloom with Bjork's learning-vs-performance distinction.
+
+**Insight 9: For scheduling, the leverage is a *correct memory model and a clean outcome mapping*, not a per-user-trained one.** On a seven-skill course the marginal accuracy of trained-vs-default FSRS is small; what matters is (a) using a model that actually fits a forgetting curve, so "when to review" is a prediction rather than a multiplier, and (b) mapping "couldn't produce it unaided" → lapse so misses resurface soonest. Defaults that are *right in shape* beat a hand-tuned multiplier with no memory model.
+
+> **SPOV Connection:** Core of **SPOV 7 (evidence-based scheduler)**; the honest defaults-vs-trained tradeoff mirrors how this document treats Bloom's 2-sigma as directional, not literal.
+
+**Insight 10: A review that feels easy is usually the wrong review.** Recognition reviews feel productive and are metacognitively flattering; retrieval reviews feel harder and teach more. Because learners are *blind* to this gap (Roediger & Karpicke), the *system* must choose the harder, generative, cumulative review on their behalf, the same protective paternalism that justifies answer-withholding, now applied to review design.
+
+> **SPOV Connection:** Core of **SPOV 8 (retrieval over recognition)**; the scaled-up sibling of **SPOV 3 (effort-gated reveal)**; grounded in the retrieval / desirable-difficulty cluster.
+
+**Insight 11: If the diagnosis is the valuable part of feedback, it must not live on the AI path.** The model's gift is *phrasing*, not knowing *why* an answer is wrong, and that "why" is computable from typed state. Moving the diagnoser into the deterministic, hand-authored layer makes the AI-off experience diagnostically equal to AI-on and gives the model, when on, a single source of truth to phrase over (so the two paths can never disagree about the math).
+
+> **SPOV Connection:** Core of **SPOV 9 (deterministic feedback)**; a direct corollary of **SPOV 2 (verification firewall)** and **SPOV 4 (additive / AI-off-first)**; the same instinct as **SPOV 5 (context engineering)**, reason over typed state, not rendered text.
 
 ---
 
@@ -277,6 +354,21 @@ Smaller prompts, lower cost, fewer hallucinations, and (because the givens are t
 
 **DOK 2: Summary & Analysis** Bloom is *why an AI tutor is worth building at all*: he quantified the prize (a responsive, mastery-oriented 1:1 tutor) and named the obstacle (cost/scale) that software is uniquely positioned to dissolve. Note the mechanism behind his numbers: *time-on-task* climbs steeply with tutoring. That is the empirical seed of **Insight 1** and **SPOV 1**: the tutoring advantage is, in large part, an *engagement* advantage, which is exactly what a low-friction voice companion is designed to maximize at home. It also motivates **SPOV 3**: tutoring works through tight feedback and correction loops, not answer-dispensing. Cited honestly (the overstatement caveat), it functions here as a directional north star, not a promised effect size.
 
+
+
+#### 1.2 Mastery learning's corrective loop (formative → corrective → re-test)
+
+**Source:** Bloom, B. S. (1968). *Learning for Mastery.* Evaluation Comment, 1(2); and Bloom (1984, above). Overview: [https://en.wikipedia.org/wiki/Mastery_learning](https://en.wikipedia.org/wiki/Mastery_learning)
+
+**DOK 1: Facts**
+
+- Bloom's **mastery learning** cycle: teach a unit → give an ungraded **formative** assessment that *diagnoses* specific gaps → deliver targeted **corrective** instruction on those gaps → **re-test** to confirm mastery before advancing.
+- The corrective step is meant to be *different* from the original teaching (re-approach the gap), not a literal repeat.
+- The high mastery bar (often ~80–90%) plus this feedback-corrective cycle is what Bloom credits for mastery learning's ~**+1 SD** (Bloom, 1984).
+- Honest: realized effect sizes vary widely with implementation fidelity; the loop costs time and only pays off when the corrective work genuinely targets the diagnosed error.
+
+**DOK 2: Summary & Analysis** This subsection is the spine that ties the three Phase-3 scheduling SPOVs into one mechanism rather than three bolt-ons. Phase 3 implements Bloom's loop almost literally: the **formative** assessment is the deterministic misconception diagnosis (the same classifier ported in **SPOV 9**), the **corrective** step is targeted Infinite-Practice on the diagnosed skill, and the **re-test** is a *spaced* FSRS review (**SPOV 7**), which is also the durability check that defines mastery in **SPOV 6**. The per-skill **mastery meter** is Bloom's "clear mastery signal." Read this way, spacing, durable mastery, and sharpened feedback are not separate features; they are the formative→corrective→re-test loop with FSRS as the re-test scheduler and the deterministic diagnoser as the formative assessment.
+
 ### Category 2: Encoding & Higher-Order Learning (Sung)
 
 
@@ -398,13 +490,51 @@ Smaller prompts, lower cost, fewer hallucinations, and (because the givens are t
 
 **DOK 2: Summary & Analysis** This fact is the entire reason **SPOV 2** and **SPOV 4** exist. Because the downside is categorical, the response can't be "reduce the error rate a bit with prompting"; it must be "make the model unable to determine truth" (firewall) and "guarantee a correct hand-authored fallback always exists" (additive/AI-off-first). Together they convert an unreliable component into a safe one: the model phrases; the engine decides; and if the model is absent or wrong, the Phase-1 experience is right there underneath.
 
+### Category 7: Spacing & Scheduling (the science of *when* to review)
+
+
+
+#### 7.1 The spacing effect
+
+**Source:** Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006). *Distributed practice in verbal recall tasks: A review and quantitative synthesis.* Psychological Bulletin, 132(3), 354–380. [https://doi.org/10.1037/0033-2909.132.3.354](https://doi.org/10.1037/0033-2909.132.3.354) · temporal scaling: Cepeda et al. (2008), Psychological Science.
+
+**DOK 1: Facts**
+
+- **Distributed (spaced) practice** reliably yields better long-term retention than **massed** practice (cramming): the **spacing effect**, one of the oldest and most robust results in memory research (Ebbinghaus, 1885).
+- Cepeda et al. (2006) quantitatively synthesized the distributed-practice literature (hundreds of experiments) and found a consistent, sizable spacing advantage across materials and designs.
+- The *optimal* review gap **scales with the retention interval**: the longer you need to remember, the wider the best spacing (Cepeda et al., 2008, the "temporal ridgeline"); there is no single magic interval.
+- Honest boundaries: most of this evidence is verbal-recall/lab; the optimal-gap function is approximate and noisy; and "expanding intervals beat equal intervals" is **contested**, equal spacing often does just as well.
+
+**DOK 2: Summary & Analysis** This is the empirical floor under **SPOV 7** and half of **SPOV 6**. Spacing is *why a scheduler must exist at all* and *why an immediate mastery pass is insufficient*: the gap between reviews is exactly where forgetting happens, and therefore where durable mastery is proven or lost. The honesty cuts in a useful direction here: because the optimal-interval science is noisy and the expanding-vs-fixed debate is unsettled, we explicitly *do not* hand-pick "magic" intervals. We delegate interval choice to a memory model (FSRS, §7.2) whose single job is to estimate when recall decays to the target, and we keep the claim modest: spacing helps; the exact schedule is an *estimate*, not a law.
+
+#### 7.2 FSRS-6: a benchmarked, open-source memory model (real-world precedent / tool)
+
+**Source:** Open-source. Anki: [https://github.com/ankitects/anki](https://github.com/ankitects/anki) · FSRS-rs reference implementation: [https://github.com/open-spaced-repetition/fsrs-rs](https://github.com/open-spaced-repetition/fsrs-rs) · the algorithm spec: [https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm) · benchmark: [https://github.com/open-spaced-repetition/srs-benchmark](https://github.com/open-spaced-repetition/srs-benchmark)
+
+> Following this document's treatment of Khanmigo, FSRS/Anki enters as a real-world *tool and precedent*, **not** a seventh expert, the roster is deliberately capped at six.
+
+**DOK 1: Facts**
+
+- **FSRS** (Free Spaced Repetition Scheduler) is Anki's modern, built-in scheduler, the default for new profiles on recent installs, supplanting legacy SM-2; **FSRS-6** is the current version (21 parameters).
+- It uses the **DSR memory model**, **Difficulty** (1–10; how hard the item is for this learner), **Stability** (days until recall probability falls to 90%), **Retrievability** (current probability of recall), and fits a **power-law forgetting curve** (a better fit than the older exponential model).
+- It schedules each item to resurface when predicted **retrievability** decays to a **target retention** (default **0.90**); a failure ("**Again**") is a **lapse** that collapses stability, while Hard/Good/Easy are passes.
+- Default weights are trained on a large public corpus (on the order of **700M reviews from ~10,000+ Anki users**). On the public `srs-benchmark` (~9,999 collections, ~350M reviews), FSRS has **lower log-loss than SM-2 for ~99.5–99.6%** of collections, *even using defaults*. Per-user optimization trims error further.
+- **Legacy SM-2** (SuperMemo / old Anki) is a hand-tuned **ease-factor × interval-multiplier** with **no memory model and no target retention**, it reacts to grades but never *predicts* recall.
+- Honest caveats: SM-2 wasn't designed to output probabilities (the benchmark adapts it to compare), and the headline "**20–30% fewer reviews**" comes from **simulation**, not a controlled classroom trial.
+
+**DOK 2: Summary & Analysis** FSRS is the real-world precedent that makes **SPOV 7** concrete, the way Khanmigo grounds SPOV 2/3. Two properties earn it a place over the simpler SM-2/Leitner box. First, it has an actual **forgetting-curve model**, so "when to review" is a *prediction* (recall has decayed to target) rather than an opaque multiplier. Second, its grade vocabulary maps cleanly onto our **deterministic outcomes**: first-try correct = pass, **wrong or assisted = lapse**, which is exactly the "resurface wrong items sooner" behavior the assignment asks for. We port FSRS-6 with default weights (SPOV 7's honest tradeoff), persist D/S/R **per skill** (not per flashcard) under `users/{uid}/…`, and drive every update through the one outcome chokepoint (`recordStep`). The benchmark's own caveats, SM-2's probability adaptation, and a simulation-based efficiency figure, are precisely why this BrainLift states "FSRS beats SM-2" as a strong *directional* result, the same stance it takes toward Bloom's 2-sigma.
+
 ---
 
 
 
 ## References
 
+- Anki (ankitects). *Anki*, open-source spaced-repetition software; ships the FSRS scheduler. [https://github.com/ankitects/anki](https://github.com/ankitects/anki)
+- Bloom, B. S. (1968). Learning for Mastery. *Evaluation Comment, 1*(2). (Mastery learning: the formative → corrective → re-test loop.)
 - Bloom, B. S. (1984). The 2 Sigma Problem: The Search for Methods of Group Instruction as Effective as One-to-One Tutoring. *Educational Researcher, 13*(6), 4–16. [https://gwern.net/doc/psychology/1984-bloom.pdf](https://gwern.net/doc/psychology/1984-bloom.pdf)
+- Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. *Psychological Bulletin, 132*(3), 354–380. [https://doi.org/10.1037/0033-2909.132.3.354](https://doi.org/10.1037/0033-2909.132.3.354)
+- Cepeda, N. J., Vul, E., Rohrer, D., Wixted, J. T., & Pashler, H. (2008). Spacing effects in learning: A temporal ridgeline of optimal retention. *Psychological Science, 19*(11), 1095–1102. [https://doi.org/10.1111/j.1467-9280.2008.02209.x](https://doi.org/10.1111/j.1467-9280.2008.02209.x)
 - Freeman, S., Eddy, S. L., McDonough, M., Smith, M. K., Okorafor, N., Jordt, H., & Wenderoth, M. P. (2014). Active learning increases student performance in science, engineering, and mathematics. *PNAS, 111*(23), 8410–8415. [https://www.pnas.org/doi/10.1073/pnas.1319030111](https://www.pnas.org/doi/10.1073/pnas.1319030111)
 - Karpicke, J. D., & Roediger, H. L. (2008). The Critical Importance of Retrieval for Learning. *Science, 319*(5865), 966–968. [https://www.science.org/doi/10.1126/science.1152408](https://www.science.org/doi/10.1126/science.1152408)
 - Khan Academy (2024). Khanmigo Math Computation and Tutoring Updates. [https://blog.khanacademy.org/khanmigo-math-computation-and-tutoring-updates/](https://blog.khanacademy.org/khanmigo-math-computation-and-tutoring-updates/)
@@ -413,6 +543,9 @@ Smaller prompts, lower cost, fewer hallucinations, and (because the givens are t
 - MacLeod, C. M., Gopie, N., Hourihan, K. L., Neary, K. R., & Ozubko, J. D. (2010). The production effect: Delineation of a phenomenon. *JEP: LMC, 36*(3), 671–685. [https://pubmed.ncbi.nlm.nih.gov/20438265/](https://pubmed.ncbi.nlm.nih.gov/20438265/)
 - Mayer, R. E. (2005/2009). The Modality Principle. In *The Cambridge Handbook of Multimedia Learning.* [https://www.cambridge.org/core/books/multimedia-learning/modality-principle/E5CD6E01CEA0B568CE260F66A3CD0D1F](https://www.cambridge.org/core/books/multimedia-learning/modality-principle/E5CD6E01CEA0B568CE260F66A3CD0D1F)
 - Mayer, R. E. (2017). Using multimedia for e-learning. *Journal of Computer Assisted Learning, 33*(5), 403–423. [https://onlinelibrary.wiley.com/doi/10.1111/jcal.12197](https://onlinelibrary.wiley.com/doi/10.1111/jcal.12197)
+- Open Spaced Repetition. FSRS-6 algorithm specification (fsrs4anki wiki). [https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm)
+- Open Spaced Repetition. FSRS-rs, Rust reference implementation. [https://github.com/open-spaced-repetition/fsrs-rs](https://github.com/open-spaced-repetition/fsrs-rs)
+- Open Spaced Repetition. SRS Benchmark, FSRS vs SM-2 and other schedulers. [https://github.com/open-spaced-repetition/srs-benchmark](https://github.com/open-spaced-repetition/srs-benchmark)
 - Roediger, H. L., & Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. *Psychological Science, 17*(3), 249–255. [http://psychnet.wustl.edu/memory/wp-content/uploads/2018/04/Roediger-Karpicke-2006_PPS.pdf](http://psychnet.wustl.edu/memory/wp-content/uploads/2018/04/Roediger-Karpicke-2006_PPS.pdf)
 - Slamecka, N. J., & Graf, P. (1978). The generation effect: Delineation of a phenomenon. *JEP: Human Learning and Memory, 4*(6), 592–604.
 - Soderstrom, N. C., & Bjork, R. A. (2015). Learning versus performance: An integrative review. *Perspectives on Psychological Science, 10*(2), 176–199.
@@ -464,6 +597,8 @@ Smaller prompts, lower cost, fewer hallucinations, and (because the givens are t
 
 
 
+> **Update (Phase 3):** the deferred row above is now **delivered**, spaced repetition, durable mastery scheduling, and mastery/SR-driven sequencing all shipped in Phase 3. See the Phase-3 ledger in **Appendix B.3**.
+
 ### A.4 Code analysis: AI-generated vs hand-written
 
 Honestly: **this build is ~entirely AI-generated and AI-orchestrated.** Effectively all shipped code (the AI layer, the backend functions, the API, the practice components, and the Koji UI) was written by the agent swarm. The human contribution was *direction and judgment*, not code: the PRD and locked decisions, the headline voice-first thesis, the agent role definitions and prompts, the architectural guardrails (additive flag, verification firewall, secrets server-side), and the review/merge gating. So the split is roughly **~100% AI-written code / 100% human-decided constraints**: the leverage was in framing the problem so the swarm couldn't ship something wrong.
@@ -476,4 +611,68 @@ Honestly: **this build is ~entirely AI-generated and AI-orchestrated.** Effectiv
 - **Restraint is a feature.** The hardest pedagogy decision was making the tutor *refuse* the answer until it's earned. → **SPOV 3.**
 - **Voice is the main use case, designed to stay active.** Voice wins on engagement and (when the learner talks) on encoding, provided the design keeps the learner producing rather than passively listening. → **SPOV 1.**
 - **The swarm's bottleneck is review, not authoring.** Parallel agents produce code fast; the multi-pass review/ponytail cadence is what keeps quality and complexity in check, and counters the model's instinct to over-build.
+
+---
+
+
+
+## Appendix B: How Phase 3 Was Built
+
+> Mirrors Appendix A for the learning-science layer. Where the body of this document is about the *thinking* behind retention, this appendix is about the *making*: the tools and workflow, the prompting strategies that worked, the shipped/skipped/deferred ledger, the AI-vs-human code split, and the key learnings (the seeds of SPOVs 6–9). The defining constraint carried from Phase 2: everything here is **additive and AI-off-safe**, it rides existing primitives and adds no AI dependency.
+
+
+
+### B.1 Tools & workflow
+
+- **Same host, isolated worktree.** Cursor as the agent host; Phase-3 work lived in the `alpha-brilliant-clone/phase-3/` worktree on `phase-3/learning-science`, never touching the frozen Phase-2 snapshot in `main/`. The non-negotiable bar from `RALPH_TASK.md` carried over verbatim: additive, AI-off-safe, green `tsc`/`eslint`/`build`, UI bar held.
+- **Two specialized agents ran first, before any feature code:**
+  1. A **read-only codebase-mapping agent** traced the seams Phase 3 had to attach to, the single outcome chokepoint (`recordStep` in `src/lib/learner.tsx`), the deterministic engine (`src/content/engine.ts`), the content types (`ProblemStep` / `Feedback` in `src/content/types.ts`), and the existing misconception diagnosis (`src/lib/ai/tools/diagnosis.ts`). This forced the new layer to ride real primitives instead of forking a parallel progress store.
+  2. An **Anki / FSRS research agent** cloned `ankitects/anki` and `open-spaced-repetition/fsrs-rs`, read the FSRS-6 algorithm spec, extracted the default weights and the DSR + power-curve formulas, and produced a faithful **TypeScript port validated by unit tests**, the port's outputs checked against reference values from the Rust/wiki implementation so a plausible-but-wrong scheduler couldn't slip through.
+- **Same multi-pass review cadence as Phase 2.** Code review re-reviewed to an explicit APPROVE; **Emil** design passes on the new mastery meters and Reviews-due hub; the **impeccable-swarm** UI/UX QA loop; and **ponytail** complexity passes to keep an additive layer from bloating (the FSRS port was the one place we *accepted* added complexity, justified by the unit-test bar).
+- **Done-bar, extended.** Phase-2's bar plus one new line: *the FSRS port matches reference outputs in unit tests, and every new state path is exercised with the AI flag off.*
+
+
+
+### B.2 Prompting strategies that worked
+
+1. **"Attach to the chokepoint; don't fork state."** Every SR/mastery update had to flow through the existing `recordStep` outcome path and nest under `users/{uid}/…`, no second writer. This kept the AI-on and AI-off paths writing one truth, and kept the layer additive. *(SPOV 4, SPOV 7.)*
+2. **"Port the algorithm, then prove it with tests, *before* any UI."** The FSRS agent was told to land a unit-test-validated TS port of FSRS-6 (default weights, DSR model, power curve, target retention 0.9) and only *then* wire scheduling, correctness settled before product. *(SPOV 7.)*
+3. **"Map the outcome→grade boundary explicitly, once."** Pin the rule that **wrong/assisted = lapse** and **first-try-correct = pass**, encoded at the chokepoint, so "resurface what they got wrong, sooner" is a property of the data path, not of any screen. *(SPOV 7.)*
+4. **"Port the diagnoser across the AI line."** Move `diagnosis.ts`'s classifier into the deterministic static-feedback layer (*what you did → why → principle → nudge*, never the answer), with AI-on phrasing over the *same* diagnosis. *(SPOV 9.)*
+5. **"Mastery = survives a spaced review."** Encode durable mastery and the level gate as the spec up front, so agents couldn't regress to a one-pass mastery flag or per-lesson locking. *(SPOV 6.)*
+
+
+
+### B.3 Phase 3 decisions: shipped / skipped / deferred
+
+
+| Decision                                                                                                                                                                       | Status               | Why                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **FSRS-6 spaced repetition**: per-skill D/S/R, target retention 0.9, **wrong/assisted = lapse**; **"Reviews due (N)"** hub + due-soon forecast + one-tap session; captures Infinite-Practice misses | ✅ Shipped            | Resurfaces each skill as predicted recall decays, and misses soonest, the assignment's headline SR ask, from a real memory model, all AI-off-safe.                 |
+| **Durable, gated mastery**: per-skill **mastery meter**, "mastery = survives a spaced review," Bloom corrective loop, mastery-driven next step, **level + level-review lock** until mastered | ✅ Shipped            | A real mastery gate with a clear signal, fused with spacing so it certifies *learning*, not a moment of performance.                                                 |
+| **Retrieval-first reviews**: cumulative (interleaved) level review, opening recall warm-up, generative + scaffold-dropped item selection                                       | ✅ Shipped            | Recall over recognition (a desirable difficulty); this is also where interleaving lives, folded in, not a headline.                                                 |
+| **Ported static misconception feedback**: deterministic diagnoser in the hand-authored `Feedback` (*what you did → why → principle → nudge*)                                    | ✅ Shipped            | Wrong answers teach with AI **off**; with AI on, Koji phrases over the identical diagnosis (one source of truth for "why wrong").                                    |
+| **~7-skill taxonomy** (identify-sides, areas-of-squares, theorem-statement, find-hypotenuse, find-a-leg, right-triangle-test, coordinate-distance) tagged on problem steps     | ✅ Shipped            | The unit that spacing, retrieval, and mastery all key off; small and bounded, matching the one-chapter course.                                                       |
+| **Per-learner FSRS parameter training**                                                                                                                                       | ❌ Skipped            | Defaults already beat SM-2 for ~99.5% of users; training needs a review history we won't have on day one and adds ML infra not yet worth it. *(SPOV 7, stated honestly.)* |
+| **Interleaving as a standalone headline mode**                                                                                                                                | ❌ Skipped            | Interleaving is real, but it rides the cumulative/mixed review sessions; a separate "interleave" surface would be décor.                                             |
+| **AI-authored feedback / pedagogy**                                                                                                                                           | ❌ Skipped            | The diagnosis is deterministic and the model only phrases; authoring pedagogy stays out of scope (SPOV 2/4/9).                                                       |
+| **Full cross-lesson adaptive *sequencing*** beyond mastery + SR                                                                                                               | ⏭ Deferred           | The fixed hand-authored path still owns order; sequencing the *curriculum itself* is a later bet.                                                                    |
+| **Multi-level scaling of the taxonomy / second chapter**                                                                                                                      | ⏭ Deferred           | The model generalizes, but Phase 3 keeps depth at one level, depth over breadth, the project's governing rule.                                                      |
+
+
+
+### B.4 Code analysis: AI-generated vs hand-written
+
+Same posture as Phase 2: **~100% AI-written code / 100% human-decided constraints.** The Phase-3 leverage was, again, in framing the problem so the swarm couldn't ship something wrong, here that meant the *locked spec* (the four techniques, the additive/AI-off rule, the **outcome→grade mapping**, the **"mastery = survives a spaced review"** redefinition, and the decision to ship FSRS **defaults**) plus a single new validation bar: **unit-test the FSRS port against the open-source reference.** The notable new artifact is that FSRS-6 TypeScript port, AI-written from the open-source spec and AI-validated against it under human-specified test criteria. As in Phase 2, the human contribution was direction and judgment, not keystrokes.
+
+
+
+### B.5 Key learnings (the seeds of SPOVs 6–9)
+
+- **Mastery must be durable.** The hardest pedagogy call was refusing to count a one-time pass as mastery; tying the gate to *surviving a spaced review* is what makes the signal mean something. → **SPOV 6.**
+- **A modeled scheduler beats a vibe, and honest defaults beat a hand-tuned multiplier.** The value of FSRS isn't a few percent on seven skills; it's a real forgetting-curve model and a clean lapse mapping, shipped with defaults and *said out loud*. → **SPOV 7.**
+- **Make reviews retrieval, not recognition.** A review that feels easy is usually the wrong one; the system has to choose the harder, generative, cumulative review for the learner. → **SPOV 8.**
+- **Put the diagnosis below the AI line.** Moving the misconception classifier into the deterministic layer made the AI-off path as sharp as AI-on, and gave the model one source of truth to phrase over. → **SPOV 9.**
+- **Additive-on-primitives pays a second dividend.** Because the whole layer rode `recordStep` + the engine + the content model, the learning-science features added *no* AI dependency and stayed AI-off-safe by construction, the Phase-2 architecture earned its keep twice.
+- **Porting a benchmarked open-source model beats hand-rolling intervals.** Cloning Anki / `fsrs-rs` and unit-testing the port was faster *and* more correct than inventing a schedule, and it made the honesty (defaults, not trained; directional, not measured) precise rather than hand-wavy.
 

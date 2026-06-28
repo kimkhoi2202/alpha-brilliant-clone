@@ -27,6 +27,7 @@ const rightTriangleQuiz: ProblemStep[] = [
   {
     id: "q-intro-hypotenuse",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "Which side is the hypotenuse of this triangle?",
     interaction: {
       kind: "pick-side",
@@ -55,6 +56,7 @@ const rightTriangleQuiz: ProblemStep[] = [
   {
     id: "q-intro-legs",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "Select both legs of this triangle.",
     interaction: {
       kind: "pick-sides",
@@ -79,6 +81,7 @@ const rightTriangleQuiz: ProblemStep[] = [
   {
     id: "q-intro-right-angle",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "Tap the corner that holds the right angle.",
     interaction: { kind: "pick-angle", a: 12, b: 5, correctVertex: "A" },
     feedback: {
@@ -101,6 +104,7 @@ const rightTriangleQuiz: ProblemStep[] = [
   {
     id: "q-intro-hyp-fact",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "Which statement about the hypotenuse is true?",
     interaction: {
       kind: "multiple-choice",
@@ -131,6 +135,7 @@ const rightTriangleQuiz: ProblemStep[] = [
   {
     id: "q-intro-one-right-angle",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "A right triangle always has exactly one ___.",
     interaction: {
       kind: "multiple-choice",
@@ -168,6 +173,7 @@ const discoverTheoremQuiz: ProblemStep[] = [
   {
     id: "q-discover-area",
     kind: "problem",
+    skill: "areas-of-squares",
     prompt:
       "Build a square on a leg of length 7. As a $7 \\times 7$ grid of unit cells, how many unit squares is that?",
     interaction: { kind: "numeric", answer: 49, placeholder: "?" },
@@ -183,6 +189,7 @@ const discoverTheoremQuiz: ProblemStep[] = [
   {
     id: "q-discover-sum",
     kind: "problem",
+    skill: "areas-of-squares",
     prompt: "For a right triangle with legs 5 and 12, what is $5^2 + 12^2$?",
     interaction: { kind: "numeric", answer: 169, placeholder: "?" },
     visual: { kind: "right-triangle", a: 5, b: 12, labels: true },
@@ -199,6 +206,7 @@ const discoverTheoremQuiz: ProblemStep[] = [
   {
     id: "q-discover-root",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "So $5^2 + 12^2 = 169$ is the hypotenuse squared. How long is the hypotenuse?",
     interaction: { kind: "numeric", answer: 13, unit: "units", placeholder: "?" },
     visual: { kind: "right-triangle", a: 5, b: 12, labels: true, unknownSide: "c" },
@@ -214,6 +222,7 @@ const discoverTheoremQuiz: ProblemStep[] = [
   {
     id: "q-discover-proof",
     kind: "problem",
+    skill: "theorem-statement",
     prompt: "Why does the rearrangement prove $a^2 + b^2 = c^2$ for every right triangle?",
     interaction: {
       kind: "multiple-choice",
@@ -248,6 +257,7 @@ const discoverTheoremQuiz: ProblemStep[] = [
   {
     id: "q-discover-generalize",
     kind: "problem",
+    skill: "theorem-statement",
     prompt: "Counting showed $3^2 + 4^2 = 5^2$. Which statement does this generalize to?",
     interaction: {
       kind: "multiple-choice",
@@ -283,6 +293,7 @@ const findHypotenuseQuiz: ProblemStep[] = [
   {
     id: "q-hyp-square",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "What is $7^2$?",
     interaction: { kind: "numeric", answer: 49, placeholder: "?" },
     feedback: {
@@ -297,6 +308,7 @@ const findHypotenuseQuiz: ProblemStep[] = [
   {
     id: "q-hyp-add",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "A right triangle has legs 9 and 12. What is $9^2 + 12^2$?",
     interaction: { kind: "numeric", answer: 225, placeholder: "?" },
     visual: { kind: "right-triangle", a: 9, b: 12, labels: true },
@@ -312,6 +324,7 @@ const findHypotenuseQuiz: ProblemStep[] = [
   {
     id: "q-hyp-root",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "$a^2 + b^2 = 225$ is the hypotenuse squared. How long is the hypotenuse?",
     interaction: { kind: "numeric", answer: 15, unit: "units", placeholder: "?" },
     visual: { kind: "right-triangle", a: 9, b: 12, labels: true, unknownSide: "c" },
@@ -327,6 +340,7 @@ const findHypotenuseQuiz: ProblemStep[] = [
   {
     id: "q-hyp-steps",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "What's the correct order of steps to find the hypotenuse from the two legs?",
     interaction: {
       kind: "multiple-choice",
@@ -356,6 +370,7 @@ const findHypotenuseQuiz: ProblemStep[] = [
   {
     id: "q-hyp-full",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "A right triangle has legs 12 and 16. How long is the hypotenuse?",
     interaction: { kind: "numeric", answer: 20, unit: "units", placeholder: "?" },
     visual: { kind: "right-triangle", a: 12, b: 16, labels: true, unknownSide: "c" },
@@ -379,6 +394,7 @@ const findALegQuiz: ProblemStep[] = [
   {
     id: "q-leg-formula",
     kind: "problem",
+    skill: "find-a-leg",
     prompt: "To find a missing leg, how do you rearrange $a^2 + b^2 = c^2$?",
     interaction: {
       kind: "multiple-choice",
@@ -407,6 +423,7 @@ const findALegQuiz: ProblemStep[] = [
   {
     id: "q-leg-25-7",
     kind: "problem",
+    skill: "find-a-leg",
     prompt: "The hypotenuse is 25 and one leg is 7. Find the other leg.",
     interaction: { kind: "numeric", answer: 24, unit: "units", placeholder: "?" },
     visual: {
@@ -429,6 +446,7 @@ const findALegQuiz: ProblemStep[] = [
   {
     id: "q-leg-15-9",
     kind: "problem",
+    skill: "find-a-leg",
     prompt: "The hypotenuse is 15 and one leg is 9. Find the other leg.",
     interaction: { kind: "numeric", answer: 12, unit: "units", placeholder: "?" },
     visual: {
@@ -451,6 +469,7 @@ const findALegQuiz: ProblemStep[] = [
   {
     id: "q-leg-sort",
     kind: "problem",
+    skill: "right-triangle-test",
     prompt: "Sort each triangle: does it have a right angle?",
     interaction: {
       kind: "categorize",
@@ -476,6 +495,7 @@ const findALegQuiz: ProblemStep[] = [
   {
     id: "q-leg-wire",
     kind: "problem",
+    skill: "find-a-leg",
     prompt:
       "A 26 m guy-wire runs from the top of a 24 m mast to an anchor on the ground. How far is the anchor from the base?",
     interaction: { kind: "numeric", answer: 10, unit: "m", placeholder: "?" },
@@ -508,6 +528,7 @@ const directDistanceQuiz: ProblemStep[] = [
   {
     id: "q-dist-plot",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt: "Plot the point (5, 2) on the grid.",
     interaction: { kind: "plot-points", size: 6, targets: [{ x: 5, y: 2 }] },
     visual: { kind: "coordinate-grid", size: 6, markers: [{ x: 0, y: 0 }] },
@@ -519,6 +540,7 @@ const directDistanceQuiz: ProblemStep[] = [
   {
     id: "q-dist-12-5",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt: "How far is (12, 5) from the origin (0, 0) in a straight line?",
     interaction: { kind: "numeric", answer: 13, unit: "units", placeholder: "?" },
     visual: {
@@ -541,6 +563,7 @@ const directDistanceQuiz: ProblemStep[] = [
   {
     id: "q-dist-9-12",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt: "How far is (9, 12) from the origin?",
     interaction: { kind: "numeric", answer: 15, unit: "units", placeholder: "?" },
     visual: {
@@ -563,6 +586,7 @@ const directDistanceQuiz: ProblemStep[] = [
   {
     id: "q-dist-offset",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt: "How far is (10, 9) from (2, 3)?",
     interaction: { kind: "numeric", answer: 10, unit: "units", placeholder: "?" },
     visual: {
@@ -586,6 +610,7 @@ const directDistanceQuiz: ProblemStep[] = [
   {
     id: "q-dist-shortcut",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt:
       "Walking the grid from (2, 3) to (10, 9) is $8 + 6 = 14$ blocks. Why is the straight-line distance only 10?",
     interaction: {
@@ -626,6 +651,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-name-hypotenuse",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "Which side is the hypotenuse of this triangle?",
     interaction: {
       kind: "pick-side",
@@ -654,6 +680,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-right-angle",
     kind: "problem",
+    skill: "identify-sides",
     prompt: "Tap the corner that holds the right angle.",
     interaction: { kind: "pick-angle", a: 16, b: 12, correctVertex: "A" },
     feedback: {
@@ -676,6 +703,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-prove",
     kind: "problem",
+    skill: "theorem-statement",
     prompt:
       "Rearranging four copies of a right triangle inside one big square proves which fact?",
     interaction: {
@@ -711,6 +739,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-hypotenuse",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt: "A right triangle has legs 18 and 24. How long is the hypotenuse?",
     interaction: { kind: "numeric", answer: 30, unit: "units", placeholder: "?" },
     visual: { kind: "right-triangle", a: 18, b: 24, labels: true, unknownSide: "c" },
@@ -726,6 +755,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-ramp",
     kind: "problem",
+    skill: "find-hypotenuse",
     prompt:
       "A skate ramp rises 9 ft and runs 40 ft along the ground. How long is the sloping surface?",
     interaction: { kind: "numeric", answer: 41, unit: "ft", placeholder: "?" },
@@ -742,6 +772,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-missing-leg",
     kind: "problem",
+    skill: "find-a-leg",
     prompt: "The hypotenuse is 37 and one leg is 12. Find the other leg.",
     interaction: { kind: "numeric", answer: 35, unit: "units", placeholder: "?" },
     visual: {
@@ -764,6 +795,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-leg-formula",
     kind: "problem",
+    skill: "find-a-leg",
     prompt: "Which equation correctly solves for the missing leg b?",
     interaction: {
       kind: "multiple-choice",
@@ -793,6 +825,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-identify",
     kind: "problem",
+    skill: "right-triangle-test",
     prompt: "Sort each set of side lengths: is it a right triangle?",
     interaction: {
       kind: "categorize",
@@ -818,6 +851,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-distance-origin",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt: "How far is (12, 9) from the origin (0, 0) in a straight line?",
     interaction: { kind: "numeric", answer: 15, unit: "units", placeholder: "?" },
     visual: {
@@ -841,6 +875,7 @@ const levelReviewQuiz: ProblemStep[] = [
   {
     id: "q-review-distance-offset",
     kind: "problem",
+    skill: "coordinate-distance",
     prompt: "Find the straight-line distance from (1, 1) to (9, 16).",
     interaction: { kind: "numeric", answer: 17, unit: "units", placeholder: "?" },
     visual: {

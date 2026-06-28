@@ -235,14 +235,18 @@ export function LessonShell({
             {footer}
           </div>
 
-          {/* Brilliant's in-lesson mascot, pinned bottom-left of the stage.
-              Interactive (tappable "Ask Koji") only when AI is on. */}
-          <AskKoji
-            swoop={kojiSwoop}
-            handleRef={kojiRef}
-            interactive={kojiInteractive}
-            onAsk={onAskKoji}
-          />
+          {/* Brilliant's in-lesson mascot (Koji), pinned bottom-left of the
+              stage. Only mounts when AI is on. AI is always-on for real users;
+              the AI-off fallback (the graded "teaches with AI off" path) shows
+              no mascot, since Koji is the AI tutor's avatar. */}
+          {kojiInteractive ? (
+            <AskKoji
+              swoop={kojiSwoop}
+              handleRef={kojiRef}
+              interactive={kojiInteractive}
+              onAsk={onAskKoji}
+            />
+          ) : null}
 
           {/* Pop-up calculator, pinned bottom-right to mirror the mascot. */}
           <LessonCalculator />

@@ -13,6 +13,7 @@ import {
   type PracticeSessionStats,
 } from "../components/practice";
 import { Button } from "../components/ui";
+import { skillForStep } from "../content";
 import { aiEnabled } from "../lib/ai/flag";
 import {
   getDifficultyPreference,
@@ -40,7 +41,7 @@ function trailingStreak(records: StepRecord[]): number {
  */
 export function InfinitePractice() {
   const navigate = useNavigate();
-  const goToCourse = () => void navigate({ to: "/" });
+  const goToCourse = () => void navigate({ to: "/courses" });
 
   // AI-off (P1): the one surface that genuinely needs generation degrades to a
   // graceful explainer. We branch BEFORE the session so the generation loop
@@ -50,7 +51,7 @@ export function InfinitePractice() {
 }
 
 function InfinitePracticeSession({ onExit }: { onExit: () => void }) {
-  const { progress } = useLearner();
+  const { progress, recordReview } = useLearner();
   // Session results feed back into difficulty so a hot/cold run nudges the ramp.
   const [sessionRecords, setSessionRecords] = useState<StepRecord[]>([]);
 
@@ -76,8 +77,18 @@ function InfinitePracticeSession({ onExit }: { onExit: () => void }) {
     difficulty,
   };
 
-  const handleResult = (record: StepRecord) =>
+  const handleResult = (record: StepRecord) => {
     setSessionRecords((prev) => [...prev, record]);
+    // Phase 3: feed practice outcomes into the problem's skill FSRS memory
+    // (Phase 2 dropped these on the floor). Generated steps carry no `skill`, so
+    // it's inferred from the interaction/visual.
+    if (problem) {
+      void recordReview(skillForStep(problem), {
+        correct: record.correct,
+        firstTryCorrect: record.firstTryCorrect,
+      });
+    }
+  };
 
   if (status === "ready" && problem) {
     return (

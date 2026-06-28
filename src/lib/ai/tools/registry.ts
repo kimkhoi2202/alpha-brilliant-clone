@@ -15,7 +15,7 @@
  */
 import type { z } from "zod";
 
-import type { AnswerValue, LessonId, Step } from "../../../content/types";
+import type { AnswerValue, LessonId, SkillId, Step } from "../../../content/types";
 import type { Grounding } from "../grounding";
 import type { LessonCanvas } from "./canvas";
 import type { RevealAllowed } from "./reveal";
@@ -64,8 +64,12 @@ export interface LearnerToolApi {
   recommendation(): Recommendation;
   /** Ensure a lesson's progress doc exists (no-op if already started). */
   startLesson(id: LessonId): Promise<void>;
-  /** Persist a `StepRecord`; `revealSolution` uses this to set `assisted`. */
-  recordStep(id: LessonId, record: StepRecord & { stepId: string }): Promise<void>;
+  /** Persist a `StepRecord`; `revealSolution` uses this to set `assisted`.
+   *  `skill` lets the chokepoint accrue per-skill FSRS mastery (Phase 3). */
+  recordStep(
+    id: LessonId,
+    record: StepRecord & { stepId: string; skill?: SkillId },
+  ): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

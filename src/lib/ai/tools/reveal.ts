@@ -111,9 +111,11 @@ export const revealSolution = defineTool({
       narrative = res.ok ? res.text : null;
     }
 
-    // --- Mark the step assisted: never first-try mastery (§2.3). ---
+    // --- Mark the step assisted: never first-try mastery (§2.3). A reveal is a
+    // lapse for the step's skill (Phase 3) — accrued via the recordStep chokepoint.
     await ctx.learner.recordStep(stepCtx.lessonId, {
       stepId: step.id,
+      skill: step.skill,
       attempts,
       correct: stepCtx.record?.correct ?? false,
       hintsUsed: true,

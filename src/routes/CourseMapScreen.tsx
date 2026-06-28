@@ -11,8 +11,15 @@ import {
   PythagorasArt,
 } from "../components/course";
 import { PracticePromoCard } from "../components/practice";
+import { ReviewsCard, SkillMasteryPanel } from "../components/review";
 import { Button } from "../components/ui";
-import { course, getLesson, lessonOrder, problemCount } from "../content";
+import {
+  course,
+  getLesson,
+  lessonOrder,
+  problemCount,
+  type SkillId,
+} from "../content";
 import { aiEnabled } from "../lib/ai/flag";
 import { requestLessonIntro } from "../lib/lesson-transition";
 import { useLearner } from "../lib/learner";
@@ -29,30 +36,48 @@ const RECOMMEND_LABEL = {
 
 export function CourseMapScreen() {
   const navigate = useNavigate();
-  const { lessonStatus, recommendation, loading, resetProgress } = useLearner();
+  const {
+    lessonStatus,
+    recommendation,
+    progressLoaded,
+    resetProgress,
+    levelMastery,
+    devMakeReviewsDue,
+    devCompleteAllLessons,
+  } = useLearner();
+
+  const levelId = course.levels[0].id;
+  const gate = levelMastery(levelId);
 
   const openLesson = (lessonId: string) => {
+    if (lessonStatus(lessonId) === "locked") return; // gated — can't enter yet
     // Launching from the map plays the branded intro animation (a transition).
     requestLessonIntro(lessonId);
     void navigate({ to: "/lesson/$lessonId", params: { lessonId } });
   };
 
+  const reviewSkill = (skill: SkillId) =>
+    void navigate({ to: "/reviews", search: { skill } });
+
   const rec = recommendation();
-  // Offer reset whenever there's progress to wipe (any lesson started or
-  // completed), so a learner can restart mid-course — not only at 6/6.
-  const anyProgress = lessonOrder.some(
-    (id) => lessonStatus(id) !== "available",
-  );
+  // Offer reset whenever there's real progress to wipe (a lesson started or
+  // completed) — not merely a locked-by-default node — so a fresh learner doesn't
+  // see a reset button.
+  const anyProgress = lessonOrder.some((id) => {
+    const status = lessonStatus(id);
+    return status === "completed" || status === "in_progress";
+  });
   // Infinite Practice (Pillar B) is reached AFTER the level review, and only
   // with AI on — otherwise the entry point stays hidden so the AI-off path is
   // byte-for-byte Phase 1 (P1).
   const practiceUnlocked =
     aiEnabled() && lessonStatus(LEVEL_REVIEW_LESSON_ID) === "completed";
-  // The active "you are here" Koji marker only exists once progress has loaded.
-  // Before that, progress is empty so every lesson reads "available" and the
-  // recommendation falls back to lesson 1, marking it active would fire Koji on
-  // the wrong node, and the marker would linger when the real one appears.
-  const currentId = loading ? null : rec.lessonId;
+  // The active "you are here" Koji marker appears once PROGRESS has hydrated, so
+  // the recommendation points at the real current lesson rather than a pre-load
+  // guess (a fresh learner correctly lands on lesson 1). It intentionally does
+  // NOT also wait on the profile / skill-mastery snapshots, which the marker
+  // doesn't need — waiting on those could leave it stuck if one is slow.
+  const currentId = progressLoaded ? rec.lessonId : null;
   // Selection follows the recommendation until the learner clicks another node
   // (null = "follow the current lesson"), so the glow lands on the right node
   // after progress loads rather than sticking to the initial guess.
@@ -65,12 +90,15 @@ export function CourseMapScreen() {
   const buildNodes = (lessonIds: string[]): CourseMapNode[] =>
     lessonIds.map((id) => {
       const lesson = getLesson(id);
+      const status = lessonStatus(id);
       const state: CourseMapNode["state"] =
-        lessonStatus(id) === "completed"
+        status === "completed"
           ? "completed"
-          : id === currentId
-            ? "active"
-            : "available";
+          : status === "locked"
+            ? "locked"
+            : id === currentId
+              ? "active"
+              : "available";
       return {
         id,
         label: lesson?.title ?? id,
@@ -106,10 +134,14 @@ export function CourseMapScreen() {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <AppHeader />
-      <main className="mx-auto max-w-5xl px-4 pt-10 pb-28 sm:px-6 lg:pt-12 lg:pb-32">
+      <main className="mx-auto w-full max-w-5xl px-4 pt-10 pb-28 sm:px-6 lg:pt-12 lg:pb-32">
         <h1 className="sr-only">{course.title}</h1>
         <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
-          <div className="h-fit space-y-5 md:sticky md:top-24">
+          {/* Both columns flow in the normal document, so there is a single
+              scrollbar — the page's own at the window edge — and each column runs
+              to the page's true bottom (no capped, independently-scrolling rail
+              that would cut off the taller column and leave dead space). */}
+          <div className="space-y-5">
             <CourseCard
               art={<PythagorasArt />}
               title={course.title}
@@ -127,6 +159,52 @@ export function CourseMapScreen() {
                 className="mt-4"
               />
             </div>
+
+            {/* Spaced-repetition hub: reviews due + a due-soon forecast. */}
+            <ReviewsCard onStart={() => void navigate({ to: "/reviews", search: {} })} />
+
+            {/* The visible mastery signal + corrective loop (tap a weak skill to
+                practice it). Provisional vs mastered is shown per skill. */}
+            <SkillMasteryPanel
+              levelId={levelId}
+              onPractice={reviewSkill}
+              hint={
+                gate.allMastered
+                  ? `All ${gate.total} skills are mastered. The Level Review is unlocked. A skill is mastered once it survives a spaced review.`
+                  : `Master all ${gate.total} skills (${gate.mastered}/${gate.total} so far) to unlock the Level Review. A skill is mastered once it survives a spaced review.`
+              }
+            />
+
+            {import.meta.env.DEV ? (
+              <div className="rounded-2xl border-2 border-border bg-background p-6">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                  Dev tools
+                </p>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted">Make reviews due now</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => void devMakeReviewsDue()}
+                    >
+                      Run
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted">Complete all lessons</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => void devCompleteAllLessons()}
+                    >
+                      Run
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {practiceUnlocked ? (
               <PracticePromoCard
                 onStart={() => void navigate({ to: "/practice" })}

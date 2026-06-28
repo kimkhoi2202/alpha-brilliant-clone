@@ -329,12 +329,12 @@ export function TileExpressionQuestion({
   })();
 
   return (
-    <div className={cn("relative isolate flex flex-col items-center gap-2", className)}>
+    <div className={cn("relative isolate flex flex-col items-center gap-4", className)}>
       <p id={statusId} className="sr-only" aria-live="polite">
         {dragStatus}
       </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 text-3xl font-bold text-foreground sm:gap-4 sm:text-4xl">
+      <div className="flex flex-wrap items-center justify-center gap-4 text-3xl font-bold text-foreground sm:gap-6 sm:text-4xl">
         {parts.map((part, i) => {
           if (part !== null) {
             return (
@@ -388,7 +388,7 @@ export function TileExpressionQuestion({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
         {bank.map((item) => (
           <TileButton
             key={item.id}

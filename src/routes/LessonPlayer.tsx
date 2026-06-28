@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 
 import {
@@ -13,12 +13,21 @@ import {
   LessonSkeleton,
   type LessonResult,
 } from "../components/lesson";
+import { RecallWarmup } from "../components/review";
 import { Button } from "../components/ui";
-import { getLesson, nextLessonId } from "../content";
+import {
+  getLesson,
+  getSkill,
+  nextLessonId,
+  pickReviewQuestions,
+  priorSkillsForLesson,
+  type ProblemStep,
+  type SkillId,
+} from "../content";
 import { useStreak } from "../hooks/useStreak";
 import { today } from "../lib/date";
 import { clearLessonIntro, peekLessonIntro } from "../lib/lesson-transition";
-import { useLearner } from "../lib/learner";
+import { useLearner, type SkillMastery } from "../lib/learner";
 
 const routeApi = getRouteApi("/lesson/$lessonId");
 
@@ -54,11 +63,21 @@ export function LessonPlayer() {
   const {
     loading,
     resumeIndex,
+    lessonStatus,
+    skillMastery,
     startLesson,
     setStepIndex,
     recordStep,
     completeLesson,
   } = useLearner();
+
+  // Opening recall warm-up (Phase 3, SPOV 8): show once per fresh lesson entry,
+  // keyed by lesson id so it resets when moving to the next lesson.
+  const [warmupDoneFor, setWarmupDoneFor] = useState<string | null>(null);
+  const finishWarmup = useCallback(
+    () => setWarmupDoneFor(lessonId),
+    [lessonId],
+  );
   const { currentStreak, lastActiveDate } = useStreak();
   // Keyed by lessonId so the completion screen auto-resets across lessons
   // (no setState-in-effect needed).
@@ -95,7 +114,7 @@ export function LessonPlayer() {
     };
   }, [loading, lessonId, lastActiveDate]);
 
-  const goToCourse = () => navigate({ to: "/" });
+  const goToCourse = () => navigate({ to: "/courses" });
   const openLesson = (id: string) =>
     navigate({ to: "/lesson/$lessonId", params: { lessonId: id } });
 
@@ -126,7 +145,11 @@ export function LessonPlayer() {
           <CelebrationScreen
             size="lg"
             art={<CongratsBadge className="size-52" />}
-            title="Lesson complete!"
+            title={
+              lesson.id === "level-review"
+                ? "Chapter complete!"
+                : "Lesson complete!"
+            }
             actionLabel={next ? "Next lesson" : "Back to course"}
             onContinue={() => (next ? openLesson(next) : goToCourse())}
             secondaryActionLabel={next ? "Back to course" : undefined}
@@ -157,6 +180,22 @@ export function LessonPlayer() {
     );
   }
 
+  // A fresh, not-yet-completed teaching lesson gets one opening recall question
+  // on a previously-learned prerequisite skill (skippable). Cheap, deterministic
+  // existence check here; the gate composes the actual question once on mount.
+  const hasWarmup = priorSkillsForLesson(lesson.id).some(
+    (id) => skillMastery(id) !== null,
+  );
+  const showWarmup =
+    warmupDoneFor !== lesson.id &&
+    lesson.steps.length > 0 &&
+    resumeIndex(lesson.id) === 0 &&
+    lessonStatus(lesson.id) !== "completed" &&
+    hasWarmup;
+  if (showWarmup) {
+    return <LessonWarmupGate lessonId={lesson.id} onDone={finishWarmup} />;
+  }
+
   return (
     <LessonRunner
       key={lesson.id}
@@ -169,6 +208,7 @@ export function LessonPlayer() {
       onStepGraded={(result) =>
         void recordStep(lesson.id, {
           stepId: result.stepId,
+          skill: result.skill,
           attempts: result.attempts,
           correct: result.correct,
           hintsUsed: result.hintsUsed,
@@ -181,6 +221,58 @@ export function LessonPlayer() {
         const earnedStreak = snap?.lessonId === lesson.id ? !snap.value : true;
         setCompleted({ lessonId: lesson.id, result, earnedStreak });
       }}
+    />
+  );
+}
+
+/** Compose the warm-up: one generative, scaffold-dropped recall question on the
+ *  most recently learned prerequisite skill, or null if there's none yet. */
+function buildWarmup(
+  lessonId: string,
+  skillMastery: (id: SkillId) => SkillMastery | null,
+): { skill: SkillId; question: ProblemStep } | null {
+  const priors = priorSkillsForLesson(lessonId).filter(
+    (id) => skillMastery(id) !== null,
+  );
+  if (priors.length === 0) return null;
+  const skill = priors[priors.length - 1];
+  const question = pickReviewQuestions(skill, 1, { dropScaffold: true })[0];
+  return question ? { skill, question } : null;
+}
+
+/**
+ * Mounts the opening recall warm-up. Composes the question exactly once (on
+ * mount, after the learner state has loaded), records the outcome as a review,
+ * and then proceeds into the lesson. Auto-advances if there's nothing to recall.
+ */
+function LessonWarmupGate({
+  lessonId,
+  onDone,
+}: {
+  lessonId: string;
+  onDone: () => void;
+}) {
+  const { skillMastery, recordReview } = useLearner();
+  const [warmup] = useState(() => buildWarmup(lessonId, skillMastery));
+
+  useEffect(() => {
+    if (!warmup) onDone();
+  }, [warmup, onDone]);
+
+  if (!warmup) return null;
+  const label = getSkill(warmup.skill)?.label ?? warmup.skill;
+  return (
+    <RecallWarmup
+      question={warmup.question}
+      skillLabel={label}
+      onComplete={(correct) => {
+        void recordReview(warmup.skill, {
+          correct,
+          firstTryCorrect: correct,
+        });
+        onDone();
+      }}
+      onSkip={onDone}
     />
   );
 }

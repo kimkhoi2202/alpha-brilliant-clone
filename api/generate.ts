@@ -8,7 +8,10 @@
  * verification firewall before we return it. Discard & regenerate on failure,
  * with a deterministic hand-built fallback so the learner never hits a dead-end.
  *
- * Contract (matches src/lib/ai/client.ts): 200 JSON `{ step: ProblemStep | null }`.
+ * Contract — single mode (matches src/lib/ai/client.ts): request
+ * `{ interactionKind }` ⇢ 200 JSON `{ step: ProblemStep }`. Batch mode: request
+ * `{ kinds: GenerableKind[] }` (1..5) ⇢ 200 JSON `{ steps: ProblemStep[] }`, one
+ * verified step per kind in the same order (each item runs the firewall above).
  *
  * OpenAI endpoint (verified against openai@6.45.0):
  *   POST /v1/responses with `text.format = { type:"json_schema", strict:true }`
@@ -36,6 +39,10 @@ import {
 /** How many model proposals to try before falling back to the template bank. */
 const MAX_ATTEMPTS = 3;
 
+/** Max items in one batch request (PRD §4.2). Duplicate kinds are allowed — item `i` uses `seed + i`. */
+const MAX_BATCH = 5;
+
+/** Single-problem request: generate ONE verified step of the given kind. */
 export interface GenerateProblemRequest {
   /** Which verifiable interaction kind to generate. */
   interactionKind: GenerableKind;
@@ -45,20 +52,49 @@ export interface GenerateProblemRequest {
   seed?: number;
 }
 
+/** Single-problem response (back-compat with the current client). */
 export interface GenerateProblemResponse {
   /** The verified, render-ready problem, tagged `source:"ai"`. */
   step: ProblemStep;
 }
 
+/** Batch request: generate one verified step per kind (1..MAX_BATCH), in order. */
+export interface GenerateBatchRequest {
+  /** Interaction kinds to generate; 1..MAX_BATCH entries. */
+  kinds: GenerableKind[];
+  /** Target difficulty applied to every item. Defaults to "medium". */
+  difficulty?: Difficulty;
+  /** Optional base seed; item `i` uses `seed + i` for distinct, deterministic items. */
+  seed?: number;
+}
+
+/** Batch response: one verified step PER requested kind, in the SAME order. */
+export interface GenerateBatchResponse {
+  /** Verified, render-ready problems, one per requested kind, tagged `source:"ai"`. */
+  steps: ProblemStep[];
+}
+
 /**
- * Bound the untrusted request (defence-in-depth, PRD §3.6). Enforces the same
- * known-kind gate as the Cloud Function's `isGenerableKind` check.
+ * Bound the untrusted request (defence-in-depth, PRD §3.6). Accepts EXACTLY ONE
+ * of two shapes: single (`interactionKind`) or batch (`kinds`, 1..MAX_BATCH).
+ * Both fields are optional here; the `.refine` enforces the exclusive-or (reject
+ * neither and both), while `.min(1).max(MAX_BATCH)` bounds the batch and the enum
+ * keeps the same known-kind gate as the Cloud Function's `isGenerableKind` check.
  */
-const generateSchema = z.object({
-  interactionKind: z.enum(GENERABLE_KINDS),
-  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-  seed: z.number().optional(),
-});
+const generateSchema = z
+  .object({
+    interactionKind: z.enum(GENERABLE_KINDS).optional(),
+    kinds: z.array(z.enum(GENERABLE_KINDS)).min(1).max(MAX_BATCH).optional(),
+    difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+    seed: z.number().optional(),
+  })
+  // Exactly one mode: interactionKind XOR kinds.
+  .refine((d) => (d.interactionKind === undefined) !== (d.kinds === undefined));
+
+/** Shared 400 body for any request that isn't a valid single- or batch-mode call. */
+const BAD_REQUEST =
+  `Provide exactly one of interactionKind or kinds (1–${MAX_BATCH}); ` +
+  `each kind must be one of: ${GENERABLE_KINDS.join(", ")}`;
 
 /**
  * Core generation logic (thin HTTP wrapper below). Returns a verified,
@@ -112,6 +148,32 @@ async function generateProblem(
   return { step };
 }
 
+/**
+ * Batch core: generate one verified step PER requested kind, IN PARALLEL.
+ * Each kind gets a distinct seed (`baseSeed + i`) so the items differ yet keep
+ * server-side choices deterministic when a `seed` is supplied (model-authored text
+ * is not seeded). The per-kind core already falls back to
+ * a pre-verified template on model failure, so a single slow/failed kind can never
+ * fail the whole batch — we always resolve exactly `kinds.length` verified steps,
+ * in the same order as `kinds`.
+ */
+async function generateBatch(
+  data: GenerateBatchRequest,
+): Promise<GenerateBatchResponse> {
+  const baseSeed = data.seed ?? Date.now();
+  const steps = await Promise.all(
+    data.kinds.map(async (kind, i) => {
+      const { step } = await generateProblem({
+        interactionKind: kind,
+        difficulty: data.difficulty,
+        seed: baseSeed + i,
+      });
+      return step;
+    }),
+  );
+  return { steps };
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
@@ -121,17 +183,26 @@ export default async function handler(
 
   const parsed = generateSchema.safeParse(readJsonBody(req));
   if (!parsed.success) {
-    res.status(400).json({
-      error: `interactionKind must be one of: ${GENERABLE_KINDS.join(", ")}`,
-    });
+    res.status(400).json({ error: BAD_REQUEST });
     return;
   }
 
+  // The schema guarantees exactly one mode; dispatch on which field is present.
+  const { interactionKind, kinds, difficulty, seed } = parsed.data;
   try {
-    const result = await generateProblem(parsed.data);
+    let result: GenerateProblemResponse | GenerateBatchResponse;
+    if (kinds !== undefined) {
+      result = await generateBatch({ kinds, difficulty, seed });
+    } else if (interactionKind !== undefined) {
+      result = await generateProblem({ interactionKind, difficulty, seed });
+    } else {
+      // Unreachable: the schema's refine rejects "neither mode" with a 400 above.
+      res.status(400).json({ error: BAD_REQUEST });
+      return;
+    }
     res.status(200).json(result);
   } catch (err) {
-    console.error("generateProblem failed", err);
+    console.error("generate handler failed", err);
     res.status(500).json({ error: "Problem generation failed." });
   }
 }
