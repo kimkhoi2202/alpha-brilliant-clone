@@ -95,9 +95,11 @@ export function Pricing() {
       <BillingToggle yearly={yearly} onYearlyChange={setYearly} />
 
       {/* Plan cards rise/fade in as a small two-item stagger (Free, then
-          Premium). Reduced motion renders them at rest, fully visible. */}
+          Premium). Each card follows the same rhythm — name + blurb, price, a
+          full-width CTA, then a divided "what's included" check-list. Reduced
+          motion renders them at rest, fully visible. */}
       <motion.div
-        className="mt-10 grid items-stretch gap-6 md:grid-cols-2"
+        className="mt-12 grid items-stretch gap-6 md:grid-cols-2"
         initial={enabled ? "hidden" : false}
         whileInView={enabled ? "shown" : undefined}
         viewport={viewportOnce}
@@ -107,80 +109,80 @@ export function Pricing() {
         <motion.article
           aria-labelledby="plan-free"
           variants={enabled ? staggerItem : undefined}
-          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface)] p-6 sm:p-7"
+          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface)] p-7 sm:p-8"
         >
-          <h3 id="plan-free" className="text-lg font-bold text-foreground">
+          <h3 id="plan-free" className="text-xl font-bold text-foreground">
             Free
           </h3>
-          <p className="mt-1 text-sm text-muted">The whole course, free</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">
+            The whole course, free.
+          </p>
 
-          <div className="mt-5 flex items-baseline gap-1.5">
-            <span className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl">
+          <div className="mt-6 flex items-baseline gap-1.5">
+            <span className="text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
               $0
             </span>
             <span className="text-sm font-medium text-muted">forever</span>
           </div>
 
-          <ul className="mt-6 flex flex-col gap-3">
-            {FREE_BENEFITS.map((benefit) => (
-              <Benefit key={benefit}>{benefit}</Benefit>
-            ))}
-          </ul>
+          <Button
+            variant="secondary"
+            size="lg"
+            className="mt-6 w-full"
+            onPress={goAuth}
+          >
+            Start learning, free
+          </Button>
 
-          <div className="mt-auto pt-7">
-            <p className="mb-3 text-center text-xs text-muted">
-              No card required. This is the complete learn-by-doing course.
+          <div className="mt-7 border-t border-border pt-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+              What&rsquo;s included
             </p>
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              onPress={goAuth}
-            >
-              Start learning, free
-            </Button>
+            <ul className="mt-4 flex flex-col gap-3">
+              {FREE_BENEFITS.map((benefit) => (
+                <Benefit key={benefit}>{benefit}</Benefit>
+              ))}
+            </ul>
           </div>
         </motion.article>
 
-        {/* Premium: the app's real emphasized accent card + one gold steer. */}
+        {/* Premium: the recommended plan, emphasized the on-brand way (no white
+            card) — a raised surface step + a 2px accent border + a one-time
+            accent glow + a slight lift on wider screens, so it stands out while
+            staying in the dark system. */}
         <motion.article
           aria-labelledby="plan-premium"
           variants={enabled ? staggerItem : undefined}
-          className="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7"
+          className="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent bg-[var(--surface-secondary)] p-7 sm:p-8 md:z-10 md:-translate-y-2"
         >
           {/* One-time accent bloom marking the recommended plan. Clipped by the
               card's overflow-hidden, so it stays a bounded glow (no heavy shadow). */}
           <motion.div
             aria-hidden
             variants={enabled ? premiumGlow : undefined}
-            className="pointer-events-none absolute inset-x-0 top-0 mx-auto -mt-24 size-64 rounded-full bg-[color-mix(in_oklab,var(--accent)_16%,transparent)] blur-3xl"
+            className="pointer-events-none absolute inset-x-0 top-0 mx-auto -mt-24 size-64 rounded-full bg-[color-mix(in_oklab,var(--accent)_18%,transparent)] blur-3xl"
           />
           <div className="relative flex flex-1 flex-col">
             <div className="flex items-center justify-between gap-3">
-              <h3 id="plan-premium" className="text-lg font-bold text-foreground">
+              <h3 id="plan-premium" className="text-xl font-bold text-foreground">
                 Premium
               </h3>
-              <Chip
-                intent="warning"
-                variant="solid"
-                size="sm"
-                className="uppercase tracking-wide"
-              >
+              <Chip intent="warning" variant="solid" size="sm">
                 Most popular
               </Chip>
             </div>
-            <p className="mt-1 text-sm text-muted">
-              Add Koji and unlimited practice
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              Add Koji and unlimited practice.
             </p>
 
-            <div className="mt-5 flex items-baseline gap-1.5">
+            <div className="mt-6 flex items-baseline gap-1.5">
               {/* Signature: the price swaps with a small slide+fade when the
                   billing period flips. An invisible sizer holds the box width
                   (both prices are 6 tabular chars) so "/ month" never shifts
                   during mode="wait". An sr-only span carries the spoken price
                   (the visible price is aria-hidden), so screen readers announce
                   it once without an aria-label on a generic span. */}
-              <span className="relative inline-block text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl">
+              <span className="relative inline-block text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
                 <span className="sr-only">
                   {`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
                 </span>
@@ -225,21 +227,24 @@ export function Pricing() {
                 : "After the 7-day trial."}
             </p>
 
-            <ul className="mt-6 flex flex-col gap-3">
-              {PREMIUM_BENEFITS.map((benefit) => (
-                <Benefit key={benefit}>{benefit}</Benefit>
-              ))}
-            </ul>
+            <Button
+              variant="accent"
+              size="lg"
+              className="mt-6 w-full"
+              onPress={goAuth}
+            >
+              Try Premium free for 7 days
+            </Button>
 
-            <div className="mt-auto pt-7">
-              <Button
-                variant="accent"
-                size="lg"
-                className="w-full"
-                onPress={goAuth}
-              >
-                Try Premium free for 7 days
-              </Button>
+            <div className="mt-7 border-t border-border pt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                What&rsquo;s included
+              </p>
+              <ul className="mt-4 flex flex-col gap-3">
+                {PREMIUM_BENEFITS.map((benefit) => (
+                  <Benefit key={benefit}>{benefit}</Benefit>
+                ))}
+              </ul>
             </div>
           </div>
         </motion.article>
