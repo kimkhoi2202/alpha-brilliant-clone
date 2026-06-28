@@ -29,23 +29,26 @@ const ZONE_REACTIONS = ["waveRight", "successSmall", "waveLeft"] as const;
 export function KojiCompanion() {
   const motionEnabled = useMotionEnabled();
   const { scrollYProgress } = useScroll();
-  // Smooth the raw scroll progress so Koji glides rather than snaps.
+  // Smooth the raw scroll progress so Koji glides rather than snaps, but track
+  // closely enough that it stays roughly in step with the scrollbar (and lands
+  // near the bottom when you reach the end) rather than lagging far behind.
   const smooth = useSpring(scrollYProgress, {
-    stiffness: 60,
-    damping: 20,
-    mass: 0.6,
+    stiffness: 130,
+    damping: 26,
+    mass: 0.5,
   });
 
   // The vertical rail Koji travels, derived from the viewport (recomputed on
-  // resize). Koji starts ~16vh down and ends ~14vh from the bottom. Seeded from
-  // the real viewport on first render so there's no top-of-screen flash.
+  // resize). Small top/bottom margins so the travel spans most of the viewport
+  // height — like the scrollbar thumb — and Koji ends near the bottom at the end
+  // of the page. Seeded from the real viewport on first render (no flash).
   const measure = () => {
     if (typeof window === "undefined") return { top: 0, height: 0 };
     const h = window.innerHeight;
-      const top = Math.round(h * 0.16);
-      const bottom = Math.round(h * 0.14);
-      const kojiPx = 128; // size-32 ceiling (companion grows on very wide screens)
-      return { top, height: Math.max(0, h - top - bottom - kojiPx) };
+    const top = Math.round(h * 0.11); // clear the sticky nav
+    const bottom = Math.round(h * 0.06); // small gap above the viewport bottom
+    const kojiPx = 128; // size-32 ceiling (companion grows on very wide screens)
+    return { top, height: Math.max(0, h - top - bottom - kojiPx) };
   };
   const [rail, setRail] = useState(measure);
   useEffect(() => {
