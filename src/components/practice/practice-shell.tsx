@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { GenerationDifficulty } from "../../lib/ai/client";
 import { cn } from "../../lib/cn";
+import { LessonCalculator } from "../lesson/lesson-calculator";
 
 /** Header info shown across loading / problem / error states of a session. */
 export interface PracticeSessionStats {
@@ -82,7 +83,8 @@ function SessionStats({ solved, streak }: { solved: number; streak: number }) {
 /**
  * The Infinite Practice frame: a slim header (exit, title, adaptive difficulty,
  * session stats) above a bordered stage, mirroring the lesson player's canvas so
- * practice feels native — without coupling to the lesson runner's Koji/calculator.
+ * practice feels native. It mounts the same pop-up calculator as the lesson (so
+ * learners can compute during practice); it does not mount Koji.
  */
 export function PracticeShell({
   stats,
@@ -153,6 +155,10 @@ export function PracticeShell({
             ) : null}
             {footer}
           </div>
+
+          {/* Pop-up calculator, pinned bottom-right inside the stage (mirrors the
+              lesson player) so learners can compute during practice. */}
+          <LessonCalculator />
         </div>
       </main>
     </div>
