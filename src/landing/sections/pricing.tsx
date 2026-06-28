@@ -105,44 +105,49 @@ export function Pricing() {
         viewport={viewportOnce}
         variants={enabled ? staggerContainer : undefined}
       >
-        {/* Free: flat hairline surface, secondary CTA. */}
+        {/* Free: a framed card — a lighter surface-secondary frame wraps a
+            darker surface header panel (name + blurb), then the padded body. */}
         <motion.article
           aria-labelledby="plan-free"
           variants={enabled ? staggerItem : undefined}
-          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface)] p-7 sm:p-8"
+          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface-secondary)] p-2"
         >
-          <h3 id="plan-free" className="text-xl font-bold text-foreground">
-            Free
-          </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted">
-            The whole course, free.
-          </p>
-
-          <div className="mt-6 flex items-baseline gap-1.5">
-            <span className="text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
-              $0
-            </span>
-            <span className="text-sm font-medium text-muted">forever</span>
+          <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 sm:px-7">
+            <h3 id="plan-free" className="text-xl font-bold text-foreground">
+              Free
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              The whole course, free.
+            </p>
           </div>
 
-          <Button
-            variant="secondary"
-            size="lg"
-            className="mt-6 w-full"
-            onPress={goAuth}
-          >
-            Start learning, free
-          </Button>
+          <div className="flex flex-1 flex-col px-6 pt-7 pb-6 sm:px-7">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
+                $0
+              </span>
+              <span className="text-sm font-medium text-muted">forever</span>
+            </div>
 
-          <div className="mt-7 border-t border-border pt-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-              What&rsquo;s included
-            </p>
-            <ul className="mt-4 flex flex-col gap-3">
-              {FREE_BENEFITS.map((benefit) => (
-                <Benefit key={benefit}>{benefit}</Benefit>
-              ))}
-            </ul>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="mt-6 w-full"
+              onPress={goAuth}
+            >
+              Start learning, free
+            </Button>
+
+            <div className="mt-7 border-t border-border pt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                What&rsquo;s included
+              </p>
+              <ul className="mt-4 flex flex-col gap-3">
+                {FREE_BENEFITS.map((benefit) => (
+                  <Benefit key={benefit}>{benefit}</Benefit>
+                ))}
+              </ul>
+            </div>
           </div>
         </motion.article>
 
@@ -163,88 +168,92 @@ export function Pricing() {
             className="pointer-events-none absolute inset-x-0 top-0 mx-auto -mt-24 size-64 rounded-full bg-[color-mix(in_oklab,var(--accent)_18%,transparent)] blur-3xl"
           />
           <div className="relative flex flex-1 flex-col">
-            <div className="flex items-center justify-between gap-3">
-              <h3 id="plan-premium" className="text-xl font-bold text-foreground">
-                Premium
-              </h3>
-              <Chip intent="warning" variant="solid" size="sm">
-                Most popular
-              </Chip>
+            <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 sm:px-7">
+              <div className="flex items-center justify-between gap-3">
+                <h3 id="plan-premium" className="text-xl font-bold text-foreground">
+                  Premium
+                </h3>
+                <Chip intent="warning" variant="solid" size="sm">
+                  Most popular
+                </Chip>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Add Koji and unlimited practice.
+              </p>
             </div>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">
-              Add Koji and unlimited practice.
-            </p>
 
-            <div className="mt-6 flex items-baseline gap-1.5">
-              {/* Signature: the price swaps with a small slide+fade when the
-                  billing period flips. An invisible sizer holds the box width
-                  (both prices are 6 tabular chars) so "/ month" never shifts
-                  during mode="wait". An sr-only span carries the spoken price
-                  (the visible price is aria-hidden), so screen readers announce
-                  it once without an aria-label on a generic span. */}
-              <span className="relative inline-block text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
-                <span className="sr-only">
-                  {`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
-                </span>
-                <span aria-hidden className="invisible">
-                  {premiumPrice}
-                </span>
-                {enabled ? (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={premiumPrice}
-                      aria-hidden
-                      className="absolute inset-0"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: {
-                          duration: duration.fast,
-                          ease: easing.out,
-                        },
-                      }}
-                      exit={{
-                        opacity: 0,
-                        y: -8,
-                        transition: { duration: 0.14, ease: easing.out },
-                      }}
-                    >
-                      {premiumPrice}
-                    </motion.span>
-                  </AnimatePresence>
-                ) : (
-                  <span aria-hidden className="absolute inset-0">
+            <div className="flex flex-1 flex-col px-6 pt-7 pb-6 sm:px-7">
+              <div className="flex items-baseline gap-1.5">
+                {/* Signature: the price swaps with a small slide+fade when the
+                    billing period flips. An invisible sizer holds the box width
+                    (both prices are 6 tabular chars) so "/ month" never shifts
+                    during mode="wait". An sr-only span carries the spoken price
+                    (the visible price is aria-hidden), so screen readers announce
+                    it once without an aria-label on a generic span. */}
+                <span className="relative inline-block text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
+                  <span className="sr-only">
+                    {`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
+                  </span>
+                  <span aria-hidden className="invisible">
                     {premiumPrice}
                   </span>
-                )}
-              </span>
-              <span className="text-sm font-medium text-muted">/ month</span>
-            </div>
-            <p className="mt-1.5 text-xs text-muted">
-              {yearly
-                ? "$239.88 billed yearly. After the 7-day trial."
-                : "After the 7-day trial."}
-            </p>
-
-            <Button
-              variant="accent"
-              size="lg"
-              className="mt-6 w-full"
-              onPress={goAuth}
-            >
-              Try Premium free for 7 days
-            </Button>
-
-            <div className="mt-7 border-t border-border pt-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-                What&rsquo;s included
+                  {enabled ? (
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={premiumPrice}
+                        aria-hidden
+                        className="absolute inset-0"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            duration: duration.fast,
+                            ease: easing.out,
+                          },
+                        }}
+                        exit={{
+                          opacity: 0,
+                          y: -8,
+                          transition: { duration: 0.14, ease: easing.out },
+                        }}
+                      >
+                        {premiumPrice}
+                      </motion.span>
+                    </AnimatePresence>
+                  ) : (
+                    <span aria-hidden className="absolute inset-0">
+                      {premiumPrice}
+                    </span>
+                  )}
+                </span>
+                <span className="text-sm font-medium text-muted">/ month</span>
+              </div>
+              <p className="mt-1.5 text-xs text-muted">
+                {yearly
+                  ? "$239.88 billed yearly. After the 7-day trial."
+                  : "After the 7-day trial."}
               </p>
-              <ul className="mt-4 flex flex-col gap-3">
-                {PREMIUM_BENEFITS.map((benefit) => (
-                  <Benefit key={benefit}>{benefit}</Benefit>
-                ))}
-              </ul>
+
+              <Button
+                variant="accent"
+                size="lg"
+                className="mt-6 w-full"
+                onPress={goAuth}
+              >
+                Try Premium free for 7 days
+              </Button>
+
+              <div className="mt-7 border-t border-border pt-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  What&rsquo;s included
+                </p>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {PREMIUM_BENEFITS.map((benefit) => (
+                    <Benefit key={benefit}>{benefit}</Benefit>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </motion.article>
