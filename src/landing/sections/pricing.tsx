@@ -177,11 +177,13 @@ export function Pricing() {
               {/* Signature: the price swaps with a small slide+fade when the
                   billing period flips. An invisible sizer holds the box width
                   (both prices are 6 tabular chars) so "/ month" never shifts
-                  during mode="wait". The aria-label carries the spoken price. */}
-              <span
-                aria-label={`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
-                className="relative inline-block text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl"
-              >
+                  during mode="wait". An sr-only span carries the spoken price
+                  (the visible price is aria-hidden), so screen readers announce
+                  it once without an aria-label on a generic span. */}
+              <span className="relative inline-block text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl">
+                <span className="sr-only">
+                  {`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
+                </span>
                 <span aria-hidden className="invisible">
                   {premiumPrice}
                 </span>

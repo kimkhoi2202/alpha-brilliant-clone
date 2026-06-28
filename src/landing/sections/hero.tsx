@@ -50,7 +50,7 @@ function HeroPlayground() {
         aria-live="polite"
         className="mt-4 text-center text-sm tabular-nums text-muted"
       >
-        <span className="font-semibold text-[var(--accent)]">
+        <span className="font-semibold text-[var(--link)]">
           {a}² + {b}²
         </span>{" "}
         ={" "}

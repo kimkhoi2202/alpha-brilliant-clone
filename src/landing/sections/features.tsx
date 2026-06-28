@@ -80,7 +80,7 @@ function DragDemo() {
         aria-live="polite"
         className="text-center text-xs tabular-nums text-muted"
       >
-        <span className="font-semibold text-[var(--accent)]">
+        <span className="font-semibold text-[var(--link)]">
           {a}² + {b}²
         </span>{" "}
         = <span className="font-semibold text-[var(--warning)]">{sum}</span>, c ={" "}
