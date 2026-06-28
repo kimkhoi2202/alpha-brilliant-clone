@@ -4,6 +4,7 @@ import { Input } from "@heroui/react";
 import { cn } from "../lib/cn";
 import { friendlyAuthError as friendlyError } from "../lib/authErrors";
 import { useAuth } from "../lib/AuthContext";
+import { AppLogo } from "../components/chrome/app-logo";
 
 type Mode = "social" | "email";
 
@@ -135,7 +136,7 @@ export function AuthScreen() {
   return (
     <main className="grid min-h-svh place-items-center bg-background px-4 py-10 text-foreground">
       <div className="flex w-full max-w-sm flex-col items-center gap-8">
-        <img src="/favicon.svg" alt="" aria-hidden className="size-20" />
+        <AppLogo className="h-20 w-auto" />
         <h1 className="w-full text-center text-3xl font-semibold tracking-tight">
           {heading}
         </h1>

@@ -4,8 +4,8 @@
 
 AlphaBrilliant teaches the Pythagorean Theorem through hands-on, interactive problems — drag a triangle, plot points on a grid, rearrange a proof — with instant, specific feedback. No videos, no walls of text. You play with a concept until it clicks, then the idea is named.
 
-- **Live app:** _coming soon (Firebase Hosting)_
-- **Status:** Phase 2 (AI features) — the AI-native Koji tutor + verified practice, additive over the Phase 1 MVP
+- **Live app:** **[main-alpha-pink.vercel.app](https://main-alpha-pink.vercel.app)** — the voice-first Koji tutor, live end-to-end on Vercel.
+- **Status:** Phase 2 (AI features) — the AI-native Koji tutor + verified practice, additive over the Phase 1 MVP.
 
 ## Subject & audience
 
@@ -24,7 +24,8 @@ AlphaBrilliant teaches the Pythagorean Theorem through hands-on, interactive pro
 - **Frontend:** React 19 + TypeScript + Vite
 - **Auth:** Firebase Authentication (email/password + Google)
 - **Data:** Cloud Firestore (progress, streaks, mastery)
-- **Hosting:** Firebase Hosting
+- **AI backend:** Vercel serverless functions (`/api`) — grounded, verified Koji tutor
+- **Hosting / deploy:** Vercel (Vite frontend + `/api` functions)
 - **Visuals:** SVG for interactive, 60fps geometry
 
 ## Getting started
@@ -41,11 +42,10 @@ pnpm build
 pnpm preview
 ```
 
-Deploy to Firebase Hosting:
+Deploy (Vercel — runs the AI `/api` functions):
 
 ```bash
-pnpm build
-npx firebase deploy
+vercel --prod        # https://main-alpha-pink.vercel.app
 ```
 
 > Firebase project: `fir-94b95`. The web config in `src/lib/firebase.ts` is a public client identifier — access is controlled by Firestore Security Rules (`firestore.rules`), not by hiding it.
