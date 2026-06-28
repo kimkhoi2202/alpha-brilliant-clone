@@ -324,12 +324,13 @@ export function VoiceControls({
     // content" and Koji stays centered. The write is deferred to a rAF per the
     // file convention (never setState synchronously in an effect body). It is
     // intentionally NOT cancelled in a cleanup: the rAF only flips `awaitingKoji`
-    // true — an idempotent, bounded write — so a cleanup tied to the `coachPending`
-    // flip (which onCoachHandled() clears synchronously, re-running this effect)
-    // would be pure churn. The cue is bounded regardless — it clears on Koji's
-    // first tokens (the `thinking` derivation + the reply-visible latch effect), on
-    // error (phase / turnError), or via the 30s `awaitingKoji` timeout — and a late
-    // rAF after unmount is a harmless no-op in React.
+    // true — a one-shot, idempotent, bounded write — and `onCoachHandled()` clears
+    // `coachPending`, which re-runs this effect, so a `coachPending`-tied cleanup
+    // would risk cancelling the pending raise (depending on effect/rAF ordering)
+    // and suppress the cue, with no upside: the latch is already bounded — it
+    // clears on Koji's first tokens (the `thinking` derivation + the reply-visible
+    // latch effect), on error (phase / turnError), or via the 30s `awaitingKoji`
+    // timeout. A late rAF after unmount is a harmless no-op in React.
     if (voiceRef.current.aiEnabled && voiceRef.current.supported) {
       requestAnimationFrame(() => setAwaitingKoji(true));
     }
