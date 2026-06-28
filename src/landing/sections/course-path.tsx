@@ -110,7 +110,7 @@ export function CoursePath() {
             as="div"
             y={20}
             delay={0.16}
-            className="mt-8 flex w-full flex-1 flex-col justify-center gap-5 rounded-2xl border border-border bg-[var(--surface)] p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:mt-10"
+            className="mt-8 flex w-full flex-1 flex-col items-center justify-center gap-6 rounded-2xl border border-border bg-[var(--surface)] p-6 text-center sm:p-7 lg:mt-10"
           >
             <div ref={medallionRef} className="shrink-0">
               <LessonProgressMedallion
