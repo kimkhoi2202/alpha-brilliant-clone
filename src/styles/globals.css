@@ -5,6 +5,33 @@
 /* Enables the `dark:` variant for the class-based dark theme. */
 @custom-variant dark (&:is(.dark *));
 
+/* Aceternity "Meteors" animation (https://ui.aceternity.com/components/meteors),
+   added the Tailwind v4 way so `animate-meteor-effect` is generated. */
+@theme inline {
+  --animate-meteor-effect: meteor 5s linear infinite;
+
+  @keyframes meteor {
+    0% {
+      transform: rotate(215deg) translateX(0);
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(215deg) translateX(-500px);
+      opacity: 0;
+    }
+  }
+}
+
+/* The meteor field is decorative — stop it for reduced-motion users. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-meteor-effect {
+    animation: none;
+  }
+}
+
 /* Default to the Outfit variable font across the whole app. */
 @theme {
   --font-sans: "Outfit Variable", ui-sans-serif, system-ui, -apple-system,

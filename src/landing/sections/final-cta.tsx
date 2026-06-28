@@ -10,8 +10,8 @@ import { scrollToId } from "../ui/scroll-to-id";
 /**
  * The band's confident entrance — the page's climax. A scale-in (0.97→1) + fade
  * + small rise, an expo curve so it lands harder than a standard reveal (never
- * bouncy). It also orchestrates its children: the accent glow blooms, then the
- * heading / buttons / trust line settle a beat after.
+ * bouncy). It also orchestrates its children: the heading / buttons / trust line
+ * settle a beat after.
  */
 const bandVariants: Variants = {
   hidden: { opacity: 0, y: 24, scale: 0.97 },
@@ -26,13 +26,6 @@ const bandVariants: Variants = {
       staggerChildren: 0.08,
     },
   },
-};
-
-/** One-time accent bloom — a bounded `--accent` radial that fades in once to give
- *  the closing moment energy (and the band its separation, in place of a shadow). */
-const glowVariants: Variants = {
-  hidden: { opacity: 0 },
-  shown: { opacity: 1, transition: { duration: 0.8, ease: easing.out } },
 };
 
 /** The inner content settles in just behind the band — a subtle rise + fade. */
@@ -70,22 +63,9 @@ export function FinalCTA() {
         {...bandMotion}
         className="relative isolate overflow-hidden rounded-2xl border-2 border-border bg-[var(--surface)] px-6 py-16 text-center sm:px-12 sm:py-20"
       >
-        {/* One-time accent glow bloom: a bounded `--accent` radial, clipped to the
-            band and behind everything (-z-10). Separates the band without a heavy
-            ambient shadow. Static (visible) when motion is off. */}
-        <motion.div
-          aria-hidden
-          variants={glowVariants}
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(90% 70% at 50% 38%, color-mix(in oklab, var(--accent) 18%, transparent), transparent 70%)",
-          }}
-        />
-
-        {/* Ambient meteor shower — owns its own animation and hides itself under
-            reduced motion. Clipped to the card by `overflow-hidden`, behind the
-            content (-z-10). */}
+        {/* Ambient meteor shower — the only background effect on the band now
+            (the accent glow was removed). Clipped to the card by `overflow-hidden`,
+            behind the content (-z-10); stops under reduced motion via globals.css. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
