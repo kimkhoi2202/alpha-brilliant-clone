@@ -116,6 +116,16 @@ function checkNumericRelationships(step: ProblemStep): string[] {
         `count-squares area mismatch: engine=${String(answer.value)} math.js=${expected}`,
       );
     }
+    // The hypotenuse square only tiles with whole unit cells when c is an integer
+    // (a Pythagorean triple); and the count must stay small enough to count. This
+    // also evicts any stale, pre-fix cached figure on re-verify.
+    const c = evalNumber("sqrt(a^2 + b^2)", { a, b });
+    if (!Number.isInteger(c)) {
+      errors.push(`count-squares needs an integer hypotenuse so the grid tiles (c=${c})`);
+    }
+    if (!Number.isFinite(expected) || expected <= 0 || expected > 50) {
+      errors.push(`count-squares area not countable (${expected})`);
+    }
   }
 
   // numeric answers must be INDEPENDENTLY re-derivable from verifiable givens —
@@ -130,6 +140,13 @@ function checkNumericRelationships(step: ProblemStep): string[] {
       if (!Number.isFinite(c) || Math.abs(interaction.answer - c) > tol) {
         errors.push(
           `numeric hypotenuse mismatch: answer=${interaction.answer} expected≈${c}`,
+        );
+      }
+      // Whole-number hypotenuse only (Pythagorean triple): reject ugly decimals
+      // like 22.2, and evict any stale pre-fix cached problem on re-verify.
+      if (!Number.isInteger(interaction.answer)) {
+        errors.push(
+          `numeric hypotenuse must be a whole number (got ${interaction.answer})`,
         );
       }
     } else {

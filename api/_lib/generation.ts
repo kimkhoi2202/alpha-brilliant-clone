@@ -97,6 +97,22 @@ const LEG_RANGE: Record<Difficulty, readonly [number, number]> = {
   hard: [6, 20],
 };
 
+/**
+ * A Pythagorean triple whose legs fit the difficulty's upper leg bound, so the
+ * hypotenuse is ALWAYS a whole number (and the square grids tile cleanly). Every
+ * kind that involves the hypotenuse (numeric, multiple-choice, count-squares,
+ * tile-expression) draws its legs from here rather than from the model, so the
+ * answer can never be an ugly decimal like √493 = 22.2. 3-4-5 fits every range.
+ */
+function pickTripleForDifficulty(
+  difficulty: Difficulty,
+  rng: () => number,
+): readonly [number, number, number] {
+  const hi = LEG_RANGE[difficulty][1];
+  const fit = TRIPLES.filter((t) => Math.max(t[0], t[1]) <= hi);
+  return pick(rng, fit.length > 0 ? fit : TRIPLES);
+}
+
 // ---------------------------------------------------------------------------
 // Model proposal: strict JSON schema + matching zod validator, per kind.
 // ---------------------------------------------------------------------------
@@ -243,43 +259,53 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
   // For kinds where the model authors the prompt, we may override it server-side
   // so the prompt can never desync from the server-owned answer key (W2).
   let promptOverride: string | undefined;
+  // Kinds with server-owned numbers also author their correct-feedback so it can
+  // never cite a stale leg/answer after we override the legs.
+  let feedbackCorrectOverride: string | undefined;
 
   switch (ctx.kind) {
     case "numeric": {
-      const c = hypotenuse(a, b);
-      if (!Number.isFinite(c)) throw new Error("non-finite hypotenuse");
+      // Whole-number hypotenuse only: draw legs from a Pythagorean triple (the
+      // model's a/b are ignored here) so the answer is exact, never an ugly
+      // decimal. Author the prompt + correct-feedback from these legs so they can
+      // never desync from the answer (W2).
+      const [ta, tb, tc] = pickTripleForDifficulty(ctx.difficulty, ctx.rng);
+      const [la, lb] = ctx.rng() < 0.5 ? [ta, tb] : [tb, ta];
       const unit = "unit" in p ? p.unit : "";
+      const u = unit ? ` ${unit}` : "";
       interaction = {
         kind: "numeric",
-        answer: c,
+        answer: tc,
         tolerance: 0.01,
         unit: unit || undefined,
         placeholder: "?",
       };
-      visual = { kind: "right-triangle", a, b, labels: true, unknownSide: "c" };
+      visual = { kind: "right-triangle", a: la, b: lb, labels: true, unknownSide: "c" };
+      promptOverride = `A right triangle has legs ${la}${u} and ${lb}${u}. How long is the hypotenuse?`;
+      feedbackCorrectOverride = `Exactly. √(${la}² + ${lb}²) = ${tc}${u}.`;
       break;
     }
     case "count-squares": {
       const countSide = "countSide" in p ? p.countSide : "c";
-      // Counting is a small-number *discovery* exercise, not a difficulty-scaled
-      // one: keep the figure countable regardless of difficulty (a 12×12 = 144
-      // hypotenuse square is absurd to count). Cap the legs so the highlighted
-      // square stays small — ≤ 36 cells for a leg square, and tighter for the
-      // hypotenuse square (a²+b²), which grows fastest.
-      const cap = countSide === "c" ? 4 : 6;
-      const ca = Math.max(2, Math.min(Math.round(a), cap));
-      const cb = Math.max(2, Math.min(Math.round(b), cap));
-      interaction = { kind: "count-squares", a: ca, b: cb, countSide };
+      // Counting is a small-number *discovery* exercise. Use the 3-4-5 triple so
+      // ALL THREE squares (a²=9, b²=16, c²=25) tile with whole unit cells AND the
+      // hypotenuse is a whole number (5): that is exactly what makes "count the
+      // squares on the hypotenuse" consistent (a non-triple gives an irrational c
+      // whose square cannot be drawn as a clean grid). Counts stay small (≤ 25),
+      // countable at any difficulty. The model's a/b are ignored.
+      const [la, lb] = ctx.rng() < 0.5 ? [3, 4] : [4, 3];
+      interaction = { kind: "count-squares", a: la, b: lb, countSide };
       visual = {
         kind: "right-triangle",
-        a: ca,
-        b: cb,
+        a: la,
+        b: lb,
         gridSquares: true,
         highlightSquare: countSide,
       };
-      // Author the prompt deterministically from the server-owned countSide so it
-      // can never desync from the highlighted square (W2, same pattern as pick-side).
+      // Author the prompt + feedback deterministically (server owns the figure) so
+      // neither can desync from the highlighted square (W2, same as pick-side).
       promptOverride = `Count the unit squares in the square drawn on the ${SIDE_NAMES[countSide]}.`;
+      feedbackCorrectOverride = "Nice counting. You read the area straight off the grid.";
       break;
     }
     case "pick-side": {
@@ -297,14 +323,17 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
       break;
     }
     case "multiple-choice": {
-      const c = hypotenuse(a, b);
-      if (!Number.isFinite(c)) throw new Error("non-finite hypotenuse");
+      // Whole-number hypotenuse: legs from a triple (model's a/b ignored), so the
+      // correct option and every distractor are clean integers.
+      const [ta, tb, tc] = pickTripleForDifficulty(ctx.difficulty, ctx.rng);
+      const [la, lb] = ctx.rng() < 0.5 ? [ta, tb] : [tb, ta];
+      const c = tc;
       // Build options server-side: one correct (c) + genuinely-wrong distractors.
-      const candidates = [a + b, a * a + b * b, Math.round(c) + 1, Math.max(1, Math.round(c) - 1)];
+      const candidates = [la + lb, la * la + lb * lb, c + 1, Math.max(1, c - 1)];
       const distractors: number[] = [];
       for (const cand of candidates) {
-        if (Math.abs(cand - c) < 1e-6) continue; // not actually wrong
-        if (distractors.some((d) => Math.abs(d - cand) < 1e-6)) continue; // duplicate
+        if (cand === c) continue; // not actually wrong
+        if (distractors.includes(cand)) continue; // duplicate
         distractors.push(cand);
         if (distractors.length === 3) break;
       }
@@ -313,7 +342,9 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
       const wrong: Choice[] = distractors.map((d, i) => ({ id: `opt_${i}`, label: numLabel(d) }));
       const choices = shuffle(ctx.rng, [correct, ...wrong]);
       interaction = { kind: "multiple-choice", choices, correctChoiceId: correct.id };
-      visual = { kind: "right-triangle", a, b, labels: true, unknownSide: "c" };
+      visual = { kind: "right-triangle", a: la, b: lb, labels: true, unknownSide: "c" };
+      promptOverride = `Which length is the hypotenuse of a right triangle with legs ${la} and ${lb}?`;
+      feedbackCorrectOverride = `Right. It is ${c}.`;
       break;
     }
     case "tile-expression": {
@@ -340,7 +371,10 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
     kind: "problem",
     prompt: promptOverride ?? p.prompt,
     interaction,
-    feedback: feedbackOf(p),
+    feedback: {
+      ...feedbackOf(p),
+      ...(feedbackCorrectOverride ? { correct: feedbackCorrectOverride } : {}),
+    },
     source: "ai",
     ...(visual ? { visual } : {}),
   };
@@ -369,9 +403,12 @@ export function verify(step: ProblemStep): boolean {
   switch (interaction.kind) {
     case "numeric": {
       if (!Number.isFinite(interaction.answer)) return false;
-      // Independent firewall: don't just trust the stored answer — recompute
-      // c = √(a²+b²) from the visual's right-triangle legs and require they
-      // agree within tolerance. Reject if we can't recompute (W).
+      // Whole-number hypotenuse only: reject any non-integer answer outright, so a
+      // non-triple (irrational c like √493 = 22.2) can never reach the learner.
+      if (!Number.isInteger(interaction.answer)) return false;
+      // Independent firewall: recompute c = √(a²+b²) from the visual's
+      // right-triangle legs and require they agree within tolerance. Reject if we
+      // cannot recompute (W).
       const v = step.visual;
       if (!v || v.kind !== "right-triangle") return false;
       const c = hypotenuse(v.a, v.b);
@@ -384,9 +421,15 @@ export function verify(step: ProblemStep): boolean {
       const correct = interaction.choices.find((c) => c.id === interaction.correctChoiceId);
       if (!correct) return false;
       const correctVal = Number(correct.label);
-      if (!Number.isFinite(correctVal)) return false;
+      // Whole-number hypotenuse only, and the correct option must equal the
+      // recomputed c = √(a²+b²) from the figure's legs.
+      if (!Number.isFinite(correctVal) || !Number.isInteger(correctVal)) return false;
+      const v = step.visual;
+      if (!v || v.kind !== "right-triangle") return false;
+      const c = hypotenuse(v.a, v.b);
+      if (!Number.isInteger(c) || Math.abs(correctVal - c) > 1e-6) return false;
       const matches = interaction.choices.filter(
-        (c) => Math.abs(Number(c.label) - correctVal) < 1e-6,
+        (c2) => Math.abs(Number(c2.label) - correctVal) < 1e-6,
       );
       return matches.length === 1 && interaction.choices.length >= 2;
     }
@@ -396,7 +439,22 @@ export function verify(step: ProblemStep): boolean {
       // Every solution token must be available in the tile bank.
       return interaction.solution.every((tok) => interaction.tiles.includes(tok));
     }
-    case "count-squares":
+    case "count-squares": {
+      // The hypotenuse square only tiles with whole unit cells when c is an
+      // integer, so require a Pythagorean-triple figure, and keep the counted
+      // area small enough to actually count.
+      const v = step.visual;
+      if (!v || v.kind !== "right-triangle") return false;
+      const c = hypotenuse(v.a, v.b);
+      if (!Number.isInteger(c)) return false;
+      const area =
+        interaction.countSide === "c"
+          ? v.a * v.a + v.b * v.b
+          : interaction.countSide === "a"
+            ? v.a * v.a
+            : v.b * v.b;
+      return area > 0 && area <= 50;
+    }
     case "pick-side":
       return true;
     default:
@@ -427,16 +485,16 @@ export function buildFallback(
           b,
           unit: "cm",
           prompt: `A right triangle has legs ${a} cm and ${b} cm. How long is the hypotenuse?`,
-          feedbackCorrect: `Exactly — √(${a}² + ${b}²) = ${c} cm.`,
+          feedbackCorrect: `Exactly. √(${a}² + ${b}²) = ${c} cm.`,
           feedbackDefault: "Square each leg, add them, then take the square root.",
         };
       case "count-squares":
         return {
-          a,
-          b,
+          a: 3,
+          b: 4,
           countSide: "c",
           prompt: "Count the unit squares in the square drawn on the hypotenuse.",
-          feedbackCorrect: "Nice counting — that's the area of the hypotenuse square.",
+          feedbackCorrect: "Nice counting. That's the area of the hypotenuse square.",
           feedbackDefault: "Count every unit cell inside the highlighted square.",
         };
       case "pick-side":
@@ -452,7 +510,7 @@ export function buildFallback(
           a,
           b,
           prompt: `Which length is the hypotenuse of a right triangle with legs ${a} and ${b}?`,
-          feedbackCorrect: `Right — it's ${c}.`,
+          feedbackCorrect: `Right. It's ${c}.`,
           feedbackDefault: "Use a² + b² = c² and take the square root.",
         };
       case "tile-expression":
@@ -460,7 +518,7 @@ export function buildFallback(
           a,
           b,
           prompt: `Complete the Pythagorean relationship for legs ${a} and ${b}.`,
-          feedbackCorrect: "Perfect — that's the theorem.",
+          feedbackCorrect: "Perfect. That's the theorem.",
           feedbackDefault: "Place the two leg lengths into the squared slots.",
         };
     }
