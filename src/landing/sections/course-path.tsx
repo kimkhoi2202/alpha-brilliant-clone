@@ -97,19 +97,9 @@ export function CoursePath() {
             One chapter, understood all the way down.
           </Reveal>
           <Reveal
-            as="p"
-            delay={0.08}
-            className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
-          >
-            Five short lessons and a review take you from naming a hypotenuse to
-            measuring distance on a grid. You work one step at a time and master
-            it before moving on, so every new idea rests on the one before it.
-          </Reveal>
-
-          <Reveal
             as="div"
             y={20}
-            delay={0.16}
+            delay={0.08}
             className="mt-8 flex w-full flex-1 flex-col items-center justify-center gap-6 rounded-2xl border border-border bg-[var(--surface)] p-6 text-center sm:p-7 lg:mt-10"
           >
             <div ref={medallionRef} className="shrink-0">
@@ -128,6 +118,16 @@ export function CoursePath() {
                 problems coming.
               </p>
             </div>
+          </Reveal>
+
+          <Reveal
+            as="p"
+            delay={0.16}
+            className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
+          >
+            Five short lessons and a review take you from naming a hypotenuse to
+            measuring distance on a grid. You work one step at a time and master
+            it before moving on, so every new idea rests on the one before it.
           </Reveal>
         </div>
 
