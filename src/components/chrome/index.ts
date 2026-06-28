@@ -15,6 +15,12 @@ export type { StreakBoltProps } from "./streak-bolt";
 export { StreakDayDisc } from "./streak-day-disc";
 export type { StreakDayDiscProps, StreakDayDiscState } from "./streak-day-disc";
 
+export { StreakWeek } from "./streak-week";
+export type { StreakWeekProps } from "./streak-week";
+
+export { toStreakDays } from "./streak-days";
+export type { StreakDay, StreakDayState } from "./streak-days";
+
 export { StreakFire } from "./streak-fire";
 export type { StreakFireProps } from "./streak-fire";
 

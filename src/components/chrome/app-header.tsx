@@ -5,11 +5,13 @@ import { useAuth } from "../../lib/AuthContext";
 import { useStreak } from "../../hooks/useStreak";
 import { useLearner } from "../../lib/learner";
 import { lessonOrder } from "../../content";
+import { today } from "../../lib/date";
 import { MenuDivider, MenuItem, MenuPanel } from "../auth";
 import { LottieIcon } from "../visuals";
 import { Brand } from "./brand";
 import { HeaderMenuButton } from "./header-menu-button";
 import { StreakMenu } from "./streak-menu";
+import { toStreakDays } from "./streak-days";
 import { TopNav } from "./top-nav";
 
 function AccountMenu() {
@@ -49,10 +51,10 @@ function AccountMenu() {
             <MenuItem
               onPress={() => {
                 setOpen(false);
-                void navigate({ to: "/profile" });
+                void navigate({ to: "/settings" });
               }}
             >
-              Profile
+              Settings
             </MenuItem>
             <MenuDivider />
             <MenuItem
@@ -76,10 +78,11 @@ export function AppHeader() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { currentStreak, longestStreak } = useStreak();
-  const { lessonStatus } = useLearner();
+  const { lessonStatus, weekActivity } = useLearner();
   const lessonsComplete = lessonOrder.filter(
     (id) => lessonStatus(id) === "completed",
   ).length;
+  const streakDays = toStreakDays(weekActivity(), today());
 
   return (
     <TopNav
@@ -98,6 +101,7 @@ export function AppHeader() {
               monochrome
             />
           ),
+          active: pathname === "/",
           onPress: () => void navigate({ to: "/" }),
         },
         {
@@ -112,8 +116,8 @@ export function AppHeader() {
               monochrome
             />
           ),
-          active: pathname === "/",
-          onPress: () => void navigate({ to: "/" }),
+          active: pathname === "/courses",
+          onPress: () => void navigate({ to: "/courses" }),
         },
       ]}
       endContent={
@@ -122,6 +126,7 @@ export function AppHeader() {
             currentStreak={currentStreak}
             longestStreak={longestStreak}
             lessonsComplete={lessonsComplete}
+            days={streakDays}
           />
           <AccountMenu />
         </>

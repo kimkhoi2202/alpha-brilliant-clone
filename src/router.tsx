@@ -10,11 +10,13 @@ import { AnimationsScreen } from "./routes/AnimationsScreen";
 import { AuthScreen } from "./routes/AuthScreen";
 import { ComponentsScreen } from "./routes/ComponentsScreen";
 import { CourseMapScreen } from "./routes/CourseMapScreen";
+import { HomeScreen } from "./routes/HomeScreen";
 import { InfinitePractice } from "./routes/InfinitePractice";
 import { Landing } from "./routes/Landing";
 import { LessonPlayer } from "./routes/LessonPlayer";
 import { MedallionScaleScreen } from "./routes/MedallionScaleScreen";
-import { ProfileScreen } from "./routes/ProfileScreen";
+import { ReviewSession } from "./routes/ReviewSession";
+import { SettingsScreen } from "./routes/SettingsScreen";
 import { Root } from "./routes/Root";
 
 export type RouterContext = { auth: AuthContextValue };
@@ -49,9 +51,18 @@ const authRoute = createRoute({
   component: AuthScreen,
 });
 
-const courseMapRoute = createRoute({
+// The signed-in Home (daily cockpit) is the app's "/".
+const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: HomeScreen,
+});
+
+// The course map (lesson path) lives at /courses.
+const courseMapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/courses",
   beforeLoad: ({ context }) => requireAuth(context),
   component: CourseMapScreen,
 });
@@ -71,11 +82,20 @@ const lessonRoute = createRoute({
   component: LessonPlayer,
 });
 
+// Account settings (profile, password, security, notifications, delete account).
+// Kept reachable at the legacy /profile path as well as the canonical /settings.
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: SettingsScreen,
+});
+
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
   beforeLoad: ({ context }) => requireAuth(context),
-  component: ProfileScreen,
+  component: SettingsScreen,
 });
 
 // "Infinite Practice" (Pillar B): verified, adaptive generation, reached after
@@ -86,6 +106,19 @@ const practiceRoute = createRoute({
   path: "/practice",
   beforeLoad: ({ context }) => requireAuth(context),
   component: InfinitePractice,
+});
+
+// Spaced-review session (Phase 3): due-skill reviews, or a single-skill
+// corrective set via `?skill=<id>`. Auth-guarded; AI-off-safe (hand-authored
+// content), so it works with the model off.
+const reviewsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reviews",
+  validateSearch: (search: Record<string, unknown>): { skill?: string } => ({
+    skill: typeof search.skill === "string" ? search.skill : undefined,
+  }),
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: ReviewSession,
 });
 
 const componentsRoute = createRoute({
@@ -110,10 +143,13 @@ const medallionsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   authRoute,
   landingRoute,
+  homeRoute,
   courseMapRoute,
   lessonRoute,
+  settingsRoute,
   profileRoute,
   practiceRoute,
+  reviewsRoute,
   componentsRoute,
   devRoute,
   medallionsRoute,
