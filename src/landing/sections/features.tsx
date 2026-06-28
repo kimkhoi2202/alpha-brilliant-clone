@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
 
 import { StreakCard, type StreakDay } from "../../components/gamification";
 import {
@@ -12,6 +13,13 @@ import { KojiMascot } from "../../components/lesson/koji";
 import { RearrangementProof, RightTriangleFigure } from "../../components/visuals";
 import type { GridPoint } from "../../content/types";
 import { cn } from "../../lib/cn";
+import {
+  duration,
+  easing,
+  staggerContainer,
+  staggerItem,
+  useMotionEnabled,
+} from "../motion";
 import { LandingSection, SectionHeading } from "../ui/section";
 
 // Demo streak for the real StreakCard: Mon to Thu done, Friday in progress,
@@ -177,6 +185,7 @@ function RearrangeDemo() {
 function ProblemsPlayground() {
   const [verb, setVerb] = useState<VerbId>("drag");
   const active = VERBS.find((v) => v.id === verb) ?? VERBS[0];
+  const enabled = useMotionEnabled();
 
   return (
     <div className="mt-5 flex flex-1 flex-col">
@@ -211,10 +220,36 @@ function ProblemsPlayground() {
       </p>
 
       <div className="mt-4 flex min-h-[20rem] flex-1 items-center justify-center">
-        {verb === "drag" ? <DragDemo /> : null}
-        {verb === "count" ? <CountDemo /> : null}
-        {verb === "plot" ? <PlotDemo /> : null}
-        {verb === "rearrange" ? <RearrangeDemo /> : null}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={verb}
+            className="flex w-full items-center justify-center"
+            initial={enabled ? { opacity: 0, y: 6, scale: 0.98 } : false}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: {
+                duration: enabled ? duration.fast : 0,
+                ease: easing.out,
+              },
+            }}
+            exit={{
+              opacity: 0,
+              y: -6,
+              scale: 0.98,
+              transition: {
+                duration: enabled ? 0.14 : 0,
+                ease: easing.out,
+              },
+            }}
+          >
+            {verb === "drag" ? <DragDemo /> : null}
+            {verb === "count" ? <CountDemo /> : null}
+            {verb === "plot" ? <PlotDemo /> : null}
+            {verb === "rearrange" ? <RearrangeDemo /> : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -226,6 +261,28 @@ const neutralTile =
 const tileHeading =
   "text-lg font-bold tracking-[-0.01em] text-foreground sm:text-xl";
 
+// The Koji focal cell earns a stronger entrance than the neutral tiles: a touch
+// more scale-in, with its blurred accent glow blooming a beat later. Shares the
+// "hidden"/"shown" labels so the parent stagger drives it like any grid child.
+const kojiItem: Variants = {
+  hidden: { opacity: 0, y: 14, scale: 0.95 },
+  shown: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: duration.reveal, ease: easing.out },
+  },
+};
+
+const kojiGlow: Variants = {
+  hidden: { opacity: 0, scale: 0.7 },
+  shown: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: duration.reveal, ease: easing.out, delay: 0.1 },
+  },
+};
+
 /**
  * Features bento, in the app's real dark skin. An asymmetric grid where every
  * tile embeds a genuine product moment: the graded AnswerChoice + instant
@@ -234,21 +291,27 @@ const tileHeading =
  * is a hand-rolled stand-in for a product component.
  */
 export function Features() {
+  const enabled = useMotionEnabled();
+
   return (
     <LandingSection id="features" width="wide">
       <SectionHeading
-        eyebrow="What you get"
         title="Everything you need to actually get it."
         description="Hands-on problems, instant feedback, a tutor who nudges, and streaks that bring you back."
         id="features-heading"
       />
 
-      <ul
+      <motion.ul
         role="list"
         className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-5"
+        initial={enabled ? "hidden" : false}
+        whileInView={enabled ? "shown" : undefined}
+        viewport={{ once: true }}
+        variants={enabled ? staggerContainer : undefined}
       >
         {/* Instant feedback: the real graded AnswerChoice + FeedbackToast. */}
-        <li
+        <motion.li
+          variants={enabled ? staggerItem : undefined}
           className={cn(
             tileBase,
             neutralTile,
@@ -282,10 +345,11 @@ export function Features() {
               then add.
             </FeedbackToast>
           </div>
-        </li>
+        </motion.li>
 
         {/* Koji, the AI tutor: the focal accent cell, with the real animated KojiMascot. */}
-        <li
+        <motion.li
+          variants={enabled ? kojiItem : undefined}
           className={cn(
             tileBase,
             "items-center justify-center border-accent/40 bg-accent-soft text-center",
@@ -293,8 +357,9 @@ export function Features() {
           )}
         >
           <div className="relative grid place-items-center">
-            <div
+            <motion.div
               aria-hidden
+              variants={enabled ? kojiGlow : undefined}
               className="absolute inset-0 m-auto size-40 rounded-full bg-[color-mix(in_oklab,var(--accent)_16%,transparent)] blur-2xl"
             />
             <div
@@ -313,11 +378,12 @@ export function Features() {
             the exact mistake you made, and reveals a worked solution only after
             you have really tried.
           </p>
-        </li>
+        </motion.li>
 
         {/* Interactive problems: a live playground of the real lesson
             interactions (drag / count / plot / rearrange), the tall left anchor. */}
-        <li
+        <motion.li
+          variants={enabled ? staggerItem : undefined}
           className={cn(
             tileBase,
             neutralTile,
@@ -331,10 +397,11 @@ export function Features() {
             hands-on problem.
           </p>
           <ProblemsPlayground />
-        </li>
+        </motion.li>
 
         {/* Progress and streaks: the real StreakCard as a live product moment. */}
-        <li
+        <motion.li
+          variants={enabled ? staggerItem : undefined}
           className={cn(
             tileBase,
             neutralTile,
@@ -354,8 +421,8 @@ export function Features() {
             days={STREAK_DAYS}
             className="w-full max-w-sm lg:w-[22rem] lg:shrink-0"
           />
-        </li>
-      </ul>
+        </motion.li>
+      </motion.ul>
     </LandingSection>
   );
 }

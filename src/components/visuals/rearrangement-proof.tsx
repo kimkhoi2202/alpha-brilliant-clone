@@ -9,6 +9,13 @@ export interface RearrangementProofProps {
   /** Vertical leg length. */
   b: number;
   className?: string;
+  /**
+   * When true, the proof plays its morph once automatically the first time it
+   * scrolls into view (respecting `prefers-reduced-motion`). Off by default, so
+   * the in-lesson usage is unchanged and the visitor still drives it with the
+   * play control. Used by the marketing landing for an auto-demo on scroll.
+   */
+  autoPlayInView?: boolean;
 }
 
 type Pt = { x: number; y: number };
@@ -63,7 +70,12 @@ function UndoIcon({ className }: { className?: string }) {
  * morph is four pure translations (clean and reversible). `prefers-reduced-
  * motion` snaps instantly instead of animating.
  */
-export function RearrangementProof({ a, b, className }: RearrangementProofProps) {
+export function RearrangementProof({
+  a,
+  b,
+  className,
+  autoPlayInView = false,
+}: RearrangementProofProps) {
   const s = a + b;
   const [t, setT] = useState(0);
   // Target state for the label/caption: flips on press (not mid-animation),
@@ -71,6 +83,7 @@ export function RearrangementProof({ a, b, className }: RearrangementProofProps)
   const [rearranged, setRearranged] = useState(false);
   const tRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const setBoth = (v: number) => {
     tRef.current = v;
@@ -108,6 +121,40 @@ export function RearrangementProof({ a, b, className }: RearrangementProofProps)
     };
     rafRef.current = requestAnimationFrame(tick);
   };
+
+  // Keep a live ref to the latest `toggle` so the autoplay observer (set up once)
+  // always calls the current closure rather than a stale one.
+  const toggleRef = useRef(toggle);
+  useEffect(() => {
+    toggleRef.current = toggle;
+  });
+
+  // Optional auto-demo: play the morph once the first time the proof scrolls into
+  // view. Honors reduced motion (then it stays put and the visitor presses play).
+  useEffect(() => {
+    if (!autoPlayInView) return;
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    let played = false;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !played) {
+            played = true;
+            io.disconnect();
+            toggleRef.current();
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [autoPlayInView]);
 
   // Geometry (math space, y-up). The right angle of the base triangle is at the
   // origin, leg a along +x and leg b along +y.
@@ -171,7 +218,7 @@ export function RearrangementProof({ a, b, className }: RearrangementProofProps)
   const atStart = !rearranged;
 
   return (
-    <div className={cn("flex flex-col items-center gap-4", className)}>
+    <div ref={rootRef} className={cn("flex flex-col items-center gap-4", className)}>
       <svg
         viewBox={`0 0 ${W.toFixed(1)} ${H.toFixed(1)}`}
         className="h-auto w-full max-w-[17rem]"
