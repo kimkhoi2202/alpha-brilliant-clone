@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "url": "http://localhost:5180/landing",
+  "name": null,
+  "viewports": {
+    "desktop": {
+      "screenshot": "alpha-brilliant-clone/landing-factory/.factory/qa/companion/desktop.png",
+      "httpStatus": 200,
+      "consoleErrors": 0,
+      "consoleWarnings": 5,
+      "a11yViolations": 0,
+      "a11ySerious": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "interactiveCount": 60,
+      "smallTapTargets": 37,
+      "bodyBackground": "rgb(20, 20, 20)",
+      "bodyColor": "rgb(255, 255, 255)",
+      "fontFamily": "\"Outfit Variable\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+      "title": "AlphaBrilliant — Learn Pythagoras by doing"
+    }
+  }
+}

@@ -14,6 +14,7 @@ import { InteractiveProof } from "../landing/sections/interactive-proof";
 import { KojiTutor } from "../landing/sections/koji";
 import { Pricing } from "../landing/sections/pricing";
 import { SocialProof } from "../landing/sections/social-proof";
+import { KojiCompanion } from "../landing/ui/koji-companion";
 import { scrollToId } from "../landing/ui/scroll-to-id";
 
 const NAV = [
@@ -73,6 +74,10 @@ export function Landing() {
       </main>
 
       <Footer />
+
+      {/* A scroll-following Koji companion that rides the right gutter through the
+          page (decorative, xl+ only, reduced-motion safe). */}
+      <KojiCompanion />
     </div>
   );
 }
