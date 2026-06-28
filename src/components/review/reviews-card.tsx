@@ -111,14 +111,6 @@ export function ReviewsCard({ onStart, className }: ReviewsCardProps) {
               ? `Next review ${formatDueIn(next - now)}.`
               : "No reviews scheduled yet."}
           </p>
-          <Button
-            variant="secondary"
-            size="lg"
-            className="mt-4 w-full"
-            onPress={onStart}
-          >
-            Review early
-          </Button>
         </>
       )}
     </div>
