@@ -106,7 +106,11 @@ export function CourseMapScreen() {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <AppHeader />
-      <main className="mx-auto max-w-5xl px-4 pt-10 pb-28 sm:px-6 lg:pt-12 lg:pb-32">
+      {/* Bottom padding must clear the fixed CTA (offset + button height + drop
+          shadow + safe-area) so the last lesson node can always scroll fully
+          into view above it — short viewports were letting a node sit under the
+          floating button. */}
+      <main className="mx-auto max-w-5xl px-4 pt-10 pb-[calc(9.5rem_+_env(safe-area-inset-bottom,0px))] sm:px-6 lg:pt-12 lg:pb-[calc(10.5rem_+_env(safe-area-inset-bottom,0px))]">
         <h1 className="sr-only">{course.title}</h1>
         <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
           <div className="h-fit space-y-5 md:sticky md:top-24">
@@ -161,21 +165,31 @@ export function CourseMapScreen() {
           stays centered on the lessons column at every width, collapsing to
           the single content column on mobile. */}
       {selectedLesson ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 px-4 sm:px-6">
-          <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
-            <div aria-hidden className="hidden md:block" />
-            <div className="flex justify-center">
-              <Button
-                variant={selectedVariant}
-                size="lg"
-                className="pointer-events-auto h-12 min-w-52 px-8 text-base shadow-[0_14px_40px_rgba(0,0,0,0.55)]"
-                onPress={() => openLesson(activeSelectedId)}
-              >
-                {selectedActionLabel}
-              </Button>
+        <>
+          {/* Static scrim behind the CTA: a node scrolling under the floating
+              button fades into the page background instead of reading as a
+              collision. Pure gradient (no animation), so it's reduced-motion
+              safe; click-through so it never steals taps from the map. */}
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[calc(8rem_+_env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-background to-transparent"
+          />
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom,0px))] z-40 px-4 sm:px-6">
+            <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
+              <div aria-hidden className="hidden md:block" />
+              <div className="flex justify-center">
+                <Button
+                  variant={selectedVariant}
+                  size="lg"
+                  className="pointer-events-auto h-12 min-w-52 px-8 text-base shadow-[0_14px_40px_rgba(0,0,0,0.55)]"
+                  onPress={() => openLesson(activeSelectedId)}
+                >
+                  {selectedActionLabel}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       ) : null}
     </div>
   );
