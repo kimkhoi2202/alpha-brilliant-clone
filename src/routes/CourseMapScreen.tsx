@@ -21,6 +21,7 @@ import {
   type SkillId,
 } from "../content";
 import { aiEnabled } from "../lib/ai/flag";
+import { devToolsEnabled } from "../lib/dev-flags";
 import { requestLessonIntro } from "../lib/lesson-transition";
 import { useLearner } from "../lib/learner";
 
@@ -178,7 +179,7 @@ export function CourseMapScreen() {
               }
             />
 
-            {import.meta.env.DEV ? (
+            {devToolsEnabled() ? (
               <div className="rounded-2xl border-2 border-border bg-background p-6">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted">
                   Dev tools
