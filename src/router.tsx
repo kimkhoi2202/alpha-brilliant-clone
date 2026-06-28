@@ -14,7 +14,7 @@ import { InfinitePractice } from "./routes/InfinitePractice";
 import { Landing } from "./routes/Landing";
 import { LessonPlayer } from "./routes/LessonPlayer";
 import { MedallionScaleScreen } from "./routes/MedallionScaleScreen";
-import { ProfileScreen } from "./routes/ProfileScreen";
+import { SettingsScreen } from "./routes/SettingsScreen";
 import { Root } from "./routes/Root";
 
 export type RouterContext = { auth: AuthContextValue };
@@ -71,11 +71,20 @@ const lessonRoute = createRoute({
   component: LessonPlayer,
 });
 
+// Account settings (profile, password, security, notifications, delete account).
+// Kept reachable at the legacy /profile path as well as the canonical /settings.
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: SettingsScreen,
+});
+
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
   beforeLoad: ({ context }) => requireAuth(context),
-  component: ProfileScreen,
+  component: SettingsScreen,
 });
 
 // "Infinite Practice" (Pillar B): verified, adaptive generation, reached after
@@ -112,6 +121,7 @@ const routeTree = rootRoute.addChildren([
   landingRoute,
   courseMapRoute,
   lessonRoute,
+  settingsRoute,
   profileRoute,
   practiceRoute,
   componentsRoute,

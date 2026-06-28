@@ -49,10 +49,10 @@ function AccountMenu() {
             <MenuItem
               onPress={() => {
                 setOpen(false);
-                void navigate({ to: "/profile" });
+                void navigate({ to: "/settings" });
               }}
             >
-              Profile
+              Settings
             </MenuItem>
             <MenuDivider />
             <MenuItem
