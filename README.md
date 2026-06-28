@@ -25,7 +25,7 @@ AlphaBrilliant teaches the Pythagorean Theorem through hands-on, interactive pro
 - **Auth:** Firebase Authentication (email/password + Google)
 - **Data:** Cloud Firestore (progress, streaks, mastery)
 - **AI backend:** Vercel serverless functions (`/api`) — grounded, verified Koji tutor
-- **Hosting / deploy:** Vercel (Vite frontend + `/api` functions); Firebase Hosting kept as a frontend-only mirror
+- **Hosting / deploy:** Vercel (Vite frontend + `/api` functions)
 - **Visuals:** SVG for interactive, 60fps geometry
 
 ## Getting started
@@ -42,17 +42,10 @@ pnpm build
 pnpm preview
 ```
 
-Deploy (canonical — Vercel, runs the AI `/api` functions):
+Deploy (Vercel — runs the AI `/api` functions):
 
 ```bash
 vercel --prod        # https://main-alpha-pink.vercel.app
-```
-
-Deploy the frontend-only mirror to Firebase Hosting:
-
-```bash
-pnpm build
-npx firebase deploy
 ```
 
 > Firebase project: `fir-94b95`. The web config in `src/lib/firebase.ts` is a public client identifier — access is controlled by Firestore Security Rules (`firestore.rules`), not by hiding it.
