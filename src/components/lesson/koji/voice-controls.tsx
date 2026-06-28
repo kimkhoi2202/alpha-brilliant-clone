@@ -323,12 +323,13 @@ export function VoiceControls({
     // AI-off/unsupported no-op), so the defensive AI-off path keeps reporting "no
     // content" and Koji stays centered. The write is deferred to a rAF per the
     // file convention (never setState synchronously in an effect body). It is
-    // intentionally NOT cancelled in a cleanup: onCoachHandled() clears
-    // `coachPending` synchronously, which re-runs this effect, and a dep-tied
-    // cancel could kill the rAF before it fires (defeating the cue). The cue is
-    // bounded regardless — it clears on Koji's first tokens (the `thinking`
-    // derivation), on error (phase / turnError), or via the 30s `awaitingKoji`
-    // timeout — and a late rAF after unmount is a harmless no-op in React.
+    // intentionally NOT cancelled in a cleanup: the rAF only flips `awaitingKoji`
+    // true — an idempotent, bounded write — so a cleanup tied to the `coachPending`
+    // flip (which onCoachHandled() clears synchronously, re-running this effect)
+    // would be pure churn. The cue is bounded regardless — it clears on Koji's
+    // first tokens (the `thinking` derivation + the reply-visible latch effect), on
+    // error (phase / turnError), or via the 30s `awaitingKoji` timeout — and a late
+    // rAF after unmount is a harmless no-op in React.
     if (voiceRef.current.aiEnabled && voiceRef.current.supported) {
       requestAnimationFrame(() => setAwaitingKoji(true));
     }
@@ -563,10 +564,25 @@ export function VoiceControls({
   // Koji's — so it holds for a typed turn (its optimistic user bubble is the last
   // turn) AND for a proactive coach turn on an EMPTY thread, where there's no user
   // bubble at all (`lastVisibleRole` is null). Koji's first reply tokens flip
-  // `lastVisibleRole` to "assistant" and hide it; an error state hides it too. All
-  // derived, so no effect needs to toggle a flag when the reply starts or fails.
+  // `lastVisibleRole` to "assistant" and hide it; an error state hides it too. The
+  // cue's visibility is derived, but the underlying `awaitingKoji` latch is also
+  // cleared by an effect below the instant the reply is visible, so the latch can't
+  // outlive the turn and re-show the cue if a later non-assistant turn lands.
+  //
+  // Gap (intentional): a coach turn on a thread already ending in an assistant turn
+  // shows no dots until its reply lands — acceptable, the panel isn't blank (prior
+  // content keeps it docked); only the empty-thread case was broken.
   const thinking =
     awaitingKoji && lastVisibleRole !== "assistant" && voice.phase !== "error";
+
+  // Drop the latch the moment Koji's reply is visible, so it can't outlive the
+  // turn and re-show the cue if a later non-assistant turn (a recorded answer or
+  // a spoken turn) lands inside the 30s window. Deferred per the file convention.
+  useEffect(() => {
+    if (!awaitingKoji || lastVisibleRole !== "assistant") return;
+    const raf = requestAnimationFrame(() => setAwaitingKoji(false));
+    return () => cancelAnimationFrame(raf);
+  }, [awaitingKoji, lastVisibleRole]);
 
   // Safety net: never let the awaiting flag hang forever if a reply never
   // materializes (e.g. a silent stall). The state change runs in the deferred
