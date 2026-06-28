@@ -1,10 +1,20 @@
 import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
 import { Switch } from "@heroui/react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { PaywallComparison, TrialTimeline } from "../../components/premium";
 import type { PaywallRow, TrialNode } from "../../components/premium";
 import { Button, Chip } from "../../components/ui";
+import {
+  Reveal,
+  duration,
+  easing,
+  staggerContainer,
+  staggerItem,
+  useMotionEnabled,
+  viewportOnce,
+} from "../motion";
 import { LandingSection, SectionHeading } from "../ui/section";
 
 const FREE_BENEFITS: string[] = [
@@ -45,6 +55,20 @@ const TRUST: string[] = ["No credit card", "Cancel anytime", "Works with AI off"
 const PREMIUM_PRICE = { monthly: "$29.99", yearly: "$19.99" } as const;
 
 /**
+ * One-time soft `--accent` bloom behind the Premium card. Blooms once with the
+ * card reveal (driven by the grid's stagger container) so Premium reads as the
+ * recommended plan without a heavy shadow. Reduced motion renders it at rest.
+ */
+const premiumGlow: Variants = {
+  hidden: { opacity: 0, scale: 0.7 },
+  shown: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: duration.reveal, ease: easing.out, delay: 0.15 },
+  },
+};
+
+/**
  * Pricing, in the app's real dark skin. Composes the product's actual premium
  * components verbatim (`PaywallComparison`, `TrialTimeline`) inside two
  * deliberately asymmetric plan cards: Free reads as a flat hairline surface,
@@ -59,21 +83,30 @@ export function Pricing() {
 
   const [yearly, setYearly] = useState(false);
   const premiumPrice = yearly ? PREMIUM_PRICE.yearly : PREMIUM_PRICE.monthly;
+  const enabled = useMotionEnabled();
 
   return (
     <LandingSection id="pricing">
       <SectionHeading
-        eyebrow="Pricing"
         title="Start free. Add Koji when you want a tutor."
         description="The full course is free, forever. Premium adds your AI tutor and unlimited practice."
       />
 
       <BillingToggle yearly={yearly} onYearlyChange={setYearly} />
 
-      <div className="mt-10 grid items-stretch gap-6 md:grid-cols-2">
+      {/* Plan cards rise/fade in as a small two-item stagger (Free, then
+          Premium). Reduced motion renders them at rest, fully visible. */}
+      <motion.div
+        className="mt-10 grid items-stretch gap-6 md:grid-cols-2"
+        initial={enabled ? "hidden" : false}
+        whileInView={enabled ? "shown" : undefined}
+        viewport={viewportOnce}
+        variants={enabled ? staggerContainer : undefined}
+      >
         {/* Free: flat hairline surface, secondary CTA. */}
-        <article
+        <motion.article
           aria-labelledby="plan-free"
+          variants={enabled ? staggerItem : undefined}
           className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface)] p-6 sm:p-7"
         >
           <h3 id="plan-free" className="text-lg font-bold text-foreground">
@@ -107,13 +140,21 @@ export function Pricing() {
               Start learning, free
             </Button>
           </div>
-        </article>
+        </motion.article>
 
         {/* Premium: the app's real emphasized accent card + one gold steer. */}
-        <article
+        <motion.article
           aria-labelledby="plan-premium"
+          variants={enabled ? staggerItem : undefined}
           className="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7"
         >
+          {/* One-time accent bloom marking the recommended plan. Clipped by the
+              card's overflow-hidden, so it stays a bounded glow (no heavy shadow). */}
+          <motion.div
+            aria-hidden
+            variants={enabled ? premiumGlow : undefined}
+            className="pointer-events-none absolute inset-x-0 top-0 mx-auto -mt-24 size-64 rounded-full bg-[color-mix(in_oklab,var(--accent)_16%,transparent)] blur-3xl"
+          />
           <div className="relative flex flex-1 flex-col">
             <div className="flex items-center justify-between gap-3">
               <h3 id="plan-premium" className="text-lg font-bold text-foreground">
@@ -133,11 +174,46 @@ export function Pricing() {
             </p>
 
             <div className="mt-5 flex items-baseline gap-1.5">
+              {/* Signature: the price swaps with a small slide+fade when the
+                  billing period flips. An invisible sizer holds the box width
+                  (both prices are 6 tabular chars) so "/ month" never shifts
+                  during mode="wait". The aria-label carries the spoken price. */}
               <span
                 aria-label={`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
-                className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl"
+                className="relative inline-block text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl"
               >
-                {premiumPrice}
+                <span aria-hidden className="invisible">
+                  {premiumPrice}
+                </span>
+                {enabled ? (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={premiumPrice}
+                      aria-hidden
+                      className="absolute inset-0"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          duration: duration.fast,
+                          ease: easing.out,
+                        },
+                      }}
+                      exit={{
+                        opacity: 0,
+                        y: -8,
+                        transition: { duration: 0.14, ease: easing.out },
+                      }}
+                    >
+                      {premiumPrice}
+                    </motion.span>
+                  </AnimatePresence>
+                ) : (
+                  <span aria-hidden className="absolute inset-0">
+                    {premiumPrice}
+                  </span>
+                )}
               </span>
               <span className="text-sm font-medium text-muted">/ month</span>
             </div>
@@ -164,8 +240,8 @@ export function Pricing() {
               </Button>
             </div>
           </div>
-        </article>
-      </div>
+        </motion.article>
+      </motion.div>
 
       {/* Trust strip (mirrors the hero's accent-check pattern). */}
       <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
@@ -194,8 +270,10 @@ export function Pricing() {
         ))}
       </ul>
 
-      {/* Compare what's included: the REAL PaywallComparison. */}
-      <div className="mx-auto mt-16 max-w-2xl">
+      {/* Compare what's included: the REAL PaywallComparison. Block-level
+          reveal — the component owns no row-stagger API, so it reveals as a unit
+          (and we never edit it). Reduced motion renders it instantly. */}
+      <Reveal className="mx-auto mt-16 max-w-2xl">
         <h3 className="text-center text-xl font-bold tracking-tight text-foreground">
           Compare what&#39;s included
         </h3>
@@ -204,10 +282,11 @@ export function Pricing() {
           practice.
         </p>
         <PaywallComparison rows={COMPARE_ROWS} className="mt-6" />
-      </div>
+      </Reveal>
 
-      {/* How the free trial works: the REAL TrialTimeline. */}
-      <div className="mx-auto mt-16 max-w-3xl">
+      {/* How the free trial works: the REAL TrialTimeline. Block-level reveal
+          (the timeline owns no node-stagger API). */}
+      <Reveal className="mx-auto mt-16 max-w-3xl">
         <h3 className="text-center text-xl font-bold tracking-tight text-foreground">
           How the free trial works
         </h3>
@@ -220,7 +299,7 @@ export function Pricing() {
         <p className="mt-3 text-center text-xs text-muted">
           No charge until day 7. Cancel before then and you pay nothing.
         </p>
-      </div>
+      </Reveal>
 
       {/* Honest "why premium" note: a human reason, not a sales line. */}
       <div className="mx-auto mt-16 max-w-2xl text-center">

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useInView } from "motion/react";
 
 import {
   CourseMap,
@@ -8,7 +9,8 @@ import {
   type LessonNodeState,
 } from "../../components/course";
 import { course, getLesson } from "../../content";
-import { Eyebrow, LandingSection } from "../ui/section";
+import { Reveal, useMotionEnabled, viewportOnce } from "../motion";
+import { LandingSection } from "../ui/section";
 
 /**
  * Marketing-only progression for the path preview, keyed by the real lesson ids
@@ -33,6 +35,12 @@ const DEMO_STATE: Partial<Record<string, LessonNodeState>> = {
  * the `LessonProgressMedallion`) over the real chapter from `content`, framed in
  * the same surface card the hero uses. Nothing here is hand-rolled marketing art:
  * it is the actual product surface, shown with a static preview of progress.
+ *
+ * Motion direction — "the path lights up". The two columns rise/fade in on
+ * scroll, then the medallion ring fills its real mastery progress the first time
+ * it enters view (the section's signature, not a uniform fade-up). The Rive
+ * lesson pucks own their own art, so we reveal the map card as a unit rather than
+ * faking per-puck entrances the components don't expose.
  */
 export function CoursePath() {
   const level = course.levels[0];
@@ -61,6 +69,17 @@ export function CoursePath() {
     (id) => DEMO_STATE[id] === "completed",
   ).length;
 
+  // Ring fill on view: start the medallion empty and set it to the mastered
+  // count once it scrolls in, letting the component's own per-segment stroke
+  // transition (globals.css) draw each arc in sequence — a real progress fill,
+  // not a faked one. Reduced motion / `?motion=off` resolves to the final count
+  // immediately (no empty flash), and the medallion's CSS already drops its
+  // transition under `prefers-reduced-motion`, so the resting lock-step holds.
+  const motionEnabled = useMotionEnabled();
+  const medallionRef = useRef<HTMLDivElement>(null);
+  const medallionInView = useInView(medallionRef, viewportOnce);
+  const ringCurrent = !motionEnabled || medallionInView ? masteredCount : 0;
+
   return (
     <LandingSection id="course">
       <div className="grid items-stretch gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
@@ -68,24 +87,37 @@ export function CoursePath() {
             the shared SectionHeading scale) so the column anchors to the top of
             the tall map card instead of a lone ring floating in empty space. The
             mastery medallion + its copy then fill the lower half as a deliberate
-            "where you stand" footer. */}
+            "where you stand" footer. The heading, copy, and that footer rise in
+            as a short three-beat sequence. */}
         <div className="flex flex-col items-start">
-          <Eyebrow>The chapter</Eyebrow>
-          <h2 className="mt-3 text-balance text-[clamp(2rem,4vw,3rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground">
+          <Reveal
+            as="h2"
+            className="text-balance text-[clamp(2rem,4vw,3rem)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground"
+          >
             One chapter, understood all the way down.
-          </h2>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+          </Reveal>
+          <Reveal
+            as="p"
+            delay={0.08}
+            className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
+          >
             Five short lessons and a review take you from naming a hypotenuse to
             measuring distance on a grid. You work one step at a time and master
             it before moving on, so every new idea rests on the one before it.
-          </p>
+          </Reveal>
 
-          <div className="mt-8 flex w-full flex-1 flex-col justify-center gap-5 rounded-3xl border border-border bg-[var(--surface)] p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:mt-10">
-            <LessonProgressMedallion
-              current={masteredCount}
-              total={lessonIds.length}
-              className="shrink-0"
-            />
+          <Reveal
+            as="div"
+            y={20}
+            delay={0.16}
+            className="mt-8 flex w-full flex-1 flex-col justify-center gap-5 rounded-2xl border border-border bg-[var(--surface)] p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-7 lg:mt-10"
+          >
+            <div ref={medallionRef} className="shrink-0">
+              <LessonProgressMedallion
+                current={ringCurrent}
+                total={lessonIds.length}
+              />
+            </div>
             <div className="flex max-w-sm flex-col gap-3">
               <p className="text-sm leading-relaxed text-muted">
                 Each lesson rolls up into a mastery signal, so you can see at a
@@ -96,14 +128,14 @@ export function CoursePath() {
                 problems coming.
               </p>
             </div>
-          </div>
+          </Reveal>
         </div>
 
-        <div className="relative">
+        <Reveal className="relative" y={24} delay={0.1} amount={0.2}>
           <div
             role="group"
             aria-label={`${course.title} course path preview`}
-            className="rounded-3xl border-2 border-border bg-[var(--surface)] p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] sm:p-8"
+            className="rounded-2xl border-2 border-border bg-[var(--surface)] p-6 sm:p-8"
           >
             <div className="mx-auto w-full max-w-md overflow-x-hidden">
               <CourseMap
@@ -118,7 +150,7 @@ export function CoursePath() {
               />
             </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </LandingSection>
   );
