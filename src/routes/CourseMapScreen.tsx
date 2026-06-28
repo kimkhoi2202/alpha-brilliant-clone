@@ -172,7 +172,7 @@ export function CourseMapScreen() {
               safe; click-through so it never steals taps from the map. */}
           <div
             aria-hidden
-            className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[calc(8rem_+_env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-background to-transparent"
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[calc(8rem_+_env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-background to-background/0"
           />
           <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom,0px))] z-40 px-4 sm:px-6">
             <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
