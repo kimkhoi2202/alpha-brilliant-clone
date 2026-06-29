@@ -453,12 +453,25 @@
    * SliderInput; `will-change` hints the tiny disc onto its own compositor layer
    * for jank-free scaling.
    * ===================================================================== */
+  /* The visible 8px track is drawn by the track pseudo-elements (not the input
+     bg), so the input itself can be 18px tall — giving the thumb vertical room to
+     center identically across Chrome, Safari, and Firefox. */
+  input[type="range"].alpha-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--default);
+  }
+  input[type="range"].alpha-slider::-moz-range-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--default);
+  }
   input[type="range"].alpha-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     height: 18px;
     width: 18px;
-    margin-top: -5px; /* center the 18px disc on the 8px (h-2) track */
+    margin-top: -5px; /* center the 18px disc on the 8px track */
     border-radius: 9999px;
     background: var(--accent);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
