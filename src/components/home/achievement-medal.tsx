@@ -111,7 +111,7 @@ export function AchievementMedal({
       </span>
 
       {!unlocked ? (
-        <LockIcon className="absolute bottom-1.5 right-1.5 size-3.5 text-muted" />
+        <LockIcon className="absolute right-1.5 top-1.5 size-3.5 text-muted" />
       ) : null}
     </>
   );
