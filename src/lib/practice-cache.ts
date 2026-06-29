@@ -39,8 +39,10 @@ export interface PracticeCache {
  * regenerated on the next read. v2: switched to the MODEL-AUTHORED generation
  * design (the model now authors the full problem and owns correctness), so
  * problems cached under the old server-authored/firewall design are discarded.
+ * v3: per-call variety seed + stronger variety prompt, so problems cached under
+ * the old (repetitive) prompt are discarded and regenerated with varied triples.
  */
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 /** The single cache doc for a user. uid is passed in (no React/auth here). */
 function cacheRef(uid: string) {
