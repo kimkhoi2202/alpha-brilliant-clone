@@ -37,7 +37,7 @@ export function PaywallComparison({ rows, className }: PaywallComparisonProps) {
         className,
       )}
     >
-      <div className="grid grid-cols-[1fr_5rem_5rem]">
+      <div className="grid grid-cols-[1fr_6.5rem_6.5rem]">
         <div className="bg-surface px-4 py-3 text-sm font-bold text-foreground">
           Benefits
         </div>
