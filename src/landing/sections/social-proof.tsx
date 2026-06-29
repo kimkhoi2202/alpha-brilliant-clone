@@ -2,7 +2,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion, type Variants } from "motion/react";
 
 import { Button } from "../../components/ui";
-import { cn } from "../../lib/cn";
 import {
   duration,
   easing,
@@ -25,19 +24,15 @@ import { LandingSection, SectionHeading } from "../ui/section";
  * sibling stagger is legitimate. The outcome cards stagger into view (capped at
  * ~0.45s total) and each card's accent check-dot *draws* its checkmark (the SVG
  * `<path>` animates `pathLength` 0→1) a beat after the card lands, so every
- * outcome visibly "checks off." The gold capstone enters last with a slightly
- * stronger, slower entrance and a later-drawing check, reading as the finale.
- * Transform + opacity + the stroke draw only — ease-out, no bounce, fired once.
- * Reduced motion / `?motion=off` → cards visible and checks fully drawn, no
- * transform.
+ * outcome visibly "checks off." Transform + opacity + the stroke draw only —
+ * ease-out, no bounce, fired once. Reduced motion / `?motion=off` → cards
+ * visible and checks fully drawn, no transform.
  */
 interface Outcome {
   /** The real lesson this capability comes from (from course.ts). */
   lesson: string;
   /** What the learner can do after it. Plain, specific, verifiable. */
   text: string;
-  /** The chapter-ending review: the "prove it" capstone, styled with accent. */
-  capstone?: boolean;
 }
 
 const OUTCOMES: readonly Outcome[] = [
@@ -64,7 +59,6 @@ const OUTCOMES: readonly Outcome[] = [
   {
     lesson: "Level Review",
     text: "Then prove it: the chapter ends with a Level Review of ten mixed questions. Score eight of ten to pass.",
-    capstone: true,
   },
 ];
 
@@ -87,62 +81,26 @@ const checkDraw: Variants = {
   },
 };
 
-/** The capstone's gold check draws a touch later and slower — the final flourish. */
-const capstoneCheckDraw: Variants = {
-  hidden: { pathLength: 0, opacity: 0 },
-  shown: {
-    pathLength: 1,
-    opacity: 1,
-    transition: {
-      pathLength: { duration: duration.reveal, ease: easing.out, delay: 0.32 },
-      opacity: { duration: 0.15, ease: easing.out, delay: 0.32 },
-    },
-  },
-};
-
-/**
- * The capstone card's slightly stronger, slower entrance so it reads as the
- * finale (it is also last in the stagger). Transform + opacity only, ease-out.
- */
-const capstoneItem: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  shown: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: duration.reveal, ease: easing.out },
-  },
-};
-
 /** The accent check used across the page (hero / pricing), reused here. With
  *  motion on, the checkmark draws its stroke when the card enters view; with
  *  motion off the `<path>` renders fully drawn (no `pathLength` animation). */
-function CheckDot({
-  capstone,
-  motionEnabled,
-}: {
-  capstone?: boolean;
-  motionEnabled: boolean;
-}) {
+function CheckDot({ motionEnabled }: { motionEnabled: boolean }) {
   return (
     <span
       aria-hidden
       className="grid size-7 shrink-0 place-items-center rounded-full"
       style={{
-        backgroundColor: capstone
-          ? "color-mix(in oklab, var(--warning) 24%, transparent)"
-          : "color-mix(in oklab, var(--accent) 22%, transparent)",
+        backgroundColor: "color-mix(in oklab, var(--accent) 22%, transparent)",
       }}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <motion.path
           d="M5 13l4 4 10-10"
-          stroke={capstone ? "var(--warning)" : "var(--accent)"}
+          stroke="var(--accent)"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
-          {...(motionEnabled
-            ? { variants: capstone ? capstoneCheckDraw : checkDraw }
-            : {})}
+          {...(motionEnabled ? { variants: checkDraw } : {})}
         />
       </svg>
     </span>
@@ -158,15 +116,10 @@ function OutcomeCard({
 }) {
   return (
     <motion.li
-      className={cn(
-        "flex h-full flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--surface)] p-6",
-        outcome.capstone && "border-[color:var(--warning)]/40 bg-[var(--warning-soft)]/20",
-      )}
-      {...(motionEnabled
-        ? { variants: outcome.capstone ? capstoneItem : staggerItem }
-        : {})}
+      className="flex h-full flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--surface)] p-6"
+      {...(motionEnabled ? { variants: staggerItem } : {})}
     >
-      <CheckDot capstone={outcome.capstone} motionEnabled={motionEnabled} />
+      <CheckDot motionEnabled={motionEnabled} />
       <p className="text-base leading-relaxed text-foreground">{outcome.text}</p>
       <span className="mt-auto text-xs font-semibold uppercase tracking-wide text-muted">
         {outcome.lesson}
