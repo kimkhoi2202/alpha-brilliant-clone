@@ -74,7 +74,6 @@ function InfinitePracticeSession({ onExit }: { onExit: () => void }) {
   const stats: PracticeSessionStats = {
     solved: sessionRecords.filter((r) => r.correct).length,
     streak: trailingStreak(sessionRecords),
-    difficulty,
   };
 
   const handleResult = (record: StepRecord) => {

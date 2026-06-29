@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import type { GenerationDifficulty } from "../../lib/ai/client";
 import { cn } from "../../lib/cn";
 import { LessonCalculator } from "../lesson/lesson-calculator";
 
@@ -10,8 +9,6 @@ export interface PracticeSessionStats {
   solved: number;
   /** Current run of consecutive correct answers. */
   streak: number;
-  /** Difficulty the next problem will target. */
-  difficulty: GenerationDifficulty;
 }
 
 export interface PracticeShellProps {
@@ -26,18 +23,6 @@ export interface PracticeShellProps {
   children: ReactNode;
 }
 
-const DIFFICULTY_LABEL: Record<GenerationDifficulty, string> = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
-};
-
-const DIFFICULTY_CLASS: Record<GenerationDifficulty, string> = {
-  easy: "bg-success/15 text-success",
-  medium: "bg-accent/15 text-accent-soft-foreground",
-  hard: "bg-warning/15 text-warning",
-};
-
 function CloseIcon() {
   return (
     <svg
@@ -51,19 +36,6 @@ function CloseIcon() {
     >
       <path d="M6 6l12 12M18 6L6 18" />
     </svg>
-  );
-}
-
-function DifficultyPill({ difficulty }: { difficulty: GenerationDifficulty }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide",
-        DIFFICULTY_CLASS[difficulty],
-      )}
-    >
-      {DIFFICULTY_LABEL[difficulty]}
-    </span>
   );
 }
 
@@ -110,7 +82,6 @@ export function PracticeShell({
             <span className="text-sm font-bold tracking-tight text-foreground sm:text-base">
               Infinite Practice
             </span>
-            <DifficultyPill difficulty={stats.difficulty} />
           </div>
           <div className="hidden sm:block">
             <SessionStats solved={stats.solved} streak={stats.streak} />
