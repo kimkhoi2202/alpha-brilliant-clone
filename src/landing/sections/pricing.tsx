@@ -295,18 +295,6 @@ export function Pricing() {
           No charge until day 7. Cancel before then and you pay nothing.
         </p>
       </Reveal>
-
-      {/* Honest "why premium" note: a human reason, not a sales line. */}
-      <div className="mx-auto mt-16 max-w-2xl text-center">
-        <h3 className="text-xl font-bold tracking-tight text-foreground">
-          Why is the tutor paid?
-        </h3>
-        <p className="mt-3 text-pretty leading-relaxed text-muted">
-          Koji&#39;s realtime voice runs on advanced AI that costs real money per
-          minute. Keeping it on a paid tier is how we keep the whole course free
-          for everyone.
-        </p>
-      </div>
     </LandingSection>
   );
 }
