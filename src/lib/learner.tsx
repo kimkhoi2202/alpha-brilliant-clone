@@ -20,6 +20,7 @@ import {
 import {
   course,
   getLesson,
+  getQuiz,
   isReviewLesson,
   lessonForSkill,
   lessonOrder,
@@ -174,7 +175,23 @@ export interface LearnerContextValue {
     correct: number;
     wrong: number;
   }) => Promise<void>;
+  /**
+   * DEV-only: simulate completing the end-of-level Level Review without the quiz
+   * UI — apply `correct` first-try-correct passes then `wrong` lapses across the
+   * Level Review's skills (round-robin, via the same `recordReview` path), then
+   * mark the "level-review" lesson completed exactly as a real completion does
+   * (`completeLesson`). Idempotent once the Level Review is already completed.
+   */
+  devSimulateLevelReview: (counts: {
+    correct: number;
+    wrong: number;
+  }) => Promise<void>;
 }
+
+/** The end-of-level review lesson; completing it unlocks Infinite Practice. */
+const LEVEL_REVIEW_LESSON_ID: LessonId = "level-review";
+/** XP per correct answer in the quiz-only Level Review (mirrors lesson-runner). */
+const QUIZ_QUESTION_XP = 15;
 
 const LearnerContext = createContext<LearnerContextValue | undefined>(undefined);
 
@@ -680,6 +697,64 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     [uid, recordReview],
   );
 
+  const devSimulateLevelReview = useCallback(
+    async ({ correct, wrong }: { correct: number; wrong: number }) => {
+      if (!uid) return;
+
+      // Idempotent: if the Level Review is already completed, there's nothing to
+      // do (running again must not re-award XP or re-apply outcomes).
+      const progressRef = doc(
+        db,
+        "users",
+        uid,
+        "progress",
+        LEVEL_REVIEW_LESSON_ID,
+      );
+      const progressSnap = await getDoc(progressRef);
+      if (progressSnap.data()?.status === "completed") return;
+
+      // The Level Review's skills, in quiz order, deduped so each gets even
+      // round-robin treatment. Read each step's skill straight off the
+      // ProblemStep — the same way the real level-review run does.
+      const quiz = getQuiz(LEVEL_REVIEW_LESSON_ID) ?? [];
+      const skills: SkillId[] = [];
+      for (const step of quiz) {
+        if (!skills.includes(step.skill)) skills.push(step.skill);
+      }
+
+      // Clamp to non-negative integers (the modal already clamps, but the store
+      // stays safe on its own).
+      const passes = Math.max(0, Math.trunc(correct));
+      const lapses = Math.max(0, Math.trunc(wrong));
+
+      // Apply the by-hand outcomes through the EXACT same path a real review uses
+      // (`recordReview` → accrueSkill → applyOutcome), correct-first, round-robin
+      // across the quiz's skills, sequentially so each skill's read-modify-write
+      // sees the prior write.
+      if (skills.length > 0) {
+        for (let i = 0; i < passes; i++) {
+          await recordReview(skills[i % skills.length], {
+            correct: true,
+            firstTryCorrect: true,
+          });
+        }
+        for (let i = 0; i < lapses; i++) {
+          await recordReview(skills[i % skills.length], {
+            correct: false,
+            firstTryCorrect: false,
+          });
+        }
+      }
+
+      // Mark the Level Review completed through the SAME store path the lesson
+      // route calls on a passing quiz (`completeLesson`) — status + XP + activity
+      // + streak, identical to a real completion. XP mirrors the real award:
+      // QUIZ_QUESTION_XP per correct answer.
+      await completeLesson(LEVEL_REVIEW_LESSON_ID, passes * QUIZ_QUESTION_XP);
+    },
+    [uid, recordReview, completeLesson],
+  );
+
   // --- derived selectors (read current state) ---
 
   function skillMastery(id: SkillId): SkillMastery | null {
@@ -960,6 +1035,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     devMakeReviewsDue,
     devCompleteAllLessons,
     devSimulateReview,
+    devSimulateLevelReview,
   };
 
   return (

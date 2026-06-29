@@ -9,3 +9,6 @@ export type { RecallWarmupProps } from "./recall-warmup";
 
 export { SimulateReviewDialog } from "./simulate-review-dialog";
 export type { SimulateReviewDialogProps } from "./simulate-review-dialog";
+
+export { SimulateLevelReviewDialog } from "./simulate-level-review-dialog";
+export type { SimulateLevelReviewDialogProps } from "./simulate-level-review-dialog";

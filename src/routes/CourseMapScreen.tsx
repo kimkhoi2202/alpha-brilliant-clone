@@ -13,6 +13,7 @@ import {
 import { PracticePromoCard } from "../components/practice";
 import {
   ReviewsCard,
+  SimulateLevelReviewDialog,
   SimulateReviewDialog,
   SkillMasteryPanel,
 } from "../components/review";
@@ -20,6 +21,7 @@ import { Button } from "../components/ui";
 import {
   course,
   getLesson,
+  getQuiz,
   lessonOrder,
   problemCount,
   type SkillId,
@@ -51,6 +53,7 @@ export function CourseMapScreen() {
     devMakeReviewsDue,
     devCompleteAllLessons,
     devSimulateReview,
+    devSimulateLevelReview,
   } = useLearner();
   // DEV-only "Simulate a review" dialog (gated with the rest of the DEV TOOLS
   // card). `simNow` is captured when the dialog opens — an event, so calling
@@ -64,6 +67,18 @@ export function CourseMapScreen() {
     setSimOpen(true);
   };
   const dueCount = dueReviews(simNow).length;
+  // DEV-only "Simulate Level Review" dialog. `levelSimKey` only changes on open,
+  // so it serves purely as the dialog's remount key (re-seeding its inputs each
+  // open). The question count is static content; completion state is live.
+  const [levelSimOpen, setLevelSimOpen] = useState(false);
+  const [levelSimKey, setLevelSimKey] = useState(0);
+  const openSimulateLevelReview = () => {
+    setLevelSimKey((k) => k + 1);
+    setLevelSimOpen(true);
+  };
+  const levelReviewQuestionCount = getQuiz(LEVEL_REVIEW_LESSON_ID)?.length ?? 0;
+  const levelReviewCompleted =
+    lessonStatus(LEVEL_REVIEW_LESSON_ID) === "completed";
 
   const levelId = course.levels[0].id;
   const gate = levelMastery(levelId);
@@ -233,6 +248,18 @@ export function CourseMapScreen() {
                       Run
                     </Button>
                   </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted">
+                      Simulate Level Review
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={openSimulateLevelReview}
+                    >
+                      Run
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -299,13 +326,23 @@ export function CourseMapScreen() {
       ) : null}
 
       {devToolsEnabled() ? (
-        <SimulateReviewDialog
-          isOpen={simOpen}
-          onOpenChange={setSimOpen}
-          seedKey={simNow}
-          dueCount={dueCount}
-          onConfirm={devSimulateReview}
-        />
+        <>
+          <SimulateReviewDialog
+            isOpen={simOpen}
+            onOpenChange={setSimOpen}
+            seedKey={simNow}
+            dueCount={dueCount}
+            onConfirm={devSimulateReview}
+          />
+          <SimulateLevelReviewDialog
+            isOpen={levelSimOpen}
+            onOpenChange={setLevelSimOpen}
+            seedKey={levelSimKey}
+            questionCount={levelReviewQuestionCount}
+            alreadyCompleted={levelReviewCompleted}
+            onConfirm={devSimulateLevelReview}
+          />
+        </>
       ) : null}
     </div>
   );
