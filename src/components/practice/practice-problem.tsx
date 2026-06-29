@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { defaultAnswer, gradeStep, isAnswerProvided } from "../../content/engine";
@@ -90,6 +90,91 @@ export function PracticeProblem({
   }
 
   const provided = isAnswerProvided(step.interaction, answer);
+
+  // Enter mirrors the footer's primary action so practice matches the lesson's
+  // keyboard flow: while answering it Checks; once resolved a fresh Enter advances
+  // to the Next problem (the exact action the footer button performs). This is the
+  // SAME window-capture + latest-ref mechanism the lesson/quiz runners use, so
+  // both surfaces behave identically. The latest-ref keeps the single listener
+  // current per render without re-subscribing.
+  const onEnterRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  useEffect(() => {
+    onEnterRef.current = (e: KeyboardEvent) => {
+      // Bail only for a real (modal) dialog. The always-mounted calculator is a
+      // NON-modal panel (role="dialog", no aria-modal) excluded by its marker;
+      // without this it would match the [role="dialog"] check and the handler
+      // would bail on every press, so Enter never drove practice.
+      const blockingDialogOpen = Array.from(
+        document.querySelectorAll('[role="dialog"], [aria-modal="true"]'),
+      ).some((el) => !el.hasAttribute("data-lesson-calculator"));
+      if (blockingDialogOpen) return;
+      const source = e.target;
+      // Inside the calculator panel: it owns its keys (Enter = compute), so let it
+      // handle the press and never advance practice from a key typed in the calc.
+      if (
+        source instanceof Element &&
+        source.closest("[data-lesson-calculator]")
+      ) {
+        return;
+      }
+      // Defer to the ACTIVE ANSWER INPUT: a focused numeric / count-squares field
+      // grades on its OWN Enter and then locks, so acting here too would check AND
+      // advance on one press. Key off the fixed e.target. A range slider has no
+      // own-Enter, so it is driven below like every button.
+      if (
+        (source instanceof HTMLInputElement && source.type !== "range") ||
+        source instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      // Sole actor for Enter: running in the capture phase, stopping propagation
+      // keeps the focused control (button onPress, answer choice, tile) from also
+      // firing, so one press = one action.
+      const drive = () => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      if (phase === "answering") {
+        // Nothing entered yet: let the focused control handle Enter (e.g. select a
+        // choice) rather than swallowing the keypress.
+        if (provided) {
+          drive();
+          check();
+        }
+        return;
+      }
+      if (phase === "wrong") {
+        drive();
+        tryAgain();
+        return;
+      }
+      // phase === "correct": advance to the next problem (the footer's action).
+      drive();
+      onNext();
+    };
+  });
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (
+        e.key !== "Enter" ||
+        e.shiftKey ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        e.isComposing ||
+        // One physical press = one action: ignore auto-repeat from a held key, so
+        // the press that grades can't also advance.
+        e.repeat
+      ) {
+        return;
+      }
+      onEnterRef.current(e);
+    }
+    // Capture phase: handle Enter before the focused control, so when this handler
+    // drives practice it can stop the event there and be the only thing that acts.
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, []);
 
   let footer: ReactNode;
   if (phase === "answering") {
