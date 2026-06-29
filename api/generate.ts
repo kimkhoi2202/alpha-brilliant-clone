@@ -134,7 +134,7 @@ async function generateProblem(
       const response = await client.responses.create({
         model: MODELS.text,
         instructions: GEN_SYSTEM,
-        input: genInput(kind, difficulty),
+        input: genInput(kind, difficulty, seed),
         max_output_tokens: GEN_MAX_OUTPUT_TOKENS,
         reasoning: { effort: GEN_REASONING_EFFORT },
         text: {

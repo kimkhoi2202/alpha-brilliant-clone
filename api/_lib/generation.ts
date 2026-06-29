@@ -340,19 +340,24 @@ export const GEN_SYSTEM = [
   "",
   "Hard rules — follow every one:",
   "1. Correct math. For right triangles a² + b² = c². Any answer or solution you give MUST be exactly right for the numbers you chose.",
-  "2. Whole-number answers ONLY — never irrational or decimal answers (e.g. never 22.2). For any hypotenuse/leg length, choose legs from a Pythagorean triple — 3-4-5, 6-8-10, 5-12-13, 8-15-17, 9-12-15, 7-24-25, 20-21-29 (or simple multiples) — so the unknown side is a whole number.",
-  "3. Match the requested difficulty (stay within the suggested leg range) and keep numbers realistic and easy to reason about.",
-  "4. Never reveal the answer in the prompt or the default hint, and never print the unknown/asked value on the figure.",
-  "5. Output STRICTLY as the provided JSON schema for the requested kind — no extra prose and no extra fields.",
+  "2. Whole-number answers ONLY — never irrational or decimal answers (e.g. never 22.2). For any hypotenuse/leg length, choose legs from a Pythagorean triple — 3-4-5, 6-8-10, 5-12-13, 8-15-17, 9-12-15, 12-16-20, 15-20-25, 7-24-25, 20-21-29 (or simple multiples) — so the unknown side is a whole number.",
+  "3. VARIETY IS REQUIRED — do NOT keep producing the same problem. Never default to 3-4-5 or 8-15-17. For each problem pick a DIFFERENT triple that fits the difficulty's leg range, and also vary which side is unknown and the wording/scenario. The author instructions carry a 'variety seed'; use it to choose, so that different seeds yield different triples and two problems almost never share the same numbers.",
+  "4. Match the requested difficulty (stay within the suggested leg range) and keep numbers realistic and easy to reason about.",
+  "5. Never reveal the answer in the prompt or the default hint, and never print the unknown/asked value on the figure.",
+  "6. Output STRICTLY as the provided JSON schema for the requested kind — no extra prose and no extra fields.",
   "Keep prompts and feedback concise and learner-friendly.",
 ].join("\n");
 
-export function genInput(kind: GenerableKind, difficulty: Difficulty): string {
+export function genInput(
+  kind: GenerableKind,
+  difficulty: Difficulty,
+  seed: number,
+): string {
   const [lo, hi] = LEG_RANGE[difficulty];
   const lines = [
     `Author one ${kind} problem.`,
     `Difficulty: ${difficulty} — use leg lengths roughly between ${lo} and ${hi}.`,
-    "Vary the specific numbers and wording so problems feel fresh.",
+    `Variety seed ${seed}: use it to pick a Pythagorean triple (within that leg range) DIFFERENT from the common defaults 3-4-5 and 8-15-17, and to vary the wording and which side is unknown. A different seed must produce a different triple.`,
     "",
   ];
   switch (kind) {
