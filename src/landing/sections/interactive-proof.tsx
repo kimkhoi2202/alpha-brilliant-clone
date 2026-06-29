@@ -62,11 +62,10 @@ function Term({
  * lessons use, dropped into the app's real card pattern. They own their own
  * `prefers-reduced-motion` handling and accessible labels.
  *
- * Motion direction — "auto-demo on view": the two cards rise/scale into view
- * (focal first, support a beat later) and the equation assembles term by term.
- * The focal `RearrangementProof` auto-plays its morph once when it scrolls into
- * view (via its `autoPlayInView` prop), so visitors watch the theorem hold on
- * their own; reduced motion / ?motion=off leave the play control to them.
+ * Motion direction: the two cards rise/scale into view (focal first, support a
+ * beat later) and the equation assembles term by term. The focal
+ * `RearrangementProof` keeps its own play control — it opens on the c² square and
+ * the visitor presses play to watch the theorem hold (it is not auto-played).
  */
 export function InteractiveProof() {
   const motionEnabled = useMotionEnabled();
@@ -135,8 +134,7 @@ export function InteractiveProof() {
 
       <div className="mt-12 grid items-stretch gap-6 lg:mt-16 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8">
         {/* Focal: the real interactive rearrangement proof. It owns its play
-            control and reduced-motion handling; the landing also asks it to
-            auto-play once on scroll via `autoPlayInView`. */}
+            control and reduced-motion handling. */}
         <motion.div
           className="flex flex-col rounded-2xl border-2 border-border bg-[var(--surface)] p-6 sm:p-8 lg:p-10"
           {...cardReveal(0)}
@@ -152,10 +150,9 @@ export function InteractiveProof() {
           </div>
 
           <div className="flex flex-1 items-center justify-center py-2">
-            {/* Auto-demo on scroll: the morph plays once when it enters view so
-                visitors literally watch the theorem hold before pressing
-                anything (reduced motion / ?motion=off leave it for them). */}
-            <RearrangementProof a={3} b={4} autoPlayInView={motionEnabled} />
+            {/* Opens on the c² arrangement; the visitor presses play to morph it
+                to a² + b² (and back). */}
+            <RearrangementProof a={3} b={4} />
           </div>
         </motion.div>
 
