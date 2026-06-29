@@ -284,8 +284,10 @@ export function Pricing() {
       </Reveal>
 
       {/* How the free trial works: the REAL TrialTimeline. Block-level reveal
-          (the timeline owns no node-stagger API). */}
-      <Reveal className="mx-auto mt-16 max-w-3xl">
+          (the timeline owns no node-stagger API). Its top margin matches the
+          section break below it (py-20 → 160px, py-24 → 192px), so this closing
+          block sits with equal breathing room above and below. */}
+      <Reveal className="mx-auto mt-40 max-w-3xl sm:mt-48">
         <h3 className="text-center text-xl font-bold tracking-tight text-foreground">
           How your free trial works
         </h3>
