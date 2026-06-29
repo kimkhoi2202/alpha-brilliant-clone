@@ -28,7 +28,7 @@ export interface PaywallComparisonProps {
   className?: string;
 }
 
-/** Free vs Premium comparison table (Premium column emphasized). */
+/** Free vs Premium comparison table (neutral columns). */
 export function PaywallComparison({ rows, className }: PaywallComparisonProps) {
   return (
     <div
@@ -44,7 +44,7 @@ export function PaywallComparison({ rows, className }: PaywallComparisonProps) {
         <div className="bg-surface px-4 py-3 text-center text-sm font-bold text-muted">
           Free
         </div>
-        <div className="bg-accent-soft px-4 py-3 text-center text-sm font-bold text-accent-soft-foreground">
+        <div className="bg-surface px-4 py-3 text-center text-sm font-bold text-foreground">
           Premium
         </div>
         {rows.map((r) => (
@@ -55,7 +55,7 @@ export function PaywallComparison({ rows, className }: PaywallComparisonProps) {
             <div className="border-t border-border px-4 py-3 text-center">
               {r.free ? <Yes /> : <No />}
             </div>
-            <div className="border-t border-border bg-accent-soft/40 px-4 py-3 text-center">
+            <div className="border-t border-border px-4 py-3 text-center">
               {r.premium ? <Yes /> : <No />}
             </div>
           </Fragment>
