@@ -1,7 +1,9 @@
 import { motion, type Variants } from "motion/react";
+import { useRef, useState } from "react";
 
 import { KojiMascot } from "../../components/lesson/koji";
 import { Button, Callout, Chip } from "../../components/ui";
+import { cn } from "../../lib/cn";
 import { duration, easing, useMotionEnabled, viewportOnce } from "../motion";
 import { LandingSection, SectionHeading } from "../ui/section";
 
@@ -119,10 +121,156 @@ const rowVariants: Variants = {
 };
 
 /**
- * A static snapshot of the in-lesson tutor thread, composed only from real UI
- * primitives and mirroring `koji-panel.tsx`: the Koji identity header, a grounded
- * hint (real `Callout`) labelled by the layered-hint `Chip`s, the voice channel,
- * and the effort-gated reveal `Button` with the panel's own locked helper copy.
+ * The three layered hints for the demo problem ("Find the Hypotenuse", 3-4-5).
+ * Each is more specific than the last and — like the real tutor — none of them
+ * hands over c; that stays behind the effort-gated reveal.
+ */
+const HINTS = [
+  {
+    id: "1",
+    label: "Hint 1",
+    body: (
+      <>
+        Square each leg on its own first. What do you get for 3&#178; and 4&#178;?
+        Add those two before you go looking for c.
+      </>
+    ),
+  },
+  {
+    id: "2",
+    label: "Hint 2",
+    body: (
+      <>
+        3&#178; is 9 and 4&#178; is 16. Add them &mdash; that total is c&#178;
+        itself, not c just yet.
+      </>
+    ),
+  },
+  {
+    id: "3",
+    label: "Hint 3",
+    body: (
+      <>
+        So c&#178; = 25. Now ask the small question: what number times itself makes
+        25? You&#8217;re one step from c.
+      </>
+    ),
+  },
+] as const;
+
+/**
+ * Interactive layered hints — the one live control in the snapshot. The Hint
+ * 1/2/3 tabs swap the grounded `Callout` beneath them, so the section doesn't just
+ * describe progressive, spoiler-free help, it lets the visitor feel it.
+ *
+ * Built to the tabs ARIA pattern (Emil): a `tablist` with roving focus
+ * (←/→/Home/End), each tab driving its `tabpanel`. The three panels share one
+ * grid cell so the box is always as tall as the longest hint — no layout shift —
+ * and only the active one shows; hidden panels are `inert`, so they stay out of
+ * the tab order and the a11y tree. Each tab carries a 44px-tall hit area (via a
+ * `::before`) while staying visually compact, and the crossfade is opacity-only
+ * and dropped entirely when motion is disabled (reduced motion / ?motion=off).
+ */
+function LayeredHints({ enabled }: { enabled: boolean }) {
+  const [active, setActive] = useState(0);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <span
+          id="koji-hints-label"
+          className="text-[0.7rem] font-bold uppercase tracking-wider text-muted"
+        >
+          Layered hints
+        </span>
+        <div
+          role="tablist"
+          aria-labelledby="koji-hints-label"
+          className="flex flex-wrap gap-1.5"
+          onKeyDown={(e) => {
+            const last = HINTS.length - 1;
+            let next: number | null = null;
+            if (e.key === "ArrowRight" || e.key === "ArrowDown")
+              next = active === last ? 0 : active + 1;
+            else if (e.key === "ArrowLeft" || e.key === "ArrowUp")
+              next = active === 0 ? last : active - 1;
+            else if (e.key === "Home") next = 0;
+            else if (e.key === "End") next = last;
+            if (next === null) return;
+            e.preventDefault();
+            setActive(next);
+            tabRefs.current[next]?.focus();
+          }}
+        >
+          {HINTS.map((h, i) => {
+            const selected = i === active;
+            return (
+              <button
+                key={h.id}
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                type="button"
+                role="tab"
+                id={`koji-hint-tab-${h.id}`}
+                aria-selected={selected}
+                aria-controls={`koji-hint-panel-${h.id}`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setActive(i)}
+                className={cn(
+                  "relative cursor-pointer touch-manipulation select-none rounded-full px-3.5 py-2 text-xs font-semibold leading-none outline-none",
+                  // 44px-tall tap target without growing the visual pill (Emil).
+                  "before:absolute before:-inset-x-0.5 before:-inset-y-2 before:content-['']",
+                  "focus-visible:ring-2 focus-visible:ring-accent",
+                  enabled &&
+                    "transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
+                  selected
+                    ? "bg-accent-soft text-accent-soft-foreground"
+                    : "bg-default text-muted hover:text-foreground",
+                )}
+              >
+                {h.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stacked panels: all share one grid cell, so the box is always as tall as
+          the longest hint (no layout shift) and the swap is a true crossfade in
+          place. Inactive panels are inert + invisible. */}
+      <div className="grid">
+        {HINTS.map((h, i) => {
+          const selected = i === active;
+          return (
+            <div
+              key={h.id}
+              role="tabpanel"
+              id={`koji-hint-panel-${h.id}`}
+              aria-labelledby={`koji-hint-tab-${h.id}`}
+              inert={!selected}
+              aria-hidden={!selected}
+              className={cn(
+                "col-start-1 row-start-1",
+                enabled && "transition-opacity duration-150 ease-out",
+                selected ? "opacity-100" : "pointer-events-none opacity-0",
+              )}
+            >
+              <Callout intent="info">{h.body}</Callout>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A snapshot of the in-lesson tutor thread, composed only from real UI primitives
+ * and mirroring `koji-panel.tsx`: the Koji identity header, a grounded hint (real
+ * `Callout`) driven by the live, layered-hint tabs, the voice channel, and the
+ * effort-gated reveal `Button` with the panel's own locked helper copy.
  */
 function KojiThread() {
   const enabled = useMotionEnabled();
@@ -157,39 +305,21 @@ function KojiThread() {
           </Chip>
         </motion.div>
 
-        {/* Log — Koji's grounded nudge, layered and spoiler-free. */}
+        {/* Log — Koji's grounded nudge and the live, layered hint selector. */}
         <div className="flex flex-col gap-3 px-4 py-4">
           <motion.p className="text-sm leading-relaxed text-muted" {...row(1)}>
             Stuck on c? Ask for a hint and I&apos;ll point you at the next step. No spoilers.
           </motion.p>
 
-          <motion.div className="flex flex-wrap items-center gap-1.5" {...row(2)}>
-            <span className="mr-1 text-[0.7rem] font-bold uppercase tracking-wider text-muted">
-              Layered hints
-            </span>
-            <Chip size="sm" intent="accent">
-              Hint 1
-            </Chip>
-            <Chip size="sm" intent="neutral">
-              Hint 2
-            </Chip>
-            <Chip size="sm" intent="neutral">
-              Hint 3
-            </Chip>
-          </motion.div>
-
-          <motion.div {...row(3)}>
-            <Callout intent="info">
-              Square each leg on its own first. What do you get for 3&#178; and 4&#178;? Add
-              those two before you go looking for c.
-            </Callout>
+          <motion.div {...row(2)}>
+            <LayeredHints enabled={enabled} />
           </motion.div>
         </div>
 
         {/* Voice — same tap-to-talk / hands-free / transcript surface as the panel. */}
         <motion.div
           className="flex flex-col gap-2 border-t border-border px-4 py-3"
-          {...row(4)}
+          {...row(3)}
         >
           <p className="text-xs font-medium leading-relaxed text-muted">
             Rather talk it through? Tap to talk or go hands-free, with a live transcript.
@@ -207,7 +337,7 @@ function KojiThread() {
         {/* Reveal — the effort-gated CTA in its locked state (the panel's copy). */}
         <motion.div
           className="flex flex-col gap-2 border-t border-border px-4 py-3"
-          {...row(5)}
+          {...row(4)}
         >
           <Button size="sm" variant="warning" className="min-h-11" isDisabled>
             Reveal the answer
@@ -219,7 +349,7 @@ function KojiThread() {
         </motion.div>
       </motion.div>
 
-      <motion.p className="mt-3 px-1 text-xs leading-relaxed text-muted" {...row(6)}>
+      <motion.p className="mt-3 px-1 text-xs leading-relaxed text-muted" {...row(5)}>
         Every hint and reveal is checked by our own math engine before you see it.
       </motion.p>
     </motion.div>
