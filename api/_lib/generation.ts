@@ -361,7 +361,12 @@ export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
         Array.from(new Set([String(b), String(a), String(c), String(b + 1)])),
       );
       interaction = { kind: "tile-expression", tiles, template, solution };
-      visual = { kind: "right-triangle", a, b, labels: true };
+      // Label the sides with the variable letters a/b/c, NOT their numeric
+      // lengths: the blank is leg `b`, so numeric labels (`labels:true` alone)
+      // would print the answer (e.g. "20") on the figure right next to the empty
+      // slot. The prompt + tiles already supply the values; the figure only
+      // reinforces the a² + b² = c² structure. Do NOT revert to numeric labels.
+      visual = { kind: "right-triangle", a, b, labels: true, letterLabels: true };
       break;
     }
   }
