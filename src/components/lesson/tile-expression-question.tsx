@@ -1,4 +1,5 @@
 import { forwardRef, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
   ButtonHTMLAttributes,
   PointerEvent as ReactPointerEvent,
@@ -423,7 +424,11 @@ export function TileExpressionQuestion({
         ))}
       </div>
 
-      {ghostNode}
+      {/* Portal the floating ghost to <body> so its `position: fixed` is
+          relative to the viewport, not a transformed ancestor (e.g. the
+          `practice-stage-in` entrance animation keeps a non-none transform,
+          which would otherwise re-anchor the ghost and strand it off-cursor). */}
+      {ghostNode ? createPortal(ghostNode, document.body) : null}
     </div>
   );
 }
