@@ -1,27 +1,36 @@
 /**
- * Pillar B generation core (PRD §4.2) — ported verbatim from
- * `functions/src/shared/generation.ts` (only the relative import paths to the
- * vendored content model change). The model PROPOSES a scenario via strict
- * structured output; WE compute every answer-bearing field with `mathjs` + the
- * vendored engine, assemble a `ProblemStep`, and run the verification firewall
- * (`gradeStep(step, correctAnswer(step.interaction))`) before it can be returned.
+ * Pillar B generation core (PRD §4.2) — MODEL-AUTHORED design.
  *
- * The model never supplies an answer key (P4). For each kind it returns only:
- * leg lengths, the prompt, and feedback text — the gradeable truth is ours.
+ * Owner-approved reversal of the previous "verification firewall" for the
+ * GENERATION path: the model now authors the COMPLETE, render-ready problem and
+ * OWNS its correctness. For the requested interaction `kind` it returns the full
+ * interaction (numbers, choices/tiles/template, the correct answer/solution),
+ * the wording, the feedback, and (where shown) the right-triangle figure spec.
+ * The server no longer picks Pythagorean triples, derives an answer key, or
+ * re-grades the result. All authoring constraints live in the PROMPT
+ * (`GEN_SYSTEM` / `genInput`).
+ *
+ * What the server STILL does is crash-prevention only (NOT correctness):
+ *  - `parseProposal` validates the model JSON against a per-kind zod schema, so
+ *    the output is well-typed and structurally renderable (a bad shape throws →
+ *    the caller retries, then falls back).
+ *  - `verify` re-affirms the assembled step is a renderable interaction shape.
+ *  - `buildFallback` hand-builds a deterministic, correct, renderable problem so
+ *    the learner never hits a dead-end when the model output can't be used.
+ *
+ * The math being right (a²+b²=c², whole-number answers, the stated answer truly
+ * correct) is the MODEL's responsibility now, requested via the prompt.
  */
-import { evaluate } from "mathjs";
 import { z } from "zod";
 import type {
-  Choice,
   Feedback,
   Interaction,
   ProblemStep,
   TriangleSide,
   VisualSpec,
 } from "./content/types.js";
-import { correctAnswer, gradeStep } from "./content/engine.js";
 
-/** Interaction kinds Pillar B is allowed to generate (verifiable only, PRD §3.4). */
+/** Interaction kinds Pillar B is allowed to generate (renderable subset, PRD §3.4). */
 export const GENERABLE_KINDS = [
   "numeric",
   "count-squares",
@@ -34,21 +43,8 @@ export type GenerableKind = (typeof GENERABLE_KINDS)[number];
 export type Difficulty = "easy" | "medium" | "hard";
 
 // ---------------------------------------------------------------------------
-// Ground-truth math — the answer key is ALWAYS computed here, never by the model.
-// ---------------------------------------------------------------------------
-
-/** c = √(a² + b²), computed via mathjs (PRD §2.2: "model never asserts a computed fact"). */
-export function hypotenuse(a: number, b: number): number {
-  return Number(evaluate(`sqrt(${a}^2 + ${b}^2)`));
-}
-
-/** Format a number as a clean label (integers as-is, else 2 dp). */
-function numLabel(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
-}
-
-// ---------------------------------------------------------------------------
-// Seeded RNG (deterministic server-side choices: target side, fallback picks).
+// Seeded RNG + Pythagorean triples — used ONLY by the deterministic fallback
+// (the model authors the live path; these never touch model output).
 // ---------------------------------------------------------------------------
 
 export function mulberry32(seed: number): () => number {
@@ -64,7 +60,6 @@ export function mulberry32(seed: number): () => number {
 function pick<T>(rng: () => number, arr: readonly T[]): T {
   if (arr.length === 0) throw new Error("pick from empty array");
   const item = arr[Math.floor(rng() * arr.length)];
-  // arr is non-empty and index is in range, so this is defined.
   return item as T;
 }
 
@@ -80,7 +75,7 @@ function shuffle<T>(rng: () => number, arr: T[]): T[] {
   return out;
 }
 
-/** Common Pythagorean triples, used for kinds that need an integer hypotenuse. */
+/** Common Pythagorean triples, used by the fallback so its hypotenuse is whole. */
 const TRIPLES: ReadonlyArray<readonly [number, number, number]> = [
   [3, 4, 5],
   [6, 8, 10],
@@ -91,19 +86,14 @@ const TRIPLES: ReadonlyArray<readonly [number, number, number]> = [
   [20, 21, 29],
 ];
 
+/** Suggested leg range per difficulty (sent to the model; enforced by the fallback). */
 const LEG_RANGE: Record<Difficulty, readonly [number, number]> = {
   easy: [3, 6],
   medium: [4, 12],
   hard: [6, 20],
 };
 
-/**
- * A Pythagorean triple whose legs fit the difficulty's upper leg bound, so the
- * hypotenuse is ALWAYS a whole number (and the square grids tile cleanly). Every
- * kind that involves the hypotenuse (numeric, multiple-choice, count-squares,
- * tile-expression) draws its legs from here rather than from the model, so the
- * answer can never be an ugly decimal like √493 = 22.2. 3-4-5 fits every range.
- */
+/** A triple whose legs fit the difficulty's upper bound (fallback only). */
 function pickTripleForDifficulty(
   difficulty: Difficulty,
   rng: () => number,
@@ -114,108 +104,292 @@ function pickTripleForDifficulty(
 }
 
 // ---------------------------------------------------------------------------
-// Model proposal: strict JSON schema + matching zod validator, per kind.
+// Model proposal: strict structured-output JSON schema, per kind. The model now
+// fills the FULL interaction (+ figure where shown) — not just a/b/prompt.
 // ---------------------------------------------------------------------------
 
-const baseProps = {
-  a: { type: "integer", minimum: 1, maximum: 25 },
-  b: { type: "integer", minimum: 1, maximum: 25 },
-  prompt: { type: "string" },
-  feedbackCorrect: { type: "string" },
-  feedbackDefault: { type: "string" },
-} as const;
+/**
+ * Right-triangle figure the model authors for kinds that show one (numeric,
+ * multiple-choice, tile-expression). The legs draw the picture; `unknownSide`
+ * renders that side's label as "?", and `letterLabels` shows a/b/c instead of
+ * the numeric lengths — both keep the blanked/asked value off the figure.
+ */
+const FIGURE_JSON_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    a: { type: "integer", minimum: 1, maximum: 25 },
+    b: { type: "integer", minimum: 1, maximum: 25 },
+    labels: { type: "boolean" },
+    letterLabels: { type: "boolean" },
+    unknownSide: { type: "string", enum: ["a", "b", "c"] },
+    showHypotenuseValue: { type: "boolean" },
+  },
+  required: ["a", "b", "labels", "letterLabels", "unknownSide", "showHypotenuseValue"],
+};
 
-/** Build the strict structured-output JSON schema for a kind's proposal. */
-export function proposalSchema(kind: GenerableKind): Record<string, unknown> {
-  const properties: Record<string, unknown> = { ...baseProps };
-  const required = ["a", "b", "prompt", "feedbackCorrect", "feedbackDefault"];
-
-  if (kind === "count-squares") {
-    properties["countSide"] = { type: "string", enum: ["a", "b", "c"] };
-    required.push("countSide");
-  }
-  if (kind === "numeric") {
-    properties["unit"] = { type: "string" };
-    required.push("unit");
-  }
-
-  return {
+/** Per-kind `interaction` sub-schema (exact shapes the renderers consume). */
+const INTERACTION_JSON_SCHEMA: Record<GenerableKind, Record<string, unknown>> = {
+  numeric: {
     type: "object",
     additionalProperties: false,
-    properties,
-    required,
+    properties: {
+      answer: { type: "number" },
+      unit: { type: ["string", "null"] },
+      tolerance: { type: ["number", "null"] },
+      placeholder: { type: ["string", "null"] },
+    },
+    required: ["answer", "unit", "tolerance", "placeholder"],
+  },
+  "count-squares": {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      a: { type: "integer", minimum: 1, maximum: 12 },
+      b: { type: "integer", minimum: 1, maximum: 12 },
+      countSide: { type: "string", enum: ["a", "b", "c"] },
+    },
+    required: ["a", "b", "countSide"],
+  },
+  "pick-side": {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      a: { type: "integer", minimum: 1, maximum: 25 },
+      b: { type: "integer", minimum: 1, maximum: 25 },
+      orientation: { type: "string", enum: ["normal", "flipped"] },
+      correctSide: { type: "string", enum: ["a", "b", "c"] },
+    },
+    required: ["a", "b", "orientation", "correctSide"],
+  },
+  "multiple-choice": {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      choices: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: { id: { type: "string" }, label: { type: "string" } },
+          required: ["id", "label"],
+        },
+      },
+      correctChoiceId: { type: "string" },
+    },
+    required: ["choices", "correctChoiceId"],
+  },
+  "tile-expression": {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      tiles: { type: "array", items: { type: "string" } },
+      template: { type: "array", items: { type: ["string", "null"] } },
+      solution: { type: "array", items: { type: "string" } },
+    },
+    required: ["tiles", "template", "solution"],
+  },
+};
+
+/** Kinds that render a separate right-triangle figure above the interaction. */
+const KINDS_WITH_FIGURE: ReadonlySet<GenerableKind> = new Set<GenerableKind>([
+  "numeric",
+  "multiple-choice",
+  "tile-expression",
+]);
+
+/** Build the strict structured-output JSON schema for a kind's full proposal. */
+export function proposalSchema(kind: GenerableKind): Record<string, unknown> {
+  const properties: Record<string, unknown> = {
+    prompt: { type: "string" },
+    feedbackCorrect: { type: "string" },
+    feedbackDefault: { type: "string" },
+    interaction: INTERACTION_JSON_SCHEMA[kind],
   };
+  const required = ["prompt", "feedbackCorrect", "feedbackDefault", "interaction"];
+  if (KINDS_WITH_FIGURE.has(kind)) {
+    properties.figure = FIGURE_JSON_SCHEMA;
+    required.push("figure");
+  }
+  return { type: "object", additionalProperties: false, properties, required };
 }
 
-const baseZod = {
+// --- zod validators: well-typedness + bounds + answerability (crash-prevention)
+// These do NOT check the math (the model owns correctness). They only guarantee
+// the output is structurally renderable and self-consistent enough to answer.
+
+const figureZod = z.object({
   a: z.number().int().min(1).max(25),
   b: z.number().int().min(1).max(25),
+  labels: z.boolean(),
+  letterLabels: z.boolean(),
+  unknownSide: z.enum(["a", "b", "c"]),
+  showHypotenuseValue: z.boolean(),
+});
+
+const baseZod = {
   prompt: z.string().min(1),
   feedbackCorrect: z.string().min(1),
   feedbackDefault: z.string().min(1),
 };
 
-const zodByKind = {
-  numeric: z.object({ ...baseZod, unit: z.string() }),
-  "count-squares": z.object({ ...baseZod, countSide: z.enum(["a", "b", "c"]) }),
-  "pick-side": z.object({ ...baseZod }),
-  "multiple-choice": z.object({ ...baseZod }),
-  "tile-expression": z.object({ ...baseZod }),
-} as const;
+const numericZod = z.object({
+  ...baseZod,
+  interaction: z.object({
+    // Finite number only — NOT forced to an integer: whole-number answers are a
+    // MODEL responsibility (per the prompt), not a server rejection rule.
+    answer: z.number().finite(),
+    unit: z.string().nullable(),
+    tolerance: z.number().nullable(),
+    placeholder: z.string().nullable(),
+  }),
+  figure: figureZod,
+});
 
-export type Proposal = z.infer<(typeof zodByKind)[GenerableKind]>;
+const countSquaresZod = z.object({
+  ...baseZod,
+  interaction: z.object({
+    a: z.number().int().min(1).max(12),
+    b: z.number().int().min(1).max(12),
+    countSide: z.enum(["a", "b", "c"]),
+  }),
+});
+
+const pickSideZod = z.object({
+  ...baseZod,
+  interaction: z.object({
+    a: z.number().int().min(1).max(25),
+    b: z.number().int().min(1).max(25),
+    orientation: z.enum(["normal", "flipped"]),
+    correctSide: z.enum(["a", "b", "c"]),
+  }),
+});
+
+const multipleChoiceZod = z.object({
+  ...baseZod,
+  interaction: z
+    .object({
+      choices: z
+        .array(z.object({ id: z.string().min(1), label: z.string().min(1) }))
+        .min(2)
+        .max(6),
+      correctChoiceId: z.string().min(1),
+    })
+    // Answerability (not math): the declared correct option must exist, and ids
+    // must be unique so selection/grading is unambiguous.
+    .refine((i) => new Set(i.choices.map((c) => c.id)).size === i.choices.length, {
+      message: "choice ids must be unique",
+    })
+    .refine((i) => i.choices.some((c) => c.id === i.correctChoiceId), {
+      message: "correctChoiceId must match one of the choices",
+    }),
+  figure: figureZod,
+});
+
+const tileExpressionZod = z.object({
+  ...baseZod,
+  interaction: z
+    .object({
+      tiles: z.array(z.string().min(1)).min(2).max(10),
+      template: z.array(z.string().nullable()).min(1).max(20),
+      solution: z.array(z.string().min(1)).min(1).max(6),
+    })
+    // Answerability (not math): one tile per blank, every answer drawn from the
+    // bank — otherwise the puzzle can't be completed/graded.
+    .refine(
+      (i) => i.template.filter((t) => t === null).length === i.solution.length,
+      { message: "number of blanks must equal solution length" },
+    )
+    .refine((i) => i.solution.every((tok) => i.tiles.includes(tok)), {
+      message: "every solution tile must be in the bank",
+    }),
+  figure: figureZod,
+});
+
+/** A validated, kind-tagged model proposal (the full problem the model authored). */
+export type Proposal =
+  | ({ kind: "numeric" } & z.infer<typeof numericZod>)
+  | ({ kind: "count-squares" } & z.infer<typeof countSquaresZod>)
+  | ({ kind: "pick-side" } & z.infer<typeof pickSideZod>)
+  | ({ kind: "multiple-choice" } & z.infer<typeof multipleChoiceZod>)
+  | ({ kind: "tile-expression" } & z.infer<typeof tileExpressionZod>);
 
 /** Parse + validate raw model JSON into a typed proposal (throws on mismatch). */
 export function parseProposal(kind: GenerableKind, raw: unknown): Proposal {
-  return zodByKind[kind].parse(raw) as Proposal;
+  switch (kind) {
+    case "numeric":
+      return { kind, ...numericZod.parse(raw) };
+    case "count-squares":
+      return { kind, ...countSquaresZod.parse(raw) };
+    case "pick-side":
+      return { kind, ...pickSideZod.parse(raw) };
+    case "multiple-choice":
+      return { kind, ...multipleChoiceZod.parse(raw) };
+    case "tile-expression":
+      return { kind, ...tileExpressionZod.parse(raw) };
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Instructions for the model (no answer key requested).
+// Instructions for the model — ALL authoring constraints live here now.
 // ---------------------------------------------------------------------------
 
-export const GEN_SYSTEM =
-  "You design practice problems for a Pythagorean-theorem course. You propose ONLY " +
-  "the scenario: the two leg lengths, the question prompt, and feedback text. You must " +
-  "NOT compute, state, or include any answer, solution, correct option, or answer key — " +
-  "the application computes and verifies all answers itself. Keep prompts and feedback " +
-  "concise and learner-friendly.";
+export const GEN_SYSTEM = [
+  "You are an expert author of interactive practice problems for a Pythagorean-theorem course.",
+  "You design a COMPLETE, ready-to-render problem and you OWN its correctness: the app renders exactly what you return and does NOT recompute or re-verify the answer, so any mistake reaches the learner.",
+  "",
+  "Hard rules — follow every one:",
+  "1. Correct math. For right triangles a² + b² = c². Any answer or solution you give MUST be exactly right for the numbers you chose.",
+  "2. Whole-number answers ONLY — never irrational or decimal answers (e.g. never 22.2). For any hypotenuse/leg length, choose legs from a Pythagorean triple — 3-4-5, 6-8-10, 5-12-13, 8-15-17, 9-12-15, 7-24-25, 20-21-29 (or simple multiples) — so the unknown side is a whole number.",
+  "3. Match the requested difficulty (stay within the suggested leg range) and keep numbers realistic and easy to reason about.",
+  "4. Never reveal the answer in the prompt or the default hint, and never print the unknown/asked value on the figure.",
+  "5. Output STRICTLY as the provided JSON schema for the requested kind — no extra prose and no extra fields.",
+  "Keep prompts and feedback concise and learner-friendly.",
+].join("\n");
 
-export function genInput(
-  kind: GenerableKind,
-  difficulty: Difficulty,
-  targetSide: TriangleSide,
-): string {
+export function genInput(kind: GenerableKind, difficulty: Difficulty): string {
   const [lo, hi] = LEG_RANGE[difficulty];
   const lines = [
-    `Interaction kind: ${kind}`,
-    `Difficulty: ${difficulty} (use leg lengths roughly between ${lo} and ${hi}).`,
+    `Author one ${kind} problem.`,
+    `Difficulty: ${difficulty} — use leg lengths roughly between ${lo} and ${hi}.`,
+    "Vary the specific numbers and wording so problems feel fresh.",
+    "",
   ];
   switch (kind) {
     case "numeric":
       lines.push(
-        "Ask the learner to compute the hypotenuse length from the two legs. Provide a `unit` (e.g. \"cm\") or empty string.",
+        "Type-in numeric answer. Fill `interaction` { answer, unit, tolerance, placeholder } and a right-triangle `figure`.",
+        'Find-the-hypotenuse: set figure.a and figure.b to the two legs, figure.labels=true, figure.unknownSide="c", figure.showHypotenuseValue=false, figure.letterLabels=false, and interaction.answer = √(a²+b²) (whole number → use a triple).',
+        'Find-a-leg: set figure.a and figure.b to the two legs, figure.labels=true, figure.unknownSide to the asked leg ("a" or "b"), figure.showHypotenuseValue=true, figure.letterLabels=false, and interaction.answer = that leg\'s length.',
+        'Use unit "" or null if there is none; tolerance 0 (or null) for an exact whole-number answer; placeholder "?".',
+        "The asked side MUST be the figure's unknownSide so its value is never shown.",
       );
       break;
     case "count-squares":
       lines.push(
-        "Ask the learner to count the unit cells in one side's square (the legs are 'a' and 'b', the hypotenuse is 'c'). Set countSide to the side you ask them to count.",
+        "Counting interaction. Fill `interaction` { a, b, countSide }. The app draws a right triangle with a unit-grid square on each side; the learner counts the cells in the square on `countSide` (a → a², b → b², c → a²+b²).",
+        'Keep a and b SMALL so the grid is easy to count. If countSide="c", use a Pythagorean triple (e.g. 3 and 4) so the hypotenuse square is a clean whole-number grid. No figure or answer field is needed.',
       );
       break;
-    case "pick-side": {
-      const name =
-        targetSide === "c" ? "hypotenuse" : targetSide === "a" ? "bottom leg" : "vertical leg";
-      lines.push(`Ask the learner to tap the ${name} of the right triangle.`);
+    case "pick-side":
+      lines.push(
+        'Tap-a-side interaction. Fill `interaction` { a, b, orientation, correctSide }. correctSide: "a"=bottom leg, "b"=vertical leg, "c"=hypotenuse. orientation "normal" is the standard figure; "flipped" mirrors it (use "normal" unless you want the mirror).',
+        "Word the prompt to ask for exactly that side (e.g. \"Tap the hypotenuse.\"). The side you mark IS the answer; no answer field is needed.",
+      );
       break;
-    }
     case "multiple-choice":
       lines.push(
-        "Ask the learner to choose the hypotenuse length. Do NOT provide answer options — the app builds them.",
+        "Single-answer choice (which length is the hypotenuse). Fill `interaction` { choices, correctChoiceId } and a right-triangle `figure`.",
+        'Provide 3–4 choices, each with a short unique id (e.g. "o1") and a numeric label. The correct label = the true whole-number hypotenuse; the others are plausible but wrong. correctChoiceId MUST equal the correct option\'s id.',
+        'Figure: a and b = the legs (from a triple), labels=true, unknownSide="c", letterLabels=false, showHypotenuseValue=false. Do not reveal which option is correct in the prompt.',
       );
       break;
     case "tile-expression":
       lines.push(
-        "Use leg lengths from a Pythagorean triple so the hypotenuse is a whole number. Ask the learner to complete a² + b² = c² by placing the leg values.",
+        "Drag-the-tiles interaction to complete a² + b² = c². Fill `interaction` { template, solution, tiles } and a right-triangle `figure`.",
+        'template is the equation as an array of tokens; use null for each blank to fill and the actual numbers for the shown value slots, e.g. ["3","²","+",null,"²","=","5","²"]. solution lists the correct tile for each blank, in order. tiles is the draggable bank: include every solution tile plus 1–2 plausible distractors.',
+        "The number of null blanks MUST equal solution.length, and every solution tile MUST appear in tiles. Use a Pythagorean triple so the equation is true.",
+        'Figure: a and b = the legs, labels=true, letterLabels=true (so the sides read a/b/c, NOT their numbers — this keeps the blanked value off the figure), showHypotenuseValue=false. Set unknownSide="c" (it is ignored while letterLabels is true).',
       );
       break;
   }
@@ -223,12 +397,8 @@ export function genInput(
 }
 
 // ---------------------------------------------------------------------------
-// Assembly: build the full, answer-bearing ProblemStep from a proposal.
+// Assembly: WRAP the model's full proposal into a ProblemStep. No math here.
 // ---------------------------------------------------------------------------
-
-function feedbackOf(p: Proposal): Feedback {
-  return { correct: p.feedbackCorrect, default: p.feedbackDefault };
-}
 
 const SIDE_NAMES: Record<TriangleSide, string> = {
   a: "bottom leg",
@@ -236,241 +406,184 @@ const SIDE_NAMES: Record<TriangleSide, string> = {
   c: "hypotenuse",
 };
 
-export interface AssembleContext {
-  kind: GenerableKind;
-  difficulty: Difficulty;
-  /** Server-chosen target side for pick-side (the answer key — ours, not the model's). */
-  targetSide: TriangleSide;
-  rng: () => number;
+function feedbackOf(p: { feedbackCorrect: string; feedbackDefault: string }): Feedback {
+  return { correct: p.feedbackCorrect, default: p.feedbackDefault };
+}
+
+/** Map the model's figure proposal into a render-ready right-triangle `VisualSpec`. */
+function buildFigure(f: z.infer<typeof figureZod>): VisualSpec {
+  return {
+    kind: "right-triangle",
+    a: f.a,
+    b: f.b,
+    labels: f.labels,
+    unknownSide: f.unknownSide,
+    ...(f.letterLabels ? { letterLabels: true } : {}),
+    ...(f.showHypotenuseValue ? { showHypotenuseValue: true } : {}),
+  };
 }
 
 /**
- * Turn a validated proposal into a verified-shape `ProblemStep`. All
- * answer-bearing fields are computed here (mathjs / engine), never taken from
- * the model. Throws if the scenario can't form a valid problem (→ caller retries).
+ * Turn a validated proposal into a render-ready `ProblemStep`. The interaction,
+ * answer/solution, wording, and figure are taken verbatim from the model (it
+ * owns correctness); the server only assigns the id, attaches default pick-side
+ * names, drops nullable optionals, and tags provenance.
  */
-export function assemble(p: Proposal, ctx: AssembleContext): ProblemStep {
-  const id = `ai-${ctx.kind}-${Date.now().toString(36)}-${Math.floor(ctx.rng() * 1e6).toString(36)}`;
-  const a = p.a;
-  const b = p.b;
+export function assemble(p: Proposal): ProblemStep {
+  const id = `ai-${p.kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
   let interaction: Interaction;
   let visual: VisualSpec | undefined;
-  // For kinds where the model authors the prompt, we may override it server-side
-  // so the prompt can never desync from the server-owned answer key (W2).
-  let promptOverride: string | undefined;
-  // Kinds with server-owned numbers also author their correct-feedback so it can
-  // never cite a stale leg/answer after we override the legs.
-  let feedbackCorrectOverride: string | undefined;
 
-  switch (ctx.kind) {
+  switch (p.kind) {
     case "numeric": {
-      // Whole-number hypotenuse only: draw legs from a Pythagorean triple (the
-      // model's a/b are ignored here) so the answer is exact, never an ugly
-      // decimal. Author the prompt + correct-feedback from these legs so they can
-      // never desync from the answer (W2).
-      const [ta, tb, tc] = pickTripleForDifficulty(ctx.difficulty, ctx.rng);
-      const [la, lb] = ctx.rng() < 0.5 ? [ta, tb] : [tb, ta];
-      const unit = "unit" in p ? p.unit : "";
-      const u = unit ? ` ${unit}` : "";
+      const i = p.interaction;
       interaction = {
         kind: "numeric",
-        answer: tc,
-        tolerance: 0.01,
-        unit: unit || undefined,
-        placeholder: "?",
+        answer: i.answer,
+        ...(i.tolerance !== null ? { tolerance: i.tolerance } : {}),
+        ...(i.unit !== null && i.unit !== "" ? { unit: i.unit } : {}),
+        ...(i.placeholder !== null && i.placeholder !== "" ? { placeholder: i.placeholder } : {}),
       };
-      visual = { kind: "right-triangle", a: la, b: lb, labels: true, unknownSide: "c" };
-      promptOverride = `A right triangle has legs ${la}${u} and ${lb}${u}. How long is the hypotenuse?`;
-      feedbackCorrectOverride = `Exactly. √(${la}² + ${lb}²) = ${tc}${u}.`;
+      visual = buildFigure(p.figure);
       break;
     }
     case "count-squares": {
-      const countSide = "countSide" in p ? p.countSide : "c";
-      // Counting is a small-number *discovery* exercise. Use the 3-4-5 triple so
-      // ALL THREE squares (a²=9, b²=16, c²=25) tile with whole unit cells AND the
-      // hypotenuse is a whole number (5): that is exactly what makes "count the
-      // squares on the hypotenuse" consistent (a non-triple gives an irrational c
-      // whose square cannot be drawn as a clean grid). Counts stay small (≤ 25),
-      // countable at any difficulty. The model's a/b are ignored.
-      const [la, lb] = ctx.rng() < 0.5 ? [3, 4] : [4, 3];
-      interaction = { kind: "count-squares", a: la, b: lb, countSide };
-      visual = {
-        kind: "right-triangle",
-        a: la,
-        b: lb,
-        gridSquares: true,
-        highlightSquare: countSide,
-      };
-      // Author the prompt + feedback deterministically (server owns the figure) so
-      // neither can desync from the highlighted square (W2, same as pick-side).
-      promptOverride = `Count the unit squares in the square drawn on the ${SIDE_NAMES[countSide]}.`;
-      feedbackCorrectOverride = "Nice counting. You read the area straight off the grid.";
+      const i = p.interaction;
+      interaction = { kind: "count-squares", a: i.a, b: i.b, countSide: i.countSide };
       break;
     }
     case "pick-side": {
+      const i = p.interaction;
       interaction = {
         kind: "pick-side",
-        a,
-        b,
-        orientation: "normal",
-        correctSide: ctx.targetSide, // server-owned answer key
+        a: i.a,
+        b: i.b,
+        orientation: i.orientation,
+        correctSide: i.correctSide,
         sideNames: SIDE_NAMES,
       };
-      // Author the prompt deterministically so it always matches `targetSide`
-      // (a model-written prompt could ask for a different side → desync, W2).
-      promptOverride = `Tap the ${SIDE_NAMES[ctx.targetSide]} of the right triangle.`;
       break;
     }
     case "multiple-choice": {
-      // Whole-number hypotenuse: legs from a triple (model's a/b ignored), so the
-      // correct option and every distractor are clean integers.
-      const [ta, tb, tc] = pickTripleForDifficulty(ctx.difficulty, ctx.rng);
-      const [la, lb] = ctx.rng() < 0.5 ? [ta, tb] : [tb, ta];
-      const c = tc;
-      // Build options server-side: one correct (c) + genuinely-wrong distractors.
-      const candidates = [la + lb, la * la + lb * lb, c + 1, Math.max(1, c - 1)];
-      const distractors: number[] = [];
-      for (const cand of candidates) {
-        if (cand === c) continue; // not actually wrong
-        if (distractors.includes(cand)) continue; // duplicate
-        distractors.push(cand);
-        if (distractors.length === 3) break;
-      }
-      if (distractors.length < 3) throw new Error("could not build distinct distractors");
-      const correct = { id: "opt_correct", label: numLabel(c) };
-      const wrong: Choice[] = distractors.map((d, i) => ({ id: `opt_${i}`, label: numLabel(d) }));
-      const choices = shuffle(ctx.rng, [correct, ...wrong]);
-      interaction = { kind: "multiple-choice", choices, correctChoiceId: correct.id };
-      visual = { kind: "right-triangle", a: la, b: lb, labels: true, unknownSide: "c" };
-      promptOverride = `Which length is the hypotenuse of a right triangle with legs ${la} and ${lb}?`;
-      feedbackCorrectOverride = `Right. It is ${c}.`;
+      const i = p.interaction;
+      interaction = {
+        kind: "multiple-choice",
+        choices: i.choices.map((c) => ({ id: c.id, label: c.label })),
+        correctChoiceId: i.correctChoiceId,
+      };
+      visual = buildFigure(p.figure);
       break;
     }
     case "tile-expression": {
-      const c = hypotenuse(a, b);
-      if (!Number.isInteger(c)) throw new Error("tile-expression needs an integer hypotenuse");
-      // a² + b² is commutative, so a two-blank [a, b] template marked the learner
-      // wrong whenever they placed the legs in the other (equally valid) order
-      // (~50% of the time). Fix leg `a` in the template and blank ONLY leg `b`,
-      // making the placement unambiguous (C2).
-      const template: (string | null)[] = [String(a), "²", "+", null, "²", "=", String(c), "²"];
-      const solution = [String(b)];
-      const tiles = shuffle(
-        ctx.rng,
-        Array.from(new Set([String(b), String(a), String(c), String(b + 1)])),
-      );
-      interaction = { kind: "tile-expression", tiles, template, solution };
-      // Label the sides with the variable letters a/b/c, NOT their numeric
-      // lengths: the blank is leg `b`, so numeric labels (`labels:true` alone)
-      // would print the answer (e.g. "20") on the figure right next to the empty
-      // slot. The prompt + tiles already supply the values; the figure only
-      // reinforces the a² + b² = c² structure. Do NOT revert to numeric labels.
-      visual = { kind: "right-triangle", a, b, labels: true, letterLabels: true };
+      const i = p.interaction;
+      interaction = {
+        kind: "tile-expression",
+        tiles: [...i.tiles],
+        template: [...i.template],
+        solution: [...i.solution],
+      };
+      visual = buildFigure(p.figure);
       break;
     }
   }
 
-  const step: ProblemStep = {
+  return {
     id,
     kind: "problem",
-    prompt: promptOverride ?? p.prompt,
+    prompt: p.prompt,
     interaction,
-    feedback: {
-      ...feedbackOf(p),
-      ...(feedbackCorrectOverride ? { correct: feedbackCorrectOverride } : {}),
-    },
+    feedback: feedbackOf(p),
     source: "ai",
     ...(visual ? { visual } : {}),
   };
-  return step;
 }
 
 // ---------------------------------------------------------------------------
-// Verification firewall: nothing is returned unless it grades correct.
+// Crash-prevention gate (NOT correctness): the assembled step must be a
+// renderable interaction shape so the UI can never white-screen.
 // ---------------------------------------------------------------------------
 
+function isFinitePositive(n: unknown): boolean {
+  return typeof n === "number" && Number.isFinite(n) && n > 0;
+}
+
+/** A present figure must be a known visual kind with finite positive legs. */
+function isRenderableFigure(visual: VisualSpec | undefined): boolean {
+  if (!visual) return true;
+  if (visual.kind === "right-triangle" || visual.kind === "rearrangement-proof") {
+    return isFinitePositive(visual.a) && isFinitePositive(visual.b);
+  }
+  return visual.kind === "coordinate-grid";
+}
+
 /**
- * The gate (P3/P4): the engine must grade the engine's own `correctAnswer` as
- * correct, plus kind-specific structural checks. Returns true iff the step is safe.
- *
- * Counterpart: the CLIENT re-runs an equivalent firewall (`verifyGeneratedProblem`
- * in `src/lib/ai/verify.ts`) before rendering. Keep the two in sync — divergence
- * would make the client silently drop steps this gate passed.
+ * Shape/renderability gate (replaces the old correctness firewall). It checks
+ * ONLY that the step parses into a renderable interaction shape — required
+ * fields present, well-typed, arrays are arrays, enums valid, the answer key
+ * references real options/tiles. It deliberately does NOT check whether the math
+ * is right; correctness is the model's responsibility now.
  */
 export function verify(step: ProblemStep): boolean {
-  const { interaction } = step;
+  if (step.kind !== "problem") return false;
+  if (typeof step.prompt !== "string" || step.prompt.length === 0) return false;
+  if (typeof step.feedback.correct !== "string" || typeof step.feedback.default !== "string") {
+    return false;
+  }
+  if (!isRenderableFigure(step.visual)) return false;
 
-  // Round-trip: feed the canonical answer back through the grader.
-  const eval_ = gradeStep(step, correctAnswer(interaction));
-  if (eval_.status !== "correct") return false;
-
-  switch (interaction.kind) {
-    case "numeric": {
-      if (!Number.isFinite(interaction.answer)) return false;
-      // Whole-number hypotenuse only: reject any non-integer answer outright, so a
-      // non-triple (irrational c like √493 = 22.2) can never reach the learner.
-      if (!Number.isInteger(interaction.answer)) return false;
-      // Independent firewall: recompute c = √(a²+b²) from the visual's
-      // right-triangle legs and require they agree within tolerance. Reject if we
-      // cannot recompute (W).
-      const v = step.visual;
-      if (!v || v.kind !== "right-triangle") return false;
-      const c = hypotenuse(v.a, v.b);
-      if (!Number.isFinite(c)) return false;
-      return Math.abs(interaction.answer - c) <= (interaction.tolerance ?? 0);
-    }
+  const i = step.interaction;
+  switch (i.kind) {
+    case "numeric":
+      return typeof i.answer === "number" && Number.isFinite(i.answer);
+    case "count-squares":
+      return isFinitePositive(i.a) && isFinitePositive(i.b);
+    case "pick-side":
+      return isFinitePositive(i.a) && isFinitePositive(i.b);
     case "multiple-choice": {
-      // Exactly one option must match the (server-computed) correct choice id,
-      // and every distractor must be a genuinely different number.
-      const correct = interaction.choices.find((c) => c.id === interaction.correctChoiceId);
-      if (!correct) return false;
-      const correctVal = Number(correct.label);
-      // Whole-number hypotenuse only, and the correct option must equal the
-      // recomputed c = √(a²+b²) from the figure's legs.
-      if (!Number.isFinite(correctVal) || !Number.isInteger(correctVal)) return false;
-      const v = step.visual;
-      if (!v || v.kind !== "right-triangle") return false;
-      const c = hypotenuse(v.a, v.b);
-      if (!Number.isInteger(c) || Math.abs(correctVal - c) > 1e-6) return false;
-      const matches = interaction.choices.filter(
-        (c2) => Math.abs(Number(c2.label) - correctVal) < 1e-6,
-      );
-      return matches.length === 1 && interaction.choices.length >= 2;
+      if (!Array.isArray(i.choices) || i.choices.length < 2) return false;
+      if (!i.choices.every((c) => typeof c.id === "string" && typeof c.label === "string")) {
+        return false;
+      }
+      return i.choices.some((c) => c.id === i.correctChoiceId);
     }
     case "tile-expression": {
-      const blanks = interaction.template.filter((t) => t === null).length;
-      if (blanks !== interaction.solution.length) return false;
-      // Every solution token must be available in the tile bank.
-      return interaction.solution.every((tok) => interaction.tiles.includes(tok));
+      if (!Array.isArray(i.tiles) || !Array.isArray(i.template) || !Array.isArray(i.solution)) {
+        return false;
+      }
+      const blanks = i.template.filter((t) => t === null).length;
+      if (blanks !== i.solution.length) return false;
+      return i.solution.every((tok) => i.tiles.includes(tok));
     }
-    case "count-squares": {
-      // The hypotenuse square only tiles with whole unit cells when c is an
-      // integer, so require a Pythagorean-triple figure, and keep the counted
-      // area small enough to actually count.
-      const v = step.visual;
-      if (!v || v.kind !== "right-triangle") return false;
-      const c = hypotenuse(v.a, v.b);
-      if (!Number.isInteger(c)) return false;
-      const area =
-        interaction.countSide === "c"
-          ? v.a * v.a + v.b * v.b
-          : interaction.countSide === "a"
-            ? v.a * v.a
-            : v.b * v.b;
-      return area > 0 && area <= 50;
-    }
-    case "pick-side":
-      return true;
     default:
-      return true;
+      // Generation only produces the five kinds above; anything else is not a
+      // valid generated shape.
+      return false;
   }
 }
 
 // ---------------------------------------------------------------------------
-// Deterministic fallback (PRD §4.2 step 4): a hand-built, pre-verified problem
-// when generation/verification can't produce one. Guarantees no dead-end.
+// Deterministic fallback (PRD §4.2 step 4): a hand-built, correct, renderable
+// problem when the model output can't be used. Guarantees no dead-end.
 // ---------------------------------------------------------------------------
+
+/** Three distinct wrong integer options for a hypotenuse multiple-choice. */
+function fallbackDistractors(a: number, b: number, c: number): number[] {
+  const candidates = [a + b, a * a + b * b, c + 1, Math.max(1, c - 1)];
+  const out: number[] = [];
+  for (const cand of candidates) {
+    if (cand === c || out.includes(cand)) continue;
+    out.push(cand);
+    if (out.length === 3) break;
+  }
+  // Top up defensively so we always have three distinct distractors.
+  let extra = c + 2;
+  while (out.length < 3) {
+    if (extra !== c && !out.includes(extra)) out.push(extra);
+    extra += 1;
+  }
+  return out;
+}
 
 export function buildFallback(
   kind: GenerableKind,
@@ -478,58 +591,73 @@ export function buildFallback(
   seed: number,
 ): ProblemStep {
   const rng = mulberry32(seed ^ 0x9e3779b9);
-  const triple = pick(rng, TRIPLES);
-  const [a, b, c] = triple;
-  const targetSide = pick(rng, ["a", "b", "c"] as const);
+  const [a, b, c] = pickTripleForDifficulty(difficulty, rng);
 
   const proposal: Proposal = ((): Proposal => {
     switch (kind) {
       case "numeric":
         return {
-          a,
-          b,
-          unit: "cm",
-          prompt: `A right triangle has legs ${a} cm and ${b} cm. How long is the hypotenuse?`,
-          feedbackCorrect: `Exactly. √(${a}² + ${b}²) = ${c} cm.`,
+          kind,
+          prompt: `A right triangle has legs ${a} and ${b}. How long is the hypotenuse?`,
+          feedbackCorrect: `Exactly. √(${a}² + ${b}²) = ${c}.`,
           feedbackDefault: "Square each leg, add them, then take the square root.",
+          interaction: { answer: c, unit: null, tolerance: 0.01, placeholder: "?" },
+          figure: { a, b, labels: true, letterLabels: false, unknownSide: "c", showHypotenuseValue: false },
         };
       case "count-squares":
         return {
-          a: 3,
-          b: 4,
-          countSide: "c",
+          kind,
           prompt: "Count the unit squares in the square drawn on the hypotenuse.",
           feedbackCorrect: "Nice counting. That's the area of the hypotenuse square.",
           feedbackDefault: "Count every unit cell inside the highlighted square.",
+          interaction: { a: 3, b: 4, countSide: "c" },
         };
-      case "pick-side":
+      case "pick-side": {
+        const targetSide = pick(rng, ["a", "b", "c"] as const);
         return {
-          a,
-          b,
-          prompt: `Tap the ${targetSide === "c" ? "hypotenuse" : targetSide === "a" ? "bottom leg" : "vertical leg"} of the triangle.`,
+          kind,
+          prompt: `Tap the ${SIDE_NAMES[targetSide]} of the right triangle.`,
           feedbackCorrect: "That's the one!",
           feedbackDefault: "Look at where the right angle is, then find the requested side.",
+          interaction: { a, b, orientation: "normal", correctSide: targetSide },
         };
-      case "multiple-choice":
+      }
+      case "multiple-choice": {
+        const correct = { id: "opt_correct", label: String(c) };
+        const wrong = fallbackDistractors(a, b, c).map((d, i) => ({
+          id: `opt_${i}`,
+          label: String(d),
+        }));
+        const choices = shuffle(rng, [correct, ...wrong]);
         return {
-          a,
-          b,
+          kind,
           prompt: `Which length is the hypotenuse of a right triangle with legs ${a} and ${b}?`,
           feedbackCorrect: `Right. It's ${c}.`,
           feedbackDefault: "Use a² + b² = c² and take the square root.",
+          interaction: { choices, correctChoiceId: correct.id },
+          figure: { a, b, labels: true, letterLabels: false, unknownSide: "c", showHypotenuseValue: false },
         };
-      case "tile-expression":
+      }
+      case "tile-expression": {
+        const template: (string | null)[] = [String(a), "²", "+", null, "²", "=", String(c), "²"];
+        const solution = [String(b)];
+        const tiles = shuffle(
+          rng,
+          Array.from(new Set([String(b), String(a), String(c), String(b + 1)])),
+        );
         return {
-          a,
-          b,
+          kind,
           prompt: `Complete the Pythagorean relationship for legs ${a} and ${b}.`,
           feedbackCorrect: "Perfect. That's the theorem.",
           feedbackDefault: "Place the two leg lengths into the squared slots.",
+          interaction: { tiles, template, solution },
+          figure: { a, b, labels: true, letterLabels: true, unknownSide: "c", showHypotenuseValue: false },
         };
+      }
     }
   })();
 
-  const step = assemble(proposal, { kind, difficulty, targetSide, rng });
+  const step = assemble(proposal);
   if (!verify(step)) {
     // Should never happen for triples; surface loudly if it does.
     throw new Error(`fallback failed verification for kind=${kind}`);

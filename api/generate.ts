@@ -1,17 +1,19 @@
 /**
- * POST /api/generate — Pillar B (PRD §4.2): verified, schema-valid practice.
+ * POST /api/generate — Pillar B (PRD §4.2): MODEL-AUTHORED practice.
  *
- * Ported from `functions/src/handlers/generate.ts` (Firebase callable → Vercel
- * Node serverless). The generation + verification firewall is preserved exactly:
- * the model proposes a scenario via strict structured output → we compute the
- * answer key (`mathjs` + engine) and assemble a `ProblemStep` → it must pass the
- * verification firewall before we return it. Discard & regenerate on failure,
- * with a deterministic hand-built fallback so the learner never hits a dead-end.
+ * Owner-approved reversal of the previous "verification firewall" for the
+ * generation path: the model now authors the COMPLETE, render-ready problem and
+ * OWNS its correctness (all constraints live in the prompt). The server no
+ * longer picks triples or derives an answer key. It only validates that the
+ * model output PARSES into a renderable interaction shape (crash-prevention) and
+ * wraps it into a `ProblemStep`; on unparseable/unrenderable output it retries,
+ * then falls back to a deterministic hand-built problem so the learner never
+ * hits a dead-end.
  *
  * Contract — single mode (matches src/lib/ai/client.ts): request
  * `{ interactionKind }` ⇢ 200 JSON `{ step: ProblemStep }`. Batch mode: request
  * `{ kinds: GenerableKind[] }` (1..5) ⇢ 200 JSON `{ steps: ProblemStep[] }`, one
- * verified step per kind in the same order (each item runs the firewall above).
+ * step per kind in the same order (the batch spans varied kinds for variety).
  *
  * OpenAI endpoint (verified against openai@6.45.0):
  *   POST /v1/responses with `text.format = { type:"json_schema", strict:true }`
@@ -21,7 +23,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { z } from "zod";
 import { getOpenAI, MODELS } from "./_lib/openai.js";
 import { guardPost, readJsonBody } from "./_lib/http.js";
-import type { ProblemStep, TriangleSide } from "./_lib/content/types.js";
+import type { ProblemStep } from "./_lib/content/types.js";
 import {
   GENERABLE_KINDS,
   type Difficulty,
@@ -30,7 +32,6 @@ import {
   buildFallback,
   genInput,
   GEN_SYSTEM,
-  mulberry32,
   parseProposal,
   proposalSchema,
   verify,
@@ -54,11 +55,11 @@ export interface GenerateProblemRequest {
 
 /** Single-problem response (back-compat with the current client). */
 export interface GenerateProblemResponse {
-  /** The verified, render-ready problem, tagged `source:"ai"`. */
+  /** The render-ready, model-authored problem, tagged `source:"ai"`. */
   step: ProblemStep;
 }
 
-/** Batch request: generate one verified step per kind (1..MAX_BATCH), in order. */
+/** Batch request: generate one step per kind (1..MAX_BATCH), in order. */
 export interface GenerateBatchRequest {
   /** Interaction kinds to generate; 1..MAX_BATCH entries. */
   kinds: GenerableKind[];
@@ -68,9 +69,9 @@ export interface GenerateBatchRequest {
   seed?: number;
 }
 
-/** Batch response: one verified step PER requested kind, in the SAME order. */
+/** Batch response: one step PER requested kind, in the SAME order. */
 export interface GenerateBatchResponse {
-  /** Verified, render-ready problems, one per requested kind, tagged `source:"ai"`. */
+  /** Render-ready, model-authored problems, one per requested kind, tagged `source:"ai"`. */
   steps: ProblemStep[];
 }
 
@@ -99,23 +100,24 @@ const BAD_REQUEST =
 /**
  * Reasoning effort for problem generation. gpt-5.5 is a reasoning model and
  * "xhigh" is its top tier (none/minimal/low/medium/high/xhigh), so it thinks
- * hardest about a well-formed, well-phrased problem. The deterministic firewall
- * still verifies correctness regardless; generation is batched and cached, so the
- * extra latency hides behind the prefetch.
+ * hardest about authoring a correct, well-formed, well-phrased problem — which
+ * matters more now that the model OWNS correctness. Generation is batched and
+ * cached, so the extra latency hides behind the prefetch.
  */
 const GEN_REASONING_EFFORT = "xhigh" as const;
 
 /**
  * Output-token ceiling. Reasoning tokens count against this alongside the JSON
- * output, so at "xhigh" a tight cap (the old 800) gets spent on reasoning and
- * truncates the JSON, forcing the fallback every time. The JSON payload itself is
- * tiny, so this is mostly reasoning headroom.
+ * output, so at "xhigh" a tight cap gets spent on reasoning and truncates the
+ * JSON, forcing the fallback. The model now emits the FULL problem (interaction
+ * + choices/tiles/template + figure), a larger payload than the old a/b proposal,
+ * so this is raised to leave ample room for reasoning AND the bigger JSON.
  */
-const GEN_MAX_OUTPUT_TOKENS = 6000;
+const GEN_MAX_OUTPUT_TOKENS = 8000;
 
 /**
- * Core generation logic (thin HTTP wrapper below). Returns a verified,
- * render-ready `ProblemStep` — never an unverified one (P4).
+ * Core generation logic (thin HTTP wrapper below). Returns a render-ready
+ * `ProblemStep` — model-authored when usable, else the deterministic fallback.
  */
 async function generateProblem(
   data: GenerateProblemRequest,
@@ -123,9 +125,6 @@ async function generateProblem(
   const kind = data.interactionKind;
   const difficulty: Difficulty = data.difficulty ?? "medium";
   const seed = data.seed ?? Date.now();
-  const rng = mulberry32(seed);
-  // Server owns the target side for pick-side (the answer key, never the model's).
-  const targetSide: TriangleSide = (["a", "b", "c"] as const)[Math.floor(rng() * 3)] ?? "c";
 
   const client = getOpenAI();
   const schema = proposalSchema(kind);
@@ -135,7 +134,7 @@ async function generateProblem(
       const response = await client.responses.create({
         model: MODELS.text,
         instructions: GEN_SYSTEM,
-        input: genInput(kind, difficulty, targetSide),
+        input: genInput(kind, difficulty),
         max_output_tokens: GEN_MAX_OUTPUT_TOKENS,
         reasoning: { effort: GEN_REASONING_EFFORT },
         text: {
@@ -148,32 +147,33 @@ async function generateProblem(
         },
       });
 
+      // The model authors the FULL problem; we only validate it parses into a
+      // renderable shape (crash-prevention) and wrap it — no answer re-derivation.
       const raw: unknown = JSON.parse(response.output_text ?? "{}");
       const proposal = parseProposal(kind, raw);
-      const step = assemble(proposal, { kind, difficulty, targetSide, rng });
+      const step = assemble(proposal);
 
       if (verify(step)) {
         return { step };
       }
     } catch (err) {
-      // Parse / validation / assembly error: count it and try again.
+      // Parse / shape / assembly error: count it and try again.
       console.warn(`generateProblem attempt ${attempt} failed (kind=${kind})`, err);
     }
   }
 
-  // All model attempts failed verification → deterministic, pre-verified fallback.
+  // Model output unusable across all attempts → deterministic, renderable fallback.
   const step = buildFallback(kind, difficulty, seed);
   return { step };
 }
 
 /**
- * Batch core: generate one verified step PER requested kind, IN PARALLEL.
- * Each kind gets a distinct seed (`baseSeed + i`) so the items differ yet keep
- * server-side choices deterministic when a `seed` is supplied (model-authored text
- * is not seeded). The per-kind core already falls back to
- * a pre-verified template on model failure, so a single slow/failed kind can never
- * fail the whole batch — we always resolve exactly `kinds.length` verified steps,
- * in the same order as `kinds`.
+ * Batch core: generate one step PER requested kind, IN PARALLEL. Each kind gets
+ * a distinct seed (`baseSeed + i`), used only by the deterministic fallback
+ * (model-authored content is not seeded). The per-kind core always resolves a
+ * renderable step — model-authored when usable, else the hand-built fallback —
+ * so a single slow/failed kind can never fail the whole batch; we always resolve
+ * exactly `kinds.length` steps, in the same order as `kinds`.
  */
 async function generateBatch(
   data: GenerateBatchRequest,

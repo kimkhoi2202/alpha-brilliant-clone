@@ -35,11 +35,12 @@ export interface PracticeCache {
 
 /**
  * Cache content version. Bump whenever the generation logic changes in a way
- * that should discard already-cached problems (e.g. the tile-expression figure
- * fix or the xhigh-reasoning bump), so stale problems are dropped and
- * regenerated on the next read.
+ * that should discard already-cached problems, so stale problems are dropped and
+ * regenerated on the next read. v2: switched to the MODEL-AUTHORED generation
+ * design (the model now authors the full problem and owns correctness), so
+ * problems cached under the old server-authored/firewall design are discarded.
  */
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 /** The single cache doc for a user. uid is passed in (no React/auth here). */
 function cacheRef(uid: string) {
