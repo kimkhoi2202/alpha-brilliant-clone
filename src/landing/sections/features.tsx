@@ -130,6 +130,7 @@ function CountDemo() {
         countSide="a"
         value={value}
         state={state}
+        inputSize="sm"
         onChange={setValue}
       />
     </div>

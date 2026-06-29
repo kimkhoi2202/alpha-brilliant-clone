@@ -13,6 +13,14 @@ import { RightTriangleFigure } from "../visuals";
 
 export type CountSquaresState = "default" | "correct" | "incorrect";
 
+/** Size presets for the embedded count input. `md` matches the full-size lesson
+ *  figure; `sm` suits compact embedded figures. Text stays ≥16px so mobile
+ *  Safari never zooms on focus. */
+const INPUT_SIZE: Record<"md" | "sm", string> = {
+  md: "h-12 w-16 rounded-xl text-2xl shadow-lg",
+  sm: "h-8 w-11 rounded-lg text-base shadow-md",
+};
+
 export interface CountSquaresFigureProps {
   /** Leg lengths used to draw the figure. */
   a: number;
@@ -25,6 +33,13 @@ export interface CountSquaresFigureProps {
   /** Graded styling for the input. */
   state?: CountSquaresState;
   disabled?: boolean;
+  /**
+   * Visual size of the embedded count input. `md` (default) is sized for the
+   * full-size lesson figure; `sm` fits compact, embedded figures (e.g. the
+   * marketing playground) where the squares are small and the default box reads
+   * as oversized.
+   */
+  inputSize?: "md" | "sm";
   /** Submit on Enter (mirrors the footer Check). */
   onEnter?: () => void;
   /**
@@ -81,6 +96,7 @@ export function CountSquaresFigure({
   onChange,
   state = "default",
   disabled = false,
+  inputSize = "md",
   onEnter,
   canvasRef,
   className,
@@ -311,7 +327,8 @@ export function CountSquaresFigure({
               }
             }}
             className={cn(
-              "h-12 w-16 rounded-xl border-2 bg-background/85 text-center text-2xl font-bold text-foreground shadow-lg outline-none transition-colors placeholder:text-muted",
+              "border-2 bg-background/85 text-center font-bold text-foreground outline-none transition-colors placeholder:text-muted",
+              INPUT_SIZE[inputSize],
               state === "correct"
                 ? "border-success"
                 : state === "incorrect"
