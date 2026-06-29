@@ -138,11 +138,12 @@ function CountDemo() {
 }
 
 /**
- * Plot — the real `PlotPointsGrid`: tap lattice points to drop dots, each
- * drawing a guide line from the origin. Keeps the latest three points.
+ * Plot — the real `PlotPointsGrid`, configured like a "plot the point" lesson
+ * step: tap a lattice point to drop a single dot, with the origin guide line
+ * drawing in to it; each tap replaces the dot (so there's only ever one), and
+ * tapping the dot clears it to redo.
  */
 function PlotDemo() {
-  const target = 3;
   const [placed, setPlaced] = useState<GridPoint[]>([]);
 
   return (
@@ -150,14 +151,8 @@ function PlotDemo() {
       <PlotPointsGrid
         size={5}
         placed={placed}
-        targetCount={target}
-        onPlace={(p) =>
-          setPlaced((prev) =>
-            prev.some((q) => q.x === p.x && q.y === p.y)
-              ? prev
-              : [...prev, p].slice(-target),
-          )
-        }
+        targetCount={1}
+        onPlace={(p) => setPlaced([p])}
         onClear={() => setPlaced([])}
       />
     </div>
