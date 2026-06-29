@@ -144,7 +144,7 @@ export function Pricing() {
         <motion.article
           aria-labelledby="plan-premium"
           variants={enabled ? staggerItem : undefined}
-          className="relative flex h-full flex-col rounded-2xl border-2 border-accent bg-[var(--surface-tertiary)] p-2 md:z-10 md:-translate-y-2"
+          className="relative flex h-full flex-col rounded-2xl border-2 border-accent bg-[var(--surface-tertiary)] p-2 md:z-10 md:scale-[1.05]"
         >
           <div className="relative flex flex-1 flex-col">
             <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] sm:px-7">
