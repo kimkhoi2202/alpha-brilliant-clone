@@ -29,8 +29,10 @@ import {
 import { lessonOrder } from "../content";
 import { friendlyAuthError } from "../lib/authErrors";
 import { useAuth } from "../lib/AuthContext";
+import { cn } from "../lib/cn";
 import { db } from "../lib/firebase";
 import { useLearner } from "../lib/learner";
+import { DEFAULT_DAILY_GOAL_XP } from "../lib/learning/activity";
 import { useStreak } from "../hooks/useStreak";
 
 type Notify = (intent: ToastIntent, message: string) => void;
@@ -72,11 +74,58 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+/** Selectable daily XP targets (the goal picker, moved here from Home). */
+const DAILY_GOAL_OPTIONS = [20, 30, 50] as const;
+
+/**
+ * Compact segmented picker for the daily XP goal. A plain bordered track with an
+ * accent fill on the active option and no focus ring/glow — matching the app's
+ * input convention.
+ */
+function DailyGoalPicker({
+  value,
+  onSelect,
+  disabled,
+}: {
+  value: number;
+  onSelect: (xp: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Daily goal in XP"
+      className="inline-flex rounded-full border border-border bg-surface p-0.5"
+    >
+      {DAILY_GOAL_OPTIONS.map((opt) => {
+        const active = opt === value;
+        return (
+          <button
+            key={opt}
+            type="button"
+            aria-pressed={active}
+            disabled={disabled}
+            onClick={() => onSelect(opt)}
+            className={cn(
+              "rounded-full px-3 py-1 text-sm font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+              active
+                ? "bg-accent text-accent-foreground"
+                : "text-muted hover:text-foreground",
+            )}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ----------------------------------------------------------------- Profile */
 
 function ProfilePanel({ notify }: { notify: Notify }) {
   const { user, updateDisplayName } = useAuth();
-  const { profile, lessonStatus } = useLearner();
+  const { profile, lessonStatus, setDailyGoal } = useLearner();
   const { currentStreak, longestStreak } = useStreak();
 
   const sourceName = profile?.displayName || user?.displayName || "";
@@ -85,6 +134,17 @@ function ProfilePanel({ notify }: { notify: Notify }) {
   const completed = lessonOrder.filter(
     (id) => lessonStatus(id) === "completed",
   ).length;
+  const goal = profile?.dailyGoalXp ?? DEFAULT_DAILY_GOAL_XP;
+
+  async function handleSetGoal(nextGoal: number) {
+    if (nextGoal === goal) return; // already the current target
+    try {
+      await setDailyGoal(nextGoal);
+      notify("success", "Daily goal updated");
+    } catch {
+      notify("danger", "Couldn't update your daily goal. Try again.");
+    }
+  }
 
   // `draft === null` means "untouched": show the live profile name. Once the
   // user types we hold their edit. This avoids deriving state via an effect.
@@ -150,6 +210,14 @@ function ProfilePanel({ notify }: { notify: Notify }) {
           <Stat label="Total XP" value={xp} />
           <Stat label="Lessons" value={`${completed}/${lessonOrder.length}`} />
         </div>
+
+        <SettingRow label="Daily goal" description="Your target XP per day.">
+          <DailyGoalPicker
+            value={goal}
+            onSelect={(next) => void handleSetGoal(next)}
+            disabled={!profile}
+          />
+        </SettingRow>
       </SettingsSection>
     </>
   );

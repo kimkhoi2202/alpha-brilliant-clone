@@ -84,7 +84,6 @@ export function HomeScreen() {
     weeklyXp,
     weekActivity,
     activityFor,
-    setDailyGoal,
   } = useLearner();
 
   // A live clock (refreshed slowly) drives review due-counts without calling an
@@ -155,7 +154,6 @@ export function HomeScreen() {
             onPrimary={openRecommended}
             goalCurrent={todayXp}
             goal={goal}
-            onSetGoal={(xp) => void setDailyGoal(xp)}
           />
 
           <StatStrip
