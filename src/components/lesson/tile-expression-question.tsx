@@ -338,6 +338,19 @@ export function TileExpressionQuestion({
       <div className="flex flex-wrap items-center justify-center gap-4 text-3xl font-bold text-foreground sm:gap-6 sm:text-4xl">
         {parts.map((part, i) => {
           if (part !== null) {
+            // A "²" exponent should hug the token before it: pull it tight
+            // (cancelling the row gap) and shrink it so it reads as a real
+            // superscript instead of a floating, full-size digit.
+            if (part === "²") {
+              return (
+                <span
+                  key={i}
+                  className="-ml-3 select-none self-start text-[0.6em] leading-none sm:-ml-5"
+                >
+                  ²
+                </span>
+              );
+            }
             return (
               <span key={i} className="select-none leading-none">
                 {part}
