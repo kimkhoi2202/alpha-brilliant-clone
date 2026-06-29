@@ -33,6 +33,14 @@ export interface PracticeCache {
   queue: ProblemStep[];
 }
 
+/**
+ * Cache content version. Bump whenever the generation logic changes in a way
+ * that should discard already-cached problems (e.g. the tile-expression figure
+ * fix or the xhigh-reasoning bump), so stale problems are dropped and
+ * regenerated on the next read.
+ */
+const CACHE_VERSION = 1;
+
 /** The single cache doc for a user. uid is passed in (no React/auth here). */
 function cacheRef(uid: string) {
   return doc(db, "users", uid, "practiceCache", "current");
@@ -47,7 +55,10 @@ function cacheRef(uid: string) {
  */
 function coerceCache(data: Record<string, unknown> | undefined): PracticeCache | null {
   if (!data) return null;
-  const { difficulty, queue } = data;
+  const { difficulty, queue, version } = data;
+  // A doc without the current CACHE_VERSION predates a generation-logic change,
+  // so treat it as "no cache" and let the consumer regenerate.
+  if (version !== CACHE_VERSION) return null;
   if (difficulty !== "easy" && difficulty !== "medium" && difficulty !== "hard") {
     return null;
   }
@@ -81,6 +92,7 @@ export async function writePracticeCache(
   cache: PracticeCache,
 ): Promise<void> {
   await setDoc(cacheRef(uid), {
+    version: CACHE_VERSION,
     difficulty: cache.difficulty,
     queue: JSON.parse(JSON.stringify(cache.queue)) as ProblemStep[],
     updatedAt: serverTimestamp(),
