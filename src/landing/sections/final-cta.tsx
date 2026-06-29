@@ -5,7 +5,6 @@ import { Button } from "../../components/ui";
 import { Meteors } from "../../components/ui/meteors";
 import { duration, easing, useMotionEnabled, viewportOnce } from "../motion";
 import { LandingSection, SectionHeading } from "../ui/section";
-import { scrollToId } from "../ui/scroll-to-id";
 
 /**
  * The band's confident entrance — the page's climax. A scale-in (0.97→1) + fade
@@ -86,25 +85,14 @@ export function FinalCTA() {
             />
           </motion.div>
 
-          <motion.div
-            variants={contentVariants}
-            className="mt-9 flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:justify-center"
-          >
+          <motion.div variants={contentVariants} className="mt-9 flex justify-center">
             <Button
               variant="accent"
               size="lg"
               className="w-full sm:w-auto"
               onPress={() => void navigate({ to: "/auth" })}
             >
-              Start learning, free
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full sm:w-auto"
-              onPress={() => scrollToId("koji")}
-            >
-              Meet Koji
+              Start learning, for free
             </Button>
           </motion.div>
 
