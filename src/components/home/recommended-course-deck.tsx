@@ -55,15 +55,19 @@ export function RecommendedCourseDeck({
             {level}
           </p>
         ) : null}
-        <div
-          className="my-5 grid h-28 place-items-center rounded-xl bg-default text-5xl"
-          aria-hidden
-        >
-          {icon ?? "📘"}
-        </div>
+        {/* Decorative course art only on the marketing/deck variant; the in-app
+            flat card drops it (the placeholder book read as out of place). */}
+        {flat ? null : (
+          <div
+            className="my-5 grid h-28 place-items-center rounded-xl bg-default text-5xl"
+            aria-hidden
+          >
+            {icon ?? "📘"}
+          </div>
+        )}
         {nextLesson ? (
           flat ? (
-            <div className="mb-4">
+            <div className="mt-5 mb-4">
               <p className="text-xs font-bold uppercase tracking-wider text-muted">
                 Up next
               </p>
