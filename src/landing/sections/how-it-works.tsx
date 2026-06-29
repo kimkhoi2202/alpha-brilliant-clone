@@ -236,17 +236,14 @@ export function HowItWorks() {
       body: "Each answer is checked on your device in under a tenth of a second. A wrong one gets a specific hint, never a bare red X.",
       visual: (
         <VisualCard intent="warning" tag="Find the hypotenuse">
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted">Your answer</span>
-            <AnswerChoice
-              state="incorrect"
-              align="center"
-              disabled
-              className="w-fit tabular-nums"
-            >
-              c = 7<span className="sr-only"> — marked incorrect</span>
-            </AnswerChoice>
-          </div>
+          <AnswerChoice
+            state="incorrect"
+            align="center"
+            disabled
+            className="w-fit tabular-nums"
+          >
+            c = 7<span className="sr-only"> — marked incorrect</span>
+          </AnswerChoice>
           <FeedbackToast status="retryable" layout="roomy" className="mt-4">
             You added the legs: 3 + 4 = 7. Square each side first, then add: 3² + 4².
           </FeedbackToast>

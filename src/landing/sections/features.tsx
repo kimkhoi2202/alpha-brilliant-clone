@@ -332,13 +332,9 @@ export function Features() {
               state="incorrect"
               align="center"
               disabled
-              className="w-fit"
+              className="w-fit tabular-nums"
             >
-              <span className="text-sm text-muted">You typed</span>{" "}
-              <span className="text-base font-semibold tabular-nums text-foreground">
-                7
-              </span>
-              <span className="sr-only"> — marked incorrect</span>
+              c = 7<span className="sr-only"> — marked incorrect</span>
             </AnswerChoice>
             <FeedbackToast status="retryable">
               You added the legs (3 + 4). Square each one first: 3&#178; + 4&#178;,
