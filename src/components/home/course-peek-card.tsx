@@ -32,7 +32,7 @@ export function CoursePeekCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border-2 border-border bg-background p-5",
+        "flex flex-col rounded-2xl border-2 border-border bg-background p-5",
         className,
       )}
     >
@@ -67,7 +67,7 @@ export function CoursePeekCard({
         skills mastered
       </p>
 
-      <Button variant="secondary" fullWidth className="mt-5" onPress={onOpen}>
+      <Button variant="secondary" fullWidth className="mt-auto" onPress={onOpen}>
         View course map
       </Button>
     </div>

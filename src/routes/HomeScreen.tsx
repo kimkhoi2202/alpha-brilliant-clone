@@ -179,10 +179,19 @@ export function HomeScreen() {
               days={streakDays}
             />
             <MemoryStrengthCard onPractice={reviewSkill} />
-            <ActivityHeatmap days={activityFor(lastNDays(42))} />
             <LeagueSection />
             <AchievementsShelf />
+          </div>
+
+          {/* Activity and the course glance share one row at equal height
+              (pulled out of the masonry so the two line up). */}
+          <div className="grid gap-6 sm:grid-cols-2 sm:items-stretch">
+            <ActivityHeatmap
+              className="h-full"
+              days={activityFor(lastNDays(42))}
+            />
             <CoursePeekCard
+              className="h-full"
               title={course.title}
               completedLessons={completedLessons}
               totalLessons={lessonOrder.length}
