@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { AnimatePresence, motion, type Variants } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Switch } from "@heroui/react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -55,20 +55,6 @@ const TRUST: string[] = ["No credit card", "Cancel anytime", "Works with AI off"
 const PREMIUM_PRICE = { monthly: "$29.99", yearly: "$19.99" } as const;
 
 /**
- * One-time soft `--accent` bloom behind the Premium card. Blooms once with the
- * card reveal (driven by the grid's stagger container) so Premium reads as the
- * recommended plan without a heavy shadow. Reduced motion renders it at rest.
- */
-const premiumGlow: Variants = {
-  hidden: { opacity: 0, scale: 0.7 },
-  shown: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: duration.reveal, ease: easing.out, delay: 0.15 },
-  },
-};
-
-/**
  * Pricing, in the app's real dark skin. Composes the product's actual premium
  * components verbatim (`PaywallComparison`, `TrialTimeline`) inside two
  * deliberately asymmetric plan cards: Free reads as a flat hairline surface,
@@ -105,14 +91,14 @@ export function Pricing() {
         viewport={viewportOnce}
         variants={enabled ? staggerContainer : undefined}
       >
-        {/* Free: a framed card — a lighter surface-secondary frame wraps a
-            darker surface header panel (name + blurb), then the padded body. */}
+        {/* Free: a framed card — a lighter surface-tertiary frame wraps a darker
+            surface header panel (name + blurb), then the padded body. */}
         <motion.article
           aria-labelledby="plan-free"
           variants={enabled ? staggerItem : undefined}
-          className="flex h-full flex-col rounded-2xl bg-[var(--surface-secondary)] p-2"
+          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface-tertiary)] p-2"
         >
-          <div className="rounded-xl border border-border bg-background px-6 py-9 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.75)] sm:px-7">
+          <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] sm:px-7">
             <h3 id="plan-free" className="text-xl font-bold text-foreground">
               Free
             </h3>
@@ -151,24 +137,17 @@ export function Pricing() {
           </div>
         </motion.article>
 
-        {/* Premium: the recommended plan, emphasized the on-brand way (no white
-            card) — a raised surface step + a 2px accent border + a one-time
-            accent glow + a slight lift on wider screens, so it stands out while
-            staying in the dark system. */}
+        {/* Premium: the SAME framed card as Free (identical structure/shades),
+            emphasized the on-brand way — a 2px accent border + a gold "Most
+            popular" steer + a slight lift on wider screens. No glow, so it stays
+            consistent with Free and fully in the dark system. */}
         <motion.article
           aria-labelledby="plan-premium"
           variants={enabled ? staggerItem : undefined}
-          className="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent bg-[var(--surface-secondary)] p-7 sm:p-8 md:z-10 md:-translate-y-2"
+          className="relative flex h-full flex-col rounded-2xl border-2 border-accent bg-[var(--surface-tertiary)] p-2 md:z-10 md:-translate-y-2"
         >
-          {/* One-time accent bloom marking the recommended plan. Clipped by the
-              card's overflow-hidden, so it stays a bounded glow (no heavy shadow). */}
-          <motion.div
-            aria-hidden
-            variants={enabled ? premiumGlow : undefined}
-            className="pointer-events-none absolute inset-x-0 top-0 mx-auto -mt-24 size-64 rounded-full bg-[color-mix(in_oklab,var(--accent)_18%,transparent)] blur-3xl"
-          />
           <div className="relative flex flex-1 flex-col">
-            <div className="rounded-xl border border-border bg-background px-6 py-9 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.75)] sm:px-7">
+            <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] sm:px-7">
               <div className="flex items-center justify-between gap-3">
                 <h3 id="plan-premium" className="text-xl font-bold text-foreground">
                   Premium
