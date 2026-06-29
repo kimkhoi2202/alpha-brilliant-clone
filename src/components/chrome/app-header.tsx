@@ -86,7 +86,7 @@ export function AppHeader() {
 
   return (
     <TopNav
-      brand={<Brand onPress={() => navigate({ to: "/" })} />}
+      brand={<Brand onPress={() => navigate({ to: "/home" })} />}
       tabs={[
         {
           id: "home",
@@ -101,8 +101,8 @@ export function AppHeader() {
               monochrome
             />
           ),
-          active: pathname === "/",
-          onPress: () => void navigate({ to: "/" }),
+          active: pathname === "/home",
+          onPress: () => void navigate({ to: "/home" }),
         },
         {
           id: "courses",
