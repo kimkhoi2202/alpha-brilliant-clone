@@ -283,7 +283,7 @@ export function Pricing() {
           (the timeline owns no node-stagger API). */}
       <Reveal className="mx-auto mt-16 max-w-3xl">
         <h3 className="text-center text-xl font-bold tracking-tight text-foreground">
-          How the free trial works
+          How your free trial works
         </h3>
         <p className="mt-2 text-center text-sm text-muted">
           Seven days of Premium, free. Cancel anytime before it ends.
