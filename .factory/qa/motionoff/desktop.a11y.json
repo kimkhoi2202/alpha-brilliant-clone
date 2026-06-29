@@ -1,0 +1,19 @@
+{
+  "skipped": false,
+  "violations": [
+    {
+      "id": "aria-prohibited-attr",
+      "impact": "serious",
+      "help": "Elements must only use permitted ARIA attributes",
+      "count": 1,
+      "sample": "span[aria-label=\"$29.99 per month\"]"
+    },
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "count": 2,
+      "sample": ".mt-4.tabular-nums[aria-live=\"polite\"] > .text-\\[var\\(--accent\\)\\].font-semibold"
+    }
+  ]
+}

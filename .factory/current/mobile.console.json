@@ -1,0 +1,6 @@
+[
+  {
+    "type": "warning",
+    "text": "A PressResponder was rendered without a pressable child. Either call the usePress hook, or wrap your DOM node with <Pressable> component."
+  }
+]
