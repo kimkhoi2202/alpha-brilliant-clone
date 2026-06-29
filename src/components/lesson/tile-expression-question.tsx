@@ -22,6 +22,8 @@ export interface TileExpressionQuestionProps {
   onBlankPress?: (blankIndex: number) => void;
   onBankPress?: (id: string) => void;
   onDropToBlank?: (id: string, blankIndex: number) => void;
+  /** When the answer is graded correct, filled blanks read green, not blue. */
+  correct?: boolean;
   className?: string;
 }
 
@@ -104,6 +106,7 @@ export function TileExpressionQuestion({
   onBlankPress,
   onBankPress,
   onDropToBlank,
+  correct = false,
   className,
 }: TileExpressionQuestionProps) {
   const statusId = useId();
@@ -389,7 +392,9 @@ export function TileExpressionQuestion({
               className={cn(
                 "h-[54px] w-[68px] rounded-[16px]",
                 value
-                  ? "border-accent bg-accent/10 text-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(69,109,255,0.08)]"
+                  ? correct
+                    ? "border-success bg-success/10 text-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                    : "border-accent bg-accent/10 text-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(69,109,255,0.08)]"
                   : "border-dashed border-white/30 bg-transparent text-transparent",
                 !value && !isDropTarget && "shadow-none",
                 isDropTarget &&
