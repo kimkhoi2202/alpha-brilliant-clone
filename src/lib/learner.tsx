@@ -163,6 +163,17 @@ export interface LearnerContextValue {
    * if it survived a spaced review), and the user's XP + streak set to match.
    */
   devCompleteAllLessons: () => Promise<void>;
+  /**
+   * DEV-only: simulate completing a spaced-review session without the review UI —
+   * apply `correct` first-try-correct passes then `wrong` lapses across the
+   * currently-due skills (round-robin), each through the exact same `recordReview`
+   * path a real review uses, so FSRS memory + mastery update identically. No-op
+   * when nothing is due.
+   */
+  devSimulateReview: (counts: {
+    correct: number;
+    wrong: number;
+  }) => Promise<void>;
 }
 
 const LearnerContext = createContext<LearnerContextValue | undefined>(undefined);
@@ -614,6 +625,61 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     await Promise.all([...lessonWrites, ...skillWrites, userWrite]);
   }, [uid]);
 
+  const devSimulateReview = useCallback(
+    async ({ correct, wrong }: { correct: number; wrong: number }) => {
+      if (!uid) return;
+      const now = Date.now();
+
+      // Determine the currently-due skills with the SAME definition the review
+      // flow / reviews-card use (a skill is due once it's been reviewed and its
+      // FSRS `dueAt` has been reached), most-urgent-first (lowest predicted
+      // recall) like `dueReviews`. Read fresh from Firestore — the authoritative
+      // source, exactly like the other dev tools — so the snapshot of "what's
+      // due" is captured once, up front, before any outcome reschedules a skill.
+      const dueWithR: { id: SkillId; r: number }[] = [];
+      await Promise.all(
+        skillOrder.map(async (id) => {
+          const ref = doc(db, "users", uid, "skillMastery", id);
+          const snap = await getDoc(ref);
+          if (!snap.exists()) return;
+          const s = deserializeSkill(snap.data() as Record<string, unknown>);
+          if (s.memory.lastReviewed !== null && s.memory.dueAt <= now) {
+            dueWithR.push({ id, r: currentRetrievability(s.memory, now) });
+          }
+        }),
+      );
+      if (dueWithR.length === 0) return; // nothing due → safe no-op
+      dueWithR.sort((a, b) => a.r - b.r);
+      const due = dueWithR.map((d) => d.id);
+
+      // Clamp to non-negative integers (the modal already clamps, but the store
+      // stays safe on its own).
+      const passes = Math.max(0, Math.trunc(correct));
+      const lapses = Math.max(0, Math.trunc(wrong));
+
+      // Feed every simulated outcome through the EXACT real-review path
+      // (`recordReview` → accrueSkill → applyOutcome), sequentially so each
+      // skill's read-modify-write sees the prior write. Correct passes go FIRST,
+      // round-robin across the due snapshot, so a due provisional skill can reach
+      // `mastered` before any lapse reschedules it — a lapse never demotes a
+      // mastered skill, but it pushes `dueAt` out, so the skill would no longer
+      // read as "due" for a later pass.
+      for (let i = 0; i < passes; i++) {
+        await recordReview(due[i % due.length], {
+          correct: true,
+          firstTryCorrect: true,
+        });
+      }
+      for (let i = 0; i < lapses; i++) {
+        await recordReview(due[i % due.length], {
+          correct: false,
+          firstTryCorrect: false,
+        });
+      }
+    },
+    [uid, recordReview],
+  );
+
   // --- derived selectors (read current state) ---
 
   function skillMastery(id: SkillId): SkillMastery | null {
@@ -893,6 +959,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     leagueState,
     devMakeReviewsDue,
     devCompleteAllLessons,
+    devSimulateReview,
   };
 
   return (

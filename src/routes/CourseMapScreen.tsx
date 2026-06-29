@@ -11,7 +11,11 @@ import {
   PythagorasArt,
 } from "../components/course";
 import { PracticePromoCard } from "../components/practice";
-import { ReviewsCard, SkillMasteryPanel } from "../components/review";
+import {
+  ReviewsCard,
+  SimulateReviewDialog,
+  SkillMasteryPanel,
+} from "../components/review";
 import { Button } from "../components/ui";
 import {
   course,
@@ -43,9 +47,23 @@ export function CourseMapScreen() {
     progressLoaded,
     resetProgress,
     levelMastery,
+    dueReviews,
     devMakeReviewsDue,
     devCompleteAllLessons,
+    devSimulateReview,
   } = useLearner();
+  // DEV-only "Simulate a review" dialog (gated with the rest of the DEV TOOLS
+  // card). `simNow` is captured when the dialog opens — an event, so calling
+  // Date.now() there is fine (not during render) — and, because it only changes
+  // on open, it both scopes the due-review count and doubles as the dialog's
+  // remount key so its inputs re-seed from the current due count each open.
+  const [simOpen, setSimOpen] = useState(false);
+  const [simNow, setSimNow] = useState(() => Date.now());
+  const openSimulateReview = () => {
+    setSimNow(Date.now());
+    setSimOpen(true);
+  };
+  const dueCount = dueReviews(simNow).length;
 
   const levelId = course.levels[0].id;
   const gate = levelMastery(levelId);
@@ -205,6 +223,16 @@ export function CourseMapScreen() {
                       Run
                     </Button>
                   </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted">Simulate a review</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={openSimulateReview}
+                    >
+                      Run
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -268,6 +296,16 @@ export function CourseMapScreen() {
             </div>
           </div>
         </>
+      ) : null}
+
+      {devToolsEnabled() ? (
+        <SimulateReviewDialog
+          isOpen={simOpen}
+          onOpenChange={setSimOpen}
+          seedKey={simNow}
+          dueCount={dueCount}
+          onConfirm={devSimulateReview}
+        />
       ) : null}
     </div>
   );
