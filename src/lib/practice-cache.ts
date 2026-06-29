@@ -41,8 +41,11 @@ export interface PracticeCache {
  * problems cached under the old server-authored/firewall design are discarded.
  * v3: per-call variety seed + stronger variety prompt, so problems cached under
  * the old (repetitive) prompt are discarded and regenerated with varied triples.
+ * v4: per-kind CONCEPT variety (find a leg / point to any side / count any
+ * square / blank any slot, not always the hypotenuse), so hypotenuse-only cached
+ * problems are discarded.
  */
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 
 /** The single cache doc for a user. uid is passed in (no React/auth here). */
 function cacheRef(uid: string) {

@@ -341,7 +341,7 @@ export const GEN_SYSTEM = [
   "Hard rules — follow every one:",
   "1. Correct math. For right triangles a² + b² = c². Any answer or solution you give MUST be exactly right for the numbers you chose.",
   "2. Whole-number answers ONLY — never irrational or decimal answers (e.g. never 22.2). For any hypotenuse/leg length, choose legs from a Pythagorean triple — 3-4-5, 6-8-10, 5-12-13, 8-15-17, 9-12-15, 12-16-20, 15-20-25, 7-24-25, 20-21-29 (or simple multiples) — so the unknown side is a whole number.",
-  "3. VARIETY IS REQUIRED — do NOT keep producing the same problem. Never default to 3-4-5 or 8-15-17. For each problem pick a DIFFERENT triple that fits the difficulty's leg range, and also vary which side is unknown and the wording/scenario. The author instructions carry a 'variety seed'; use it to choose, so that different seeds yield different triples and two problems almost never share the same numbers.",
+  "3. VARIETY IS REQUIRED — do NOT keep producing the same problem. Never default to 3-4-5 or 8-15-17, and never make every problem about the hypotenuse. For each problem pick a DIFFERENT triple that fits the difficulty's leg range, and vary the CONCEPT: ask the learner to find a LEG about as often as the hypotenuse, point to different sides (not always the hypotenuse), count different squares, and blank different slots — plus vary the wording/scenario. The author instructions carry a 'variety seed'; use it to choose, so different seeds yield different triples AND different concepts, and two problems almost never repeat.",
   "4. Match the requested difficulty (stay within the suggested leg range) and keep numbers realistic and easy to reason about.",
   "5. Never reveal the answer in the prompt or the default hint, and never print the unknown/asked value on the figure.",
   "6. Output STRICTLY as the provided JSON schema for the requested kind — no extra prose and no extra fields.",
@@ -364,6 +364,7 @@ export function genInput(
     case "numeric":
       lines.push(
         "Type-in numeric answer. Fill `interaction` { answer, unit, tolerance, placeholder } and a right-triangle `figure`.",
+        "ALTERNATE between the two variants below using the variety seed — find-a-leg about as often as find-the-hypotenuse; do NOT always ask for the hypotenuse.",
         'Find-the-hypotenuse: set figure.a and figure.b to the two legs, figure.labels=true, figure.unknownSide="c", figure.showHypotenuseValue=false, figure.letterLabels=false, and interaction.answer = √(a²+b²) (whole number → use a triple).',
         'Find-a-leg: set figure.a and figure.b to the two legs, figure.labels=true, figure.unknownSide to the asked leg ("a" or "b"), figure.showHypotenuseValue=true, figure.letterLabels=false, and interaction.answer = that leg\'s length.',
         'Use unit "" or null if there is none; tolerance 0 (or null) for an exact whole-number answer; placeholder "?".',
@@ -373,26 +374,30 @@ export function genInput(
     case "count-squares":
       lines.push(
         "Counting interaction. Fill `interaction` { a, b, countSide }. The app draws a right triangle with a unit-grid square on each side; the learner counts the cells in the square on `countSide` (a → a², b → b², c → a²+b²).",
+        'VARY countSide across "a", "b", and "c" using the variety seed — do NOT always count the hypotenuse square.',
         'Keep a and b SMALL so the grid is easy to count. If countSide="c", use a Pythagorean triple (e.g. 3 and 4) so the hypotenuse square is a clean whole-number grid. No figure or answer field is needed.',
       );
       break;
     case "pick-side":
       lines.push(
         'Tap-a-side interaction. Fill `interaction` { a, b, orientation, correctSide }. correctSide: "a"=bottom leg, "b"=vertical leg, "c"=hypotenuse. orientation "normal" is the standard figure; "flipped" mirrors it (use "normal" unless you want the mirror).',
-        "Word the prompt to ask for exactly that side (e.g. \"Tap the hypotenuse.\"). The side you mark IS the answer; no answer field is needed.",
+        'VARY correctSide across "a", "b", and "c" using the variety seed — do NOT always ask for the hypotenuse; ask for a leg about as often.',
+        'Word the prompt to ask for exactly that side (e.g. "Tap the hypotenuse.", "Tap the longer leg.", "Tap the vertical leg."). The side you mark IS the answer; no answer field is needed.',
       );
       break;
     case "multiple-choice":
       lines.push(
-        "Single-answer choice (which length is the hypotenuse). Fill `interaction` { choices, correctChoiceId } and a right-triangle `figure`.",
-        'Provide 3–4 choices, each with a short unique id (e.g. "o1") and a numeric label. The correct label = the true whole-number hypotenuse; the others are plausible but wrong. correctChoiceId MUST equal the correct option\'s id.',
-        'Figure: a and b = the legs (from a triple), labels=true, unknownSide="c", letterLabels=false, showHypotenuseValue=false. Do not reveal which option is correct in the prompt.',
+        "Single-answer choice. Fill `interaction` { choices, correctChoiceId } and a right-triangle `figure`.",
+        'VARY the question using the variety seed: usually "which length is the hypotenuse", but sometimes "which is the missing leg" — do NOT always ask for the hypotenuse.',
+        'Provide 3–4 choices, each with a short unique id (e.g. "o1") and a numeric label. The correct label = the true whole-number value of the ASKED side; the others are plausible but wrong. correctChoiceId MUST equal the correct option\'s id.',
+        'Figure: labels=true, letterLabels=false; set unknownSide to the asked side so its value is hidden, and show the other known sides. For "which is the hypotenuse" use unknownSide="c", showHypotenuseValue=false; for "which is the missing leg" use unknownSide=that leg, showHypotenuseValue=true (the hypotenuse is given). Do not reveal which option is correct in the prompt.',
       );
       break;
     case "tile-expression":
       lines.push(
         "Drag-the-tiles interaction to complete a² + b² = c². Fill `interaction` { template, solution, tiles } and a right-triangle `figure`.",
         'template is the equation as an array of tokens; use null for each blank to fill and the actual numbers for the shown value slots, e.g. ["3","²","+",null,"²","=","5","²"]. solution lists the correct tile for each blank, in order. tiles is the draggable bank: include every solution tile plus 1–2 plausible distractors.',
+        "VARY which slot is blank using the variety seed — sometimes blank a leg, sometimes the hypotenuse; do NOT always blank the hypotenuse.",
         "The number of null blanks MUST equal solution.length, and every solution tile MUST appear in tiles. Use a Pythagorean triple so the equation is true.",
         'Figure: a and b = the legs, labels=true, letterLabels=true (so the sides read a/b/c, NOT their numbers — this keeps the blanked value off the figure), showHypotenuseValue=false. Set unknownSide="c" (it is ignored while letterLabels is true).',
       );
