@@ -108,30 +108,6 @@ export function FinalCTA() {
             </Button>
           </motion.div>
 
-          <motion.p
-            variants={contentVariants}
-            className="mt-6 inline-flex items-center gap-2 text-sm text-muted"
-          >
-            <span
-              aria-hidden
-              className="grid size-4 place-items-center rounded-full"
-              style={{
-                backgroundColor:
-                  "color-mix(in oklab, var(--accent) 22%, transparent)",
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M5 13l4 4 10-10"
-                  stroke="var(--accent)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            Free to start. No card required.
-          </motion.p>
         </div>
       </motion.div>
     </LandingSection>

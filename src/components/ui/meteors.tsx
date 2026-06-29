@@ -30,8 +30,11 @@ export const Meteors = ({
     >
       {meteors.map((_el, idx) => {
         const meteorCount = number || 20;
-        // Calculate position to evenly distribute meteors across container width
-        const position = idx * (800 / meteorCount) - 400; // Spread across 800px range, centered
+        // Spread evenly across the FULL container width as a percentage.
+        // (Aceternity's original `idx*(800/count)-400` is a fixed px range tuned
+        // for their narrow max-w-xl demo card; on a wide band that only covers
+        // the left side, so we use a percentage to fill the whole width.)
+        const position = (idx / meteorCount) * 100;
 
         return (
           <span
@@ -43,7 +46,7 @@ export const Meteors = ({
             )}
             style={{
               top: "-40px", // Start above the container
-              left: position + "px",
+              left: position + "%",
               animationDelay: Math.random() * 5 + "s", // Random delay between 0-5s
               animationDuration: Math.floor(Math.random() * (10 - 5) + 5) + "s", // Keep some randomness in duration
             }}
