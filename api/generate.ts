@@ -97,6 +97,23 @@ const BAD_REQUEST =
   `each kind must be one of: ${GENERABLE_KINDS.join(", ")}`;
 
 /**
+ * Reasoning effort for problem generation. gpt-5.5 is a reasoning model and
+ * "xhigh" is its top tier (none/minimal/low/medium/high/xhigh), so it thinks
+ * hardest about a well-formed, well-phrased problem. The deterministic firewall
+ * still verifies correctness regardless; generation is batched and cached, so the
+ * extra latency hides behind the prefetch.
+ */
+const GEN_REASONING_EFFORT = "xhigh" as const;
+
+/**
+ * Output-token ceiling. Reasoning tokens count against this alongside the JSON
+ * output, so at "xhigh" a tight cap (the old 800) gets spent on reasoning and
+ * truncates the JSON, forcing the fallback every time. The JSON payload itself is
+ * tiny, so this is mostly reasoning headroom.
+ */
+const GEN_MAX_OUTPUT_TOKENS = 6000;
+
+/**
  * Core generation logic (thin HTTP wrapper below). Returns a verified,
  * render-ready `ProblemStep` — never an unverified one (P4).
  */
@@ -119,7 +136,8 @@ async function generateProblem(
         model: MODELS.text,
         instructions: GEN_SYSTEM,
         input: genInput(kind, difficulty, targetSide),
-        max_output_tokens: 800,
+        max_output_tokens: GEN_MAX_OUTPUT_TOKENS,
+        reasoning: { effort: GEN_REASONING_EFFORT },
         text: {
           format: {
             type: "json_schema",
