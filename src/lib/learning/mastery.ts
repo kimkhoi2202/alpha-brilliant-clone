@@ -5,8 +5,9 @@
  * The central redefinition: **mastery is not a one-time pass; it is surviving a
  * spaced review.** A first-try-correct demonstration earns a skill *provisional*
  * status; it only becomes *mastered* once it is recalled first-try on a review
- * that was actually due (real elapsed time past its FSRS `dueAt`). A lapse on a
- * mastered skill knocks it back to provisional.
+ * that was actually due (real elapsed time past its FSRS `dueAt`). Mastery is
+ * hard to EARN; once earned it is permanent (a later lapse still reschedules the
+ * skill for reinforcement, but never revokes the badge).
  *
  * The outcome → FSRS grade map is the single boundary the whole layer keys off
  * (SPOV 7): **wrong or assisted = lapse (Again); correct after retries = Hard;
@@ -33,7 +34,7 @@ export interface SkillMastery {
   /** FSRS D/S/R memory state for this skill. */
   memory: SkillMemory;
   masteryLevel: MasteryLevel;
-  /** Epoch ms the skill first reached `mastered` (cleared on a later lapse). */
+  /** Epoch ms the skill first reached `mastered` (permanent once set). */
   masteredAt: number | null;
   /** Whether a first-try-correct demonstration has ever happened (sticky). */
   provisional: boolean;
@@ -106,12 +107,11 @@ export function applyOutcome(
   let provisional = state.provisional;
 
   if (grade === 1) {
-    // A miss: mastered → provisional (it didn't survive); otherwise keep what
-    // we had, but a brand-new skill becomes "learning" (it's been seen now).
-    if (masteryLevel === "mastered") {
-      masteryLevel = "provisional";
-      masteredAt = null;
-    } else if (masteryLevel === "new") {
+    // A miss reschedules the skill (its FSRS stability collapsed above, so it
+    // comes due sooner) but NEVER revokes a level: once a skill is mastered it
+    // stays mastered (the achievement is permanent). A brand-new skill just
+    // becomes "learning" now that it has been seen.
+    if (masteryLevel === "new") {
       masteryLevel = "learning";
     }
   } else if (grade >= 3) {
