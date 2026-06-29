@@ -11,6 +11,8 @@ export type {
   PracticeStatus,
 } from "./use-infinite-practice";
 
+export { prewarmPracticeCache } from "./prewarm-practice";
+
 export { PracticeShell } from "./practice-shell";
 export type { PracticeShellProps, PracticeSessionStats } from "./practice-shell";
 

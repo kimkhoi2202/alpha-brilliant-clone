@@ -32,15 +32,7 @@ import {
 import { verifyGeneratedProblem } from "../../lib/ai/verify";
 import { readPracticeCache, writePracticeCache } from "../../lib/practice-cache";
 import { useAuth } from "../../lib/AuthContext";
-
-/** Verifiable kinds; a batch generates exactly one of each, in this order (§3.4). */
-const ROTATION: readonly GeneratableInteractionKind[] = [
-  "numeric",
-  "count-squares",
-  "pick-side",
-  "multiple-choice",
-  "tile-expression",
-];
+import { ROTATION, verifyBatch } from "./practice-batch";
 
 /**
  * Prefetch the next batch once the queue (including the on-screen problem) has
@@ -68,24 +60,6 @@ function asGeneratableKind(kind: InteractionKind): GeneratableInteractionKind | 
   return (ROTATION as readonly string[]).includes(kind)
     ? (kind as GeneratableInteractionKind)
     : null;
-}
-
-/**
- * Re-verify a batch of raw candidates, keeping only the ones that pass and
- * tagging their provenance (P4). A backend that's off / failing / partial simply
- * yields fewer (or zero) verified problems — never a wrong one.
- */
-function verifyBatch(steps: ProblemStep[]): ProblemStep[] {
-  const verified: ProblemStep[] = [];
-  for (const step of steps) {
-    const verdict = verifyGeneratedProblem(step);
-    if (verdict.ok) {
-      verified.push({ ...step, source: "ai" });
-    } else if (import.meta.env.DEV) {
-      console.warn("[infinite-practice] rejected generated candidate:", verdict.errors);
-    }
-  }
-  return verified;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { AppHeader } from "../components/chrome";
@@ -10,7 +10,11 @@ import {
   LevelHeader,
   PythagorasArt,
 } from "../components/course";
-import { PracticePromoCard } from "../components/practice";
+import {
+  difficultyFromHistory,
+  PracticePromoCard,
+  prewarmPracticeCache,
+} from "../components/practice";
 import {
   ReviewsCard,
   SimulateLevelReviewDialog,
@@ -27,6 +31,7 @@ import {
   type SkillId,
 } from "../content";
 import { aiEnabled } from "../lib/ai/flag";
+import { useAuth } from "../lib/AuthContext";
 import { devToolsEnabled } from "../lib/dev-flags";
 import { requestLessonIntro } from "../lib/lesson-transition";
 import { useLearner } from "../lib/learner";
@@ -43,9 +48,12 @@ const RECOMMEND_LABEL = {
 
 export function CourseMapScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const uid = user?.uid ?? null;
   const {
     lessonStatus,
     recommendation,
+    progress,
     progressLoaded,
     resetProgress,
     levelMastery,
@@ -106,6 +114,22 @@ export function CourseMapScreen() {
   // byte-for-byte Phase 1 (P1).
   const practiceUnlocked =
     aiEnabled() && lessonStatus(LEVEL_REVIEW_LESSON_ID) === "completed";
+  // The difficulty the first practice batch should warm at — derived purely from
+  // history (no Date.now / side effects, so it's safe during render). Used as the
+  // pre-warm effect's dep, so only a change of difficulty BUCKET re-triggers it,
+  // not every Firestore progress snapshot.
+  const practiceDifficulty = difficultyFromHistory(progress);
+  // Pre-warm the Infinite Practice cache in the BACKGROUND the moment it unlocks,
+  // so the first visit serves from a warm cache instead of paying the visible
+  // "Generating a fresh problem…" cold-start wait. Fire-and-forget and
+  // idempotent: `prewarmPracticeCache` skips when the cache is already warm for
+  // this difficulty, single-flights per uid, and is AI-off safe — so running it
+  // on every mount only does real work when the cache is genuinely cold. The live
+  // loop's own serve / prefetch logic is untouched (this just fills early).
+  useEffect(() => {
+    if (!practiceUnlocked || !uid) return;
+    void prewarmPracticeCache(uid, practiceDifficulty).catch(() => {});
+  }, [practiceUnlocked, uid, practiceDifficulty]);
   // The active "you are here" Koji marker appears once PROGRESS has hydrated, so
   // the recommendation points at the real current lesson rather than a pre-load
   // guess (a fresh learner correctly lands on lesson 1). It intentionally does
