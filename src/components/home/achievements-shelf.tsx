@@ -160,7 +160,7 @@ export function AchievementsShelf({ className }: AchievementsShelfProps) {
         </p>
       </header>
 
-      <ul className="mt-4 grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(4.75rem,1fr))]">
+      <ul className="mt-4 grid auto-rows-fr gap-3 [grid-template-columns:repeat(auto-fill,minmax(4.75rem,1fr))]">
         {ordered.map((a) => {
           const at = unlocked[a.id] ?? null;
           const isNew = at !== null ? now - at < DAY_MS : false;
@@ -171,7 +171,7 @@ export function AchievementsShelf({ className }: AchievementsShelfProps) {
                 unlockedAt={at}
                 isNew={isNew}
                 onPress={() => openDetail(a)}
-                className="w-full"
+                className="h-full w-full"
               />
             </li>
           );
