@@ -110,9 +110,9 @@ export function Pricing() {
         <motion.article
           aria-labelledby="plan-free"
           variants={enabled ? staggerItem : undefined}
-          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface-secondary)] p-2"
+          className="flex h-full flex-col rounded-2xl bg-[var(--surface-secondary)] p-2"
         >
-          <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 sm:px-7">
+          <div className="rounded-xl border border-border bg-background px-6 py-9 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.75)] sm:px-7">
             <h3 id="plan-free" className="text-xl font-bold text-foreground">
               Free
             </h3>
@@ -168,7 +168,7 @@ export function Pricing() {
             className="pointer-events-none absolute inset-x-0 top-0 mx-auto -mt-24 size-64 rounded-full bg-[color-mix(in_oklab,var(--accent)_18%,transparent)] blur-3xl"
           />
           <div className="relative flex flex-1 flex-col">
-            <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 sm:px-7">
+            <div className="rounded-xl border border-border bg-background px-6 py-9 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.75)] sm:px-7">
               <div className="flex items-center justify-between gap-3">
                 <h3 id="plan-premium" className="text-xl font-bold text-foreground">
                   Premium
