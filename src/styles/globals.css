@@ -32,6 +32,49 @@
   }
 }
 
+/* Always-on glowing animated border (an always-rotating take on Aceternity's
+   GlowingEffect). A brand-blue conic gradient is masked to a thin ring and spun
+   continuously; the component renders a blurred copy behind it for the halo. */
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes alpha-glow-spin {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+.alpha-glow-border {
+  padding: var(--glow-border-width, 2px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    var(--accent),
+    var(--link),
+    #dbe6ff,
+    var(--link),
+    var(--accent),
+    var(--link),
+    #dbe6ff,
+    var(--link),
+    var(--accent)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: alpha-glow-spin var(--glow-duration, 2s) linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .alpha-glow-border {
+    animation: none;
+  }
+}
+
 /* Default to the Outfit variable font across the whole app. */
 @theme {
   --font-sans: "Outfit Variable", ui-sans-serif, system-ui, -apple-system,

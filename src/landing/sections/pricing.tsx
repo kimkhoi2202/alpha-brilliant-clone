@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { PaywallComparison, TrialTimeline } from "../../components/premium";
 import type { PaywallRow, TrialNode } from "../../components/premium";
 import { Button, Chip } from "../../components/ui";
+import { GlowingEffect } from "../../components/ui/glowing-effect";
 import {
   Reveal,
   duration,
@@ -144,8 +145,11 @@ export function Pricing() {
         <motion.article
           aria-labelledby="plan-premium"
           variants={enabled ? staggerItem : undefined}
-          className="relative flex h-full flex-col rounded-2xl border-2 border-accent bg-[var(--surface-tertiary)] p-2 md:z-10 md:scale-[1.05]"
+          className="relative flex h-full flex-col rounded-2xl border border-border bg-[var(--surface-tertiary)] p-2 md:z-10 md:scale-[1.05]"
         >
+          {/* Always-on glowing border (replaces the static accent border) marks
+              the recommended plan. */}
+          <GlowingEffect duration={5} />
           <div className="relative flex flex-1 flex-col">
             <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] sm:px-7">
               <div className="flex items-center justify-between gap-3">
