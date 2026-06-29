@@ -1,10 +1,7 @@
 import { cn } from "../../lib/cn";
-import { StreakBolt, StreakDayDisc } from "../chrome";
+import { StreakBolt, StreakWeek, type StreakDay } from "../chrome";
 
-export interface StreakDay {
-  label: string;
-  state: "completed" | "current" | "upcoming";
-}
+export type { StreakDay };
 
 export interface StreakCardProps {
   count: number;
@@ -13,7 +10,7 @@ export interface StreakCardProps {
   className?: string;
 }
 
-/** Home streak card: count + message + week strip of day circles. */
+/** Home streak card: count + message + the shared week strip of day discs. */
 export function StreakCard({ count, message, days, className }: StreakCardProps) {
   return (
     <div
@@ -28,26 +25,7 @@ export function StreakCard({ count, message, days, className }: StreakCardProps)
         <span className="text-sm font-medium text-muted">day streak</span>
       </div>
       {message ? <p className="mt-1 text-sm text-muted">{message}</p> : null}
-      <div className="mt-4 flex justify-between">
-        {days.map((d, i) => (
-          <div key={i} className="flex flex-col items-center gap-1">
-            <StreakDayDisc
-              state={d.state === "completed" ? "done" : d.state}
-              className="size-8"
-            />
-            <span
-              className={cn(
-                "text-xs",
-                d.state === "current"
-                  ? "font-bold text-foreground"
-                  : "text-muted",
-              )}
-            >
-              {d.label}
-            </span>
-          </div>
-        ))}
-      </div>
+      <StreakWeek days={days} className="mt-4" />
     </div>
   );
 }

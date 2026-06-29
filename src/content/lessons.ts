@@ -9,6 +9,7 @@
  * Each step has hand-written, targeted feedback (a wrong answer must teach).
  * Adding a lesson is adding an object here + registering its id in `course.ts`.
  */
+import type { SkillId } from "./skills";
 import type { Lesson, LessonId } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -32,6 +33,7 @@ const rightTriangle: Lesson = {
     {
       id: "find-hypotenuse",
       kind: "problem",
+      skill: "identify-sides",
       prompt: "Which side is the hypotenuse?",
       interaction: {
         kind: "pick-side",
@@ -60,6 +62,7 @@ const rightTriangle: Lesson = {
     {
       id: "pick-legs",
       kind: "problem",
+      skill: "identify-sides",
       prompt: "Select both legs of the triangle.",
       interaction: {
         kind: "pick-sides",
@@ -83,6 +86,7 @@ const rightTriangle: Lesson = {
     {
       id: "where-right-angle",
       kind: "problem",
+      skill: "identify-sides",
       prompt: "Where does the right angle sit?",
       interaction: { kind: "pick-angle", a: 3, b: 4, correctVertex: "A" },
       feedback: {
@@ -135,6 +139,7 @@ const discoverTheorem: Lesson = {
     {
       id: "count-leg-a",
       kind: "problem",
+      skill: "areas-of-squares",
       prompt: "Count the unit squares in the square on leg a (3 units).",
       interaction: { kind: "count-squares", a: 3, b: 4, countSide: "a" },
       feedback: {
@@ -149,6 +154,7 @@ const discoverTheorem: Lesson = {
     {
       id: "count-leg-b",
       kind: "problem",
+      skill: "areas-of-squares",
       prompt: "Now count the unit squares in the square on leg b (4 units).",
       interaction: { kind: "count-squares", a: 3, b: 4, countSide: "b" },
       feedback: {
@@ -160,6 +166,7 @@ const discoverTheorem: Lesson = {
     {
       id: "count-hyp",
       kind: "problem",
+      skill: "areas-of-squares",
       prompt: "Now count the unit squares in the (tilted) square on the hypotenuse.",
       interaction: { kind: "count-squares", a: 3, b: 4, countSide: "c" },
       feedback: {
@@ -174,6 +181,7 @@ const discoverTheorem: Lesson = {
     {
       id: "second-example",
       kind: "problem",
+      skill: "areas-of-squares",
       prompt: "Coincidence? Try a different right triangle with legs 6 and 8. What is $6^2 + 8^2$?",
       interaction: { kind: "numeric", answer: 100, placeholder: "?" },
       visual: { kind: "right-triangle", a: 6, b: 8, labels: true },
@@ -195,6 +203,7 @@ const discoverTheorem: Lesson = {
     {
       id: "proof-takeaway",
       kind: "problem",
+      skill: "theorem-statement",
       prompt: "What did the rearrangement prove?",
       interaction: {
         kind: "multiple-choice",
@@ -255,6 +264,7 @@ const findHypotenuse: Lesson = {
     {
       id: "what-is-c2",
       kind: "problem",
+      skill: "theorem-statement",
       prompt: "In $a^2 + b^2 = c^2$, what does $c^2$ represent?",
       interaction: {
         kind: "multiple-choice",
@@ -275,6 +285,7 @@ const findHypotenuse: Lesson = {
     {
       id: "build-equation",
       kind: "problem",
+      skill: "theorem-statement",
       prompt: "Build the Pythagorean theorem.",
       interaction: {
         kind: "tile-expression",
@@ -292,6 +303,7 @@ const findHypotenuse: Lesson = {
     {
       id: "square-a-leg",
       kind: "problem",
+      skill: "find-hypotenuse",
       prompt: "If a leg has length 3, what is $a^2$?",
       interaction: { kind: "numeric", answer: 9, placeholder: "?" },
       feedback: {
@@ -306,6 +318,7 @@ const findHypotenuse: Lesson = {
     {
       id: "add-the-squares",
       kind: "problem",
+      skill: "find-hypotenuse",
       prompt: "The legs are 3 and 4. What is $a^2 + b^2$?",
       interaction: { kind: "numeric", answer: 25, placeholder: "?" },
       visual: { kind: "right-triangle", a: 3, b: 4, labels: true },
@@ -321,6 +334,7 @@ const findHypotenuse: Lesson = {
     {
       id: "side-from-area",
       kind: "problem",
+      skill: "find-hypotenuse",
       prompt: "$a^2 + b^2 = 25$ is the hypotenuse squared. So how long is the hypotenuse?",
       interaction: { kind: "numeric", answer: 5, unit: "units" },
       visual: { kind: "right-triangle", a: 3, b: 4, labels: true },
@@ -336,6 +350,7 @@ const findHypotenuse: Lesson = {
     {
       id: "hyp-6-8",
       kind: "problem",
+      skill: "find-hypotenuse",
       prompt: "A right triangle has legs 6 and 8. How long is the hypotenuse?",
       interaction: { kind: "numeric", answer: 10, unit: "units", placeholder: "?" },
       visual: { kind: "right-triangle", a: 6, b: 8, labels: true, unknownSide: "c" },
@@ -364,6 +379,7 @@ const findALeg: Lesson = {
     {
       id: "build-rearranged",
       kind: "problem",
+      skill: "find-a-leg",
       prompt: "Rearrange the theorem to find a missing leg.",
       interaction: {
         kind: "tile-expression",
@@ -381,6 +397,7 @@ const findALeg: Lesson = {
     {
       id: "find-a-leg",
       kind: "problem",
+      skill: "find-a-leg",
       prompt: "The hypotenuse is 13 and one leg is 5. Find the other leg.",
       interaction: { kind: "numeric", answer: 12, unit: "units", placeholder: "?" },
       visual: {
@@ -403,6 +420,7 @@ const findALeg: Lesson = {
     {
       id: "why-not-sum",
       kind: "problem",
+      skill: "find-hypotenuse",
       prompt: "Why isn't the hypotenuse just $a + b$ (for legs 6 and 8, that would be 14)?",
       interaction: {
         kind: "multiple-choice",
@@ -437,6 +455,7 @@ const findALeg: Lesson = {
     {
       id: "sort-right",
       kind: "problem",
+      skill: "right-triangle-test",
       prompt: "Sort each triangle: does it have a right angle?",
       interaction: {
         kind: "categorize",
@@ -490,6 +509,7 @@ const directDistance: Lesson = {
     {
       id: "plot-point",
       kind: "problem",
+      skill: "coordinate-distance",
       prompt: "Plot the point (3, 4) on the grid.",
       interaction: { kind: "plot-points", size: 6, targets: [{ x: 3, y: 4 }] },
       visual: { kind: "coordinate-grid", size: 6, markers: [{ x: 0, y: 0 }] },
@@ -501,6 +521,7 @@ const directDistance: Lesson = {
     {
       id: "distance-3-4",
       kind: "problem",
+      skill: "coordinate-distance",
       prompt: "How far is (3, 4) from the origin (0, 0) in a straight line?",
       interaction: { kind: "numeric", answer: 5, unit: "units" },
       visual: {
@@ -521,6 +542,7 @@ const directDistance: Lesson = {
     {
       id: "distance-6-8",
       kind: "problem",
+      skill: "coordinate-distance",
       prompt: "How far is (6, 8) from the origin?",
       interaction: { kind: "numeric", answer: 10, unit: "units" },
       visual: {
@@ -541,6 +563,7 @@ const directDistance: Lesson = {
     {
       id: "distance-offset",
       kind: "problem",
+      skill: "coordinate-distance",
       prompt: "How far is (4, 6) from (1, 2)?",
       interaction: { kind: "numeric", answer: 5, unit: "units" },
       visual: {
@@ -564,6 +587,7 @@ const directDistance: Lesson = {
     {
       id: "pick-formula",
       kind: "problem",
+      skill: "coordinate-distance",
       prompt: "Which one is the distance formula?",
       interaction: {
         kind: "multiple-choice",
@@ -618,4 +642,13 @@ export const lessons: Record<LessonId, Lesson> = Object.fromEntries(
 
 export function getLesson(id: LessonId): Lesson | undefined {
   return lessons[id];
+}
+
+/** The skill a lesson's problem step exercises (for the `recordStep` chokepoint). */
+export function skillForLessonStep(
+  lessonId: LessonId,
+  stepId: string,
+): SkillId | undefined {
+  const step = lessons[lessonId]?.steps.find((s) => s.id === stepId);
+  return step && step.kind === "problem" ? step.skill : undefined;
 }

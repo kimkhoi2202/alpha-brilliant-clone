@@ -144,7 +144,7 @@ export function useToolContext(input: UseToolContextInput): ToolContext {
           });
           return;
         case "course-map":
-          void navigate({ to: "/" });
+          void navigate({ to: "/courses" });
           return;
         case "infinite-practice":
           void navigate({ to: "/practice" });

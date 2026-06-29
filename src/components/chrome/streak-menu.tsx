@@ -1,22 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
-import { cn } from "../../lib/cn";
 import { Counter } from "../ui/counter";
 import { StreakBolt } from "./streak-bolt";
-import { StreakDayDisc } from "./streak-day-disc";
+import { StreakWeek } from "./streak-week";
+import type { StreakDay } from "./streak-days";
 
 export interface StreakMenuProps {
   currentStreak: number;
   longestStreak: number;
   lessonsComplete: number;
-}
-
-const WEEKDAYS = ["M", "T", "W", "Th", "F"] as const;
-
-/** JS getDay() (0=Sun) → Mon–Fri index (0–4); weekend clamps to Fri. */
-function todayWeekday(): { idx: number; isWeekday: boolean } {
-  const mon0 = (new Date().getDay() + 6) % 7; // 0 Mon … 6 Sun
-  return mon0 <= 4 ? { idx: mon0, isWeekday: true } : { idx: 4, isWeekday: false };
+  /** The same week strip the Home card shows (from `toStreakDays(weekActivity())`). */
+  days: StreakDay[];
 }
 
 function Stat({ value, label }: { value: number; label: string }) {
@@ -32,12 +26,14 @@ function Stat({ value, label }: { value: number; label: string }) {
 
 /**
  * The streak pill plus Brilliant's streak popover (current week, max streak,
- * lessons complete). The pill itself carries the interactive hover.
+ * lessons complete). The pill itself carries the interactive hover. The week
+ * strip is the shared `StreakWeek`, so it matches the home StreakCard exactly.
  */
 export function StreakMenu({
   currentStreak,
   longestStreak,
   lessonsComplete,
+  days,
 }: StreakMenuProps) {
   const [open, setOpen] = useState(false);
   // Keep the panel mounted while it plays its exit animation, then unmount.
@@ -71,8 +67,6 @@ export function StreakMenu({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
-
-  const { idx: todayIdx, isWeekday } = todayWeekday();
 
   return (
     <div ref={ref} className="relative">
@@ -127,29 +121,7 @@ export function StreakMenu({
                 : "Start a streak today!"}
             </p>
 
-            <div className="mt-4 flex w-full justify-between">
-              {WEEKDAYS.map((label, i) => {
-                const done = i <= todayIdx && todayIdx - i < currentStreak;
-                const isToday = isWeekday && i === todayIdx;
-                return (
-                  <div
-                    key={label}
-                    className="streak-disc flex flex-col items-center gap-2"
-                    style={{ animationDelay: `${i * 45}ms` }}
-                  >
-                    <StreakDayDisc state={done ? "done" : "upcoming"} />
-                    <span
-                      className={cn(
-                        "text-sm",
-                        isToday ? "font-bold text-foreground" : "text-muted",
-                      )}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <StreakWeek days={days} animate className="mt-4" />
 
             <div className="mt-4 flex items-center rounded-lg bg-default/50 py-4">
               <div className="flex flex-1 justify-center">

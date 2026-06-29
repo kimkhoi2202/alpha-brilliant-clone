@@ -8,6 +8,11 @@
  * and never depends on the network.
  */
 
+import type { SkillId } from "./skills";
+
+/** Re-exported so consumers can pull `SkillId` from the content types barrel. */
+export type { SkillId };
+
 export type LessonId = string;
 
 export type GridPoint = { x: number; y: number };
@@ -268,6 +273,13 @@ export type ProblemStep = {
   interaction: Interaction;
   visual?: VisualSpec;
   feedback: Feedback;
+  /**
+   * The skill this step exercises (Phase 3). Spacing, retrieval, and mastery all
+   * key off this tag; per-skill FSRS memory is accrued from each graded outcome
+   * (see `lib/learner.tsx` + `content/skills.ts`). Required on authored content;
+   * AI-generated practice steps are tagged best-effort via `skillForStep`.
+   */
+  skill: SkillId;
   /** XP awarded for a correct answer (default 15, Brilliant-style). */
   xp?: number;
   /** Provenance: hand-authored (default) or AI-generated (Phase 2, Pillar B). */

@@ -278,6 +278,21 @@ export function VoiceControls({
     onCoachHandledRef.current = onCoachHandled;
   });
 
+  // Optimistic typed turns: rendered the instant the learner submits, before the
+  // realtime round-trip. Each carries a client id passed to `sendText`; the API
+  // echoes that id back, so the live turn dedupes onto the optimistic one by id
+  // (see `entries`). Pruned once the echo lands (the effect below).
+  const [optimistic, setOptimistic] = useState<VoiceTranscriptEntry[]>([]);
+  // True from a typed send OR a proactive coach turn until Koji's reply starts
+  // streaming — drives the subtle "Koji is thinking…" cue. Scoped to an actual
+  // send / coach turn so pre-warm connecting (or a restored thread that ends on a
+  // user turn) never shows a phantom indicator.
+  const [awaitingKoji, setAwaitingKoji] = useState(false);
+  // One-shot "restore this text into the composer" signal, lifted down to the
+  // ChatComposer when an optimistic turn is reverted after a failure (the
+  // composer already cleared its draft on submit). Null until the first revert.
+  const [revertSignal, setRevertSignal] = useState<RevertSignal | null>(null);
+
   // Proactive coaching: when the host signals a fresh wrong-answer offer
   // (`coachPending`), fire EXACTLY ONE developer-driven coach turn into this
   // realtime session, then immediately ask the host to clear the flag. Firing +
@@ -301,21 +316,25 @@ export function VoiceControls({
     klog("proactive coach: offer seen → coachProactively()");
     voiceRef.current.coachProactively();
     onCoachHandledRef.current();
+    // Raise the "Koji is thinking…" cue for the WHOLE proactive turn — the
+    // connect → readState/highlight tool-call → first-token window — so the panel
+    // never reads as an empty/broken tutor before Koji's first reply lands. Only
+    // when a backend will actually reply (mirrors coachProactively's own
+    // AI-off/unsupported no-op), so the defensive AI-off path keeps reporting "no
+    // content" and Koji stays centered. The write is deferred to a rAF per the
+    // file convention (never setState synchronously in an effect body). It is
+    // intentionally NOT cancelled in a cleanup: the rAF only flips `awaitingKoji`
+    // true — a one-shot, idempotent, bounded write — and `onCoachHandled()` clears
+    // `coachPending`, which re-runs this effect, so a `coachPending`-tied cleanup
+    // would risk cancelling the pending raise (depending on effect/rAF ordering)
+    // and suppress the cue, with no upside: the latch is already bounded — it
+    // clears on Koji's first tokens (the `thinking` derivation + the reply-visible
+    // latch effect), on error (phase / turnError), or via the 30s `awaitingKoji`
+    // timeout. A late rAF after unmount is a harmless no-op in React.
+    if (voiceRef.current.aiEnabled && voiceRef.current.supported) {
+      requestAnimationFrame(() => setAwaitingKoji(true));
+    }
   }, [coachPending]);
-
-  // Optimistic typed turns: rendered the instant the learner submits, before the
-  // realtime round-trip. Each carries a client id passed to `sendText`; the API
-  // echoes that id back, so the live turn dedupes onto the optimistic one by id
-  // (see `entries`). Pruned once the echo lands (the effect below).
-  const [optimistic, setOptimistic] = useState<VoiceTranscriptEntry[]>([]);
-  // True from submit until Koji's reply starts streaming — drives the subtle
-  // "Koji is thinking…" cue. Scoped to an actual send so pre-warm connecting (or
-  // a restored thread that ends on a user turn) never shows a phantom indicator.
-  const [awaitingKoji, setAwaitingKoji] = useState(false);
-  // One-shot "restore this text into the composer" signal, lifted down to the
-  // ChatComposer when an optimistic turn is reverted after a failure (the
-  // composer already cleared its draft on submit). Null until the first revert.
-  const [revertSignal, setRevertSignal] = useState<RevertSignal | null>(null);
 
   const sendUserText = useCallback(
     (text: string): boolean => {
@@ -542,12 +561,29 @@ export function VoiceControls({
     }
     return null;
   }, [entries]);
-  // Show the cue only while awaiting AND the last visible turn is still the
-  // user's (Koji's first reply tokens flip `lastVisibleRole` to "assistant" and
-  // hide it) AND we're not in an error state — all derived, so no effect needs to
-  // toggle a flag when the reply starts or the session fails.
+  // Show the cue while we're awaiting a reply AND the last visible turn is NOT yet
+  // Koji's — so it holds for a typed turn (its optimistic user bubble is the last
+  // turn) AND for a proactive coach turn on an EMPTY thread, where there's no user
+  // bubble at all (`lastVisibleRole` is null). Koji's first reply tokens flip
+  // `lastVisibleRole` to "assistant" and hide it; an error state hides it too. The
+  // cue's visibility is derived, but the underlying `awaitingKoji` latch is also
+  // cleared by an effect below the instant the reply is visible, so the latch can't
+  // outlive the turn and re-show the cue if a later non-assistant turn lands.
+  //
+  // Gap (intentional): a coach turn on a thread already ending in an assistant turn
+  // shows no dots until its reply lands — acceptable, the panel isn't blank (prior
+  // content keeps it docked); only the empty-thread case was broken.
   const thinking =
-    awaitingKoji && lastVisibleRole === "user" && voice.phase !== "error";
+    awaitingKoji && lastVisibleRole !== "assistant" && voice.phase !== "error";
+
+  // Drop the latch the moment Koji's reply is visible, so it can't outlive the
+  // turn and re-show the cue if a later non-assistant turn (a recorded answer or
+  // a spoken turn) lands inside the 30s window. Deferred per the file convention.
+  useEffect(() => {
+    if (!awaitingKoji || lastVisibleRole !== "assistant") return;
+    const raf = requestAnimationFrame(() => setAwaitingKoji(false));
+    return () => cancelAnimationFrame(raf);
+  }, [awaitingKoji, lastVisibleRole]);
 
   // Safety net: never let the awaiting flag hang forever if a reply never
   // materializes (e.g. a silent stall). The state change runs in the deferred
@@ -568,9 +604,17 @@ export function VoiceControls({
     () => entries.some((e) => e.text.length > 0),
     [entries],
   );
+  // Count an active "thinking" cue as content too, so the panel docks Koji and
+  // grows the thread region to make room for the cue — while empty the thread's
+  // flexGrow is 0, leaving a coach-on-empty cue nowhere to render. When the cue
+  // clears with still no content (e.g. a proactive coach turn that errors out
+  // before any reply) this falls back to false and Koji returns to centered.
+  // `thinking` is already gated so it can't be true with AI off, so the AI-off
+  // "stays centered" note above still holds.
+  const contentPresent = hasContent || thinking;
   useEffect(() => {
-    onContentPresent?.(hasContent);
-  }, [hasContent, onContentPresent]);
+    onContentPresent?.(contentPresent);
+  }, [contentPresent, onContentPresent]);
 
   // AI-off (defensive — the panel is already gated): render nothing.
   if (!voice.aiEnabled) return null;

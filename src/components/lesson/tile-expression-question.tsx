@@ -1,4 +1,5 @@
 import { forwardRef, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
   ButtonHTMLAttributes,
   PointerEvent as ReactPointerEvent,
@@ -21,6 +22,8 @@ export interface TileExpressionQuestionProps {
   onBlankPress?: (blankIndex: number) => void;
   onBankPress?: (id: string) => void;
   onDropToBlank?: (id: string, blankIndex: number) => void;
+  /** When the answer is graded correct, filled blanks read green, not blue. */
+  correct?: boolean;
   className?: string;
 }
 
@@ -103,6 +106,7 @@ export function TileExpressionQuestion({
   onBlankPress,
   onBankPress,
   onDropToBlank,
+  correct = false,
   className,
 }: TileExpressionQuestionProps) {
   const statusId = useId();
@@ -329,14 +333,27 @@ export function TileExpressionQuestion({
   })();
 
   return (
-    <div className={cn("relative isolate flex flex-col items-center gap-2", className)}>
+    <div className={cn("relative isolate flex flex-col items-center gap-4", className)}>
       <p id={statusId} className="sr-only" aria-live="polite">
         {dragStatus}
       </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 text-3xl font-bold text-foreground sm:gap-4 sm:text-4xl">
+      <div className="flex flex-wrap items-center justify-center gap-4 text-3xl font-bold text-foreground sm:gap-6 sm:text-4xl">
         {parts.map((part, i) => {
           if (part !== null) {
+            // A "²" exponent should hug the token before it: pull it tight
+            // (cancelling the row gap) and shrink it so it reads as a real
+            // superscript instead of a floating, full-size digit.
+            if (part === "²") {
+              return (
+                <span
+                  key={i}
+                  className="-ml-3 select-none self-start text-[0.6em] leading-none sm:-ml-5"
+                >
+                  ²
+                </span>
+              );
+            }
             return (
               <span key={i} className="select-none leading-none">
                 {part}
@@ -375,7 +392,9 @@ export function TileExpressionQuestion({
               className={cn(
                 "h-[54px] w-[68px] rounded-[16px]",
                 value
-                  ? "border-accent bg-accent/10 text-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(69,109,255,0.08)]"
+                  ? correct
+                    ? "border-success bg-success/10 text-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                    : "border-accent bg-accent/10 text-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(69,109,255,0.08)]"
                   : "border-dashed border-white/30 bg-transparent text-transparent",
                 !value && !isDropTarget && "shadow-none",
                 isDropTarget &&
@@ -388,7 +407,7 @@ export function TileExpressionQuestion({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
         {bank.map((item) => (
           <TileButton
             key={item.id}
@@ -423,7 +442,11 @@ export function TileExpressionQuestion({
         ))}
       </div>
 
-      {ghostNode}
+      {/* Portal the floating ghost to <body> so its `position: fixed` is
+          relative to the viewport, not a transformed ancestor (e.g. the
+          `practice-stage-in` entrance animation keeps a non-none transform,
+          which would otherwise re-anchor the ghost and strand it off-cursor). */}
+      {ghostNode ? createPortal(ghostNode, document.body) : null}
     </div>
   );
 }

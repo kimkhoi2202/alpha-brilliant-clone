@@ -1,0 +1,22 @@
+[
+  {
+    "type": "warning",
+    "text": "A PressResponder was rendered without a pressable child. Either call the usePress hook, or wrap your DOM node with <Pressable> component."
+  },
+  {
+    "type": "warning",
+    "text": "[.WebGL-0x124005d7600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+    "type": "warning",
+    "text": "[.WebGL-0x124005d7600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+    "type": "warning",
+    "text": "[.WebGL-0x124005d7600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+    "type": "warning",
+    "text": "[.WebGL-0x124005d7600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  }
+]

@@ -11,6 +11,8 @@ export interface QuizResultsProps {
   passThreshold: number;
   /** Whether the learner passed (score ≥ threshold). */
   passed: boolean;
+  /** "review" reframes the copy as a spaced-review summary (no pass/fail). */
+  mode?: "quiz" | "review";
 }
 
 /**
@@ -29,12 +31,14 @@ export function QuizResults({
   total,
   passThreshold,
   passed,
+  mode = "quiz",
 }: QuizResultsProps) {
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(id);
   }, []);
+  const isReview = mode === "review";
 
   return (
     <div
@@ -45,7 +49,7 @@ export function QuizResults({
       )}
     >
       <h2 className="text-2xl font-bold tracking-tight text-foreground">
-        {passed ? "Quiz passed!" : "Almost there"}
+        {isReview ? "Review complete" : passed ? "Quiz passed!" : "Almost there"}
       </h2>
 
       <p
@@ -57,9 +61,11 @@ export function QuizResults({
       </p>
 
       <p className="mt-3 text-base text-muted">
-        {passed
-          ? "Great recall! You're ready to move on."
-          : `You need ${passThreshold} of ${total} correct to pass. Give it another go.`}
+        {isReview
+          ? "Recall keeps skills from fading. Skills you recalled when due are now mastered."
+          : passed
+            ? "Great recall! You're ready to move on."
+            : `You need ${passThreshold} of ${total} correct to pass. Give it another go.`}
       </p>
     </div>
   );

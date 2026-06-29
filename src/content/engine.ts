@@ -3,6 +3,8 @@
  * Correctness is derived from the interaction config + the learner's answer,
  * so feedback is instant (< 100ms) and never hits the network.
  */
+import { misconceptionFeedback } from "./diagnosis";
+import type { SkillId } from "./skills";
 import type {
   AnswerValue,
   Evaluation,
@@ -189,10 +191,13 @@ function isCorrect(interaction: Interaction, answer: AnswerValue): boolean {
   }
 }
 
-/** Pick the targeted hint for a wrong answer, falling back to `default`. */
-function pickHint(step: ProblemStep, answer: AnswerValue): string {
-  const { hints, default: fallback } = step.feedback;
-  if (!hints) return fallback;
+/**
+ * Hand-tuned hint for a specific wrong answer (selection / value), or null when
+ * none of the step's `HintRule`s match.
+ */
+function matchHintRule(step: ProblemStep, answer: AnswerValue): string | null {
+  const { hints } = step.feedback;
+  if (!hints) return null;
   const { interaction } = step;
 
   for (const rule of hints) {
@@ -228,7 +233,21 @@ function pickHint(step: ProblemStep, answer: AnswerValue): string {
         return rule.hint;
     }
   }
-  return fallback;
+  return null;
+}
+
+/**
+ * Pick what to show on a wrong answer: a hand-tuned hint if one matches, else a
+ * named-misconception explanation from the deterministic classifier (Phase 3,
+ * SPOV 9 — teaches with AI off, structured what-you-did → why → principle →
+ * nudge, never the answer), else the step's authored fallback.
+ */
+function pickHint(step: ProblemStep, answer: AnswerValue): string {
+  const tuned = matchHintRule(step, answer);
+  if (tuned) return tuned;
+  const diagnosed = misconceptionFeedback(step, answer);
+  if (diagnosed) return diagnosed;
+  return step.feedback.default;
 }
 
 /** The fully-correct answer for an interaction (used by "See answer"). */
@@ -272,6 +291,49 @@ export function gradeStep(step: ProblemStep, answer: AnswerValue): Evaluation {
     return { status: "correct", message: step.feedback.correct };
   }
   return { status: "incorrect", message: pickHint(step, answer) };
+}
+
+/**
+ * The skill a problem step exercises. Authored content always carries `skill`;
+ * AI-generated practice steps don't, so we infer one from the interaction +
+ * visual so Infinite-Practice outcomes can still feed the right skill's FSRS
+ * memory (Phase 3). Pure + deterministic, like the rest of the engine.
+ */
+export function skillForStep(step: ProblemStep): SkillId {
+  if (step.skill) return step.skill;
+  const { interaction, visual } = step;
+
+  if (visual?.kind === "coordinate-grid" || interaction.kind === "plot-points") {
+    return "coordinate-distance";
+  }
+  switch (interaction.kind) {
+    case "pick-side":
+    case "pick-sides":
+    case "pick-angle":
+      return "identify-sides";
+    case "count-squares":
+      return "areas-of-squares";
+    case "tile-expression":
+      return "theorem-statement";
+    case "categorize":
+      return "right-triangle-test";
+    case "numeric":
+    case "slider":
+      // A "find the leg" figure marks the unknown as a leg / shows the
+      // hypotenuse value; otherwise treat a numeric triangle problem as a
+      // hypotenuse computation.
+      if (
+        visual?.kind === "right-triangle" &&
+        (visual.unknownSide === "a" ||
+          visual.unknownSide === "b" ||
+          visual.showHypotenuseValue === true)
+      ) {
+        return "find-a-leg";
+      }
+      return "find-hypotenuse";
+    default:
+      return "theorem-statement";
+  }
 }
 
 /** Total XP available in a lesson (sum of problem-step XP, default 15 each). */

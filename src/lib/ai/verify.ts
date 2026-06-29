@@ -1,15 +1,18 @@
 /**
- * Verification firewall (PRD-phase-2 §3.1, Principles P3 & P4: "verify
- * everything checkable" / "the AI never emits a wrong answer").
+ * Client-side crash-prevention gate for generated practice (Phase 3).
  *
- * Ground truth is the existing pure engine (`gradeStep` / `correctAnswer`) plus
- * `math.js`. The model only *proposes*; this code *decides*. Nothing AI-proposed
- * reaches the learner until it passes here. This module is read-only with
- * respect to the engine — it never changes Phase 1 grading behavior.
+ * Owner-approved reversal of the previous "verification firewall": the MODEL now
+ * authors the full problem and OWNS its correctness, so this no longer
+ * re-derives answers or rejects a problem because its math looks wrong. What it
+ * STILL does is keep the UI from white-screening: every generated / cached step
+ * is checked to PARSE into a renderable interaction SHAPE (valid kind, required
+ * fields present and well-typed, the answer key references real options/tiles)
+ * before it is rendered. Anything malformed is dropped and the caller falls back.
+ *
+ * The `hintLeaksAnswer` helper below is unrelated to generation correctness — it
+ * guards the live tutor/hint path and is unchanged.
  */
-import { evaluate } from "mathjs";
-
-import { correctAnswer, gradeStep } from "../../content/engine";
+import { correctAnswer } from "../../content/engine";
 import type { ProblemStep, TriangleSide, VisualSpec } from "../../content/types";
 
 export interface VerificationResult {
@@ -18,7 +21,7 @@ export interface VerificationResult {
   errors: string[];
 }
 
-/** The hand-built figure kinds (PRD §2.4: no AI-generated visuals). */
+/** The hand-built figure kinds the renderer supports (PRD §2.4: no AI visuals). */
 const KNOWN_VISUAL_KINDS: readonly VisualSpec["kind"][] = [
   "right-triangle",
   "coordinate-grid",
@@ -29,20 +32,9 @@ function isKnownVisualKind(kind: string): boolean {
   return (KNOWN_VISUAL_KINDS as readonly string[]).includes(kind);
 }
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
-/** Evaluate a numeric expression with `math.js`; NaN on any non-finite result. */
-function evalNumber(expr: string, scope: Record<string, number>): number {
-  try {
-    const value: unknown = evaluate(expr, scope);
-    return typeof value === "number" && Number.isFinite(value)
-      ? value
-      : Number.NaN;
-  } catch {
-    return Number.NaN;
-  }
+/** True for a finite, positive number (legs the figures can draw). */
+function isFinitePositive(value: unknown): boolean {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 /** Minimal structural guard — AI output is cast to `ProblemStep` but untrusted. */
@@ -52,130 +44,113 @@ function isProblemStepShape(step: ProblemStep): boolean {
     step !== null &&
     step.kind === "problem" &&
     typeof step.prompt === "string" &&
+    step.prompt.length > 0 &&
     typeof step.interaction === "object" &&
     step.interaction !== null &&
-    typeof step.interaction.kind === "string"
+    typeof step.interaction.kind === "string" &&
+    typeof step.feedback === "object" &&
+    step.feedback !== null &&
+    typeof step.feedback.correct === "string" &&
+    typeof step.feedback.default === "string"
   );
 }
 
-/** Leg lengths from a triangle figure or triangle interaction, if present. */
-function triangleLegs(step: ProblemStep): { a: number; b: number } | undefined {
-  const { visual, interaction } = step;
-  if (visual?.kind === "right-triangle" || visual?.kind === "rearrangement-proof") {
-    return { a: visual.a, b: visual.b };
+/** A present figure must be a known kind; a right-triangle needs positive legs. */
+function figureErrors(visual: VisualSpec | undefined): string[] {
+  if (!visual) return [];
+  if (!isKnownVisualKind(visual.kind)) {
+    return [`unknown visual kind: ${String(visual.kind)}`];
   }
-  switch (interaction.kind) {
-    case "pick-side":
-    case "pick-sides":
-    case "pick-angle":
-    case "count-squares":
-      return { a: interaction.a, b: interaction.b };
-    default:
-      return undefined;
-  }
-}
-
-function isHypotenuseUnknown(
-  visual: Extract<VisualSpec, { kind: "right-triangle" }>,
-): boolean {
-  return (
-    visual.unknownHypotenuse === true ||
-    visual.unknownSide === "c" ||
-    visual.showHypotenuseValue === true
-  );
-}
-
-/** Check numeric relationships (a²+b²=c², area counts) independently via math.js. */
-function checkNumericRelationships(step: ProblemStep): string[] {
-  const errors: string[] = [];
-  const { interaction, visual } = step;
-
-  const legs = triangleLegs(step);
-  if (legs) {
-    const { a, b } = legs;
-    if (!Number.isFinite(a) || !Number.isFinite(b) || a <= 0 || b <= 0) {
-      errors.push(`triangle legs must be positive finite numbers (a=${a}, b=${b})`);
-      return errors; // downstream math would be meaningless
+  if (visual.kind === "right-triangle" || visual.kind === "rearrangement-proof") {
+    if (!isFinitePositive(visual.a) || !isFinitePositive(visual.b)) {
+      return [
+        `right-triangle figure needs positive legs (a=${String(visual.a)}, b=${String(visual.b)})`,
+      ];
     }
   }
-
-  // count-squares: recompute the cell count with math.js and compare to engine.
-  if (interaction.kind === "count-squares") {
-    const { a, b, countSide } = interaction;
-    const expr =
-      countSide === "a" ? "a^2" : countSide === "b" ? "b^2" : "a^2 + b^2";
-    const expected = evalNumber(expr, { a, b });
-    const answer = correctAnswer(interaction);
-    if (answer.kind === "count-squares" && answer.value !== expected) {
-      errors.push(
-        `count-squares area mismatch: engine=${String(answer.value)} math.js=${expected}`,
-      );
-    }
-  }
-
-  // numeric answers must be INDEPENDENTLY re-derivable from verifiable givens —
-  // we never pass on the generator's stated `answer`. The one numeric relationship
-  // this course can recompute is the right-triangle hypotenuse √(a²+b²); a numeric
-  // problem we cannot recompute that way fails closed (defense-in-depth: don't
-  // trust the generator's goodwill).
-  if (interaction.kind === "numeric") {
-    if (visual?.kind === "right-triangle" && isHypotenuseUnknown(visual)) {
-      const c = evalNumber("sqrt(a^2 + b^2)", { a: visual.a, b: visual.b });
-      const tol = (interaction.tolerance ?? 0) + 1e-9;
-      if (!Number.isFinite(c) || Math.abs(interaction.answer - c) > tol) {
-        errors.push(
-          `numeric hypotenuse mismatch: answer=${interaction.answer} expected≈${c}`,
-        );
-      }
-    } else {
-      errors.push(
-        "numeric answer not independently verifiable: no right-triangle legs to recompute from",
-      );
-    }
-  }
-
-  return errors;
+  return [];
 }
 
 /**
- * Verify an AI-proposed problem. It is `ok` only if, all together:
- *  1. the engine grades our computed `correctAnswer` as "correct" (round-trip),
- *  2. any visual references an existing hand-built `VisualSpec` kind, and
- *  3. its numeric relationships check out via `math.js`.
+ * Per-kind renderability checks for the five generated interaction kinds. These
+ * verify the SHAPE is renderable and self-consistent enough to answer — NOT that
+ * the math is right (that's the model's responsibility now).
+ */
+function interactionErrors(step: ProblemStep): string[] {
+  const i = step.interaction;
+  switch (i.kind) {
+    case "numeric":
+      return typeof i.answer === "number" && Number.isFinite(i.answer)
+        ? []
+        : [`numeric answer must be a finite number (got ${String(i.answer)})`];
+    case "count-squares":
+      if (!isFinitePositive(i.a) || !isFinitePositive(i.b)) {
+        return ["count-squares needs positive legs"];
+      }
+      return ["a", "b", "c"].includes(i.countSide)
+        ? []
+        : [`invalid countSide: ${String(i.countSide)}`];
+    case "pick-side":
+      if (!isFinitePositive(i.a) || !isFinitePositive(i.b)) {
+        return ["pick-side needs positive legs"];
+      }
+      return ["a", "b", "c"].includes(i.correctSide)
+        ? []
+        : [`invalid correctSide: ${String(i.correctSide)}`];
+    case "multiple-choice": {
+      if (!Array.isArray(i.choices) || i.choices.length < 2) {
+        return ["multiple-choice needs at least two choices"];
+      }
+      if (!i.choices.every((c) => typeof c.id === "string" && typeof c.label === "string")) {
+        return ["each multiple-choice option needs a string id and label"];
+      }
+      return i.choices.some((c) => c.id === i.correctChoiceId)
+        ? []
+        : ["correctChoiceId must reference one of the choices"];
+    }
+    case "tile-expression": {
+      if (
+        !Array.isArray(i.tiles) ||
+        !Array.isArray(i.template) ||
+        !Array.isArray(i.solution)
+      ) {
+        return ["tile-expression needs tiles, template, and solution arrays"];
+      }
+      const blanks = i.template.filter((t) => t === null).length;
+      if (blanks !== i.solution.length) {
+        return ["tile-expression blank count must equal solution length"];
+      }
+      return i.solution.every((tok) => i.tiles.includes(tok))
+        ? []
+        : ["every tile-expression solution token must be in the bank"];
+    }
+    default:
+      // Generation only produces the five kinds above.
+      return [`interaction kind is not a generatable/renderable kind: ${String(i.kind)}`];
+  }
+}
+
+/**
+ * Crash-prevention check for an AI-authored problem. It is `ok` only if the step
+ * parses into a renderable interaction shape: a well-typed `ProblemStep`, any
+ * figure is a known visual kind, and the interaction's required fields are
+ * present and well-typed. It does NOT check correctness — the model owns that.
  */
 export function verifyGeneratedProblem(step: ProblemStep): VerificationResult {
   if (!isProblemStepShape(step)) {
     return {
       ok: false,
-      errors: ["malformed problem step (missing kind/prompt/interaction)"],
+      errors: ["malformed problem step (missing kind/prompt/interaction/feedback)"],
     };
   }
 
-  const errors: string[] = [];
-
-  // (P4) Round-trip: gradeStep(correctAnswer(step)) must be "correct".
-  try {
-    const grade = gradeStep(step, correctAnswer(step.interaction));
-    if (grade.status !== "correct") {
-      errors.push("round-trip failed: gradeStep(correctAnswer(step)) is not 'correct'");
-    }
-  } catch (err) {
-    errors.push(`round-trip threw: ${errorMessage(err)}`);
-  }
-
-  // Visual must be one of the hand-built kinds (no AI-authored figures).
-  if (step.visual && !isKnownVisualKind(step.visual.kind)) {
-    errors.push(`unknown visual kind: ${String(step.visual.kind)}`);
-  }
-
-  // Numeric relationships must check out via math.js.
-  errors.push(...checkNumericRelationships(step));
-
+  const errors = [...figureErrors(step.visual), ...interactionErrors(step)];
   return { ok: errors.length === 0, errors };
 }
 
 // ---------------------------------------------------------------------------
 // Hint leak detection — a hint must never contain the rendered correct answer.
+// (Unrelated to generation; guards the live tutor/hint path. Unchanged.)
 // ---------------------------------------------------------------------------
 
 const NUMBER_TOKEN = /^-?\d+(\.\d+)?$/;

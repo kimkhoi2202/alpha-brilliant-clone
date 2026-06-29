@@ -71,6 +71,24 @@ export interface GenerateProblemResult {
   step: ProblemStep | null;
 }
 
+export interface GenerateProblemsInput {
+  /** Which verifiable interaction kinds to generate (1..5, one step per kind). */
+  kinds: GeneratableInteractionKind[];
+  /** Difficulty (typically derived from the learner's `StepRecord`). */
+  difficulty?: GenerationDifficulty;
+  /** Optional seed for deterministic server-side choices (testing/repro). */
+  seed?: number;
+}
+
+export interface GenerateProblemsResult {
+  ok: boolean;
+  /**
+   * Candidate problems — UNVERIFIED. Callers MUST pass EACH through
+   * `verifyGeneratedProblem` before rendering it (P4: nothing shown unchecked).
+   */
+  steps: ProblemStep[];
+}
+
 // ---------------------------------------------------------------------------
 // mintRealtimeToken — short-lived client secret for the browser voice session.
 // ---------------------------------------------------------------------------
@@ -87,6 +105,10 @@ export interface RealtimeTokenResult {
 
 const EMPTY_TUTOR_RESULT: RunTutorResult = { ok: false, text: null };
 const EMPTY_GENERATE_RESULT: GenerateProblemResult = { ok: false, step: null };
+const EMPTY_GENERATE_PROBLEMS_RESULT: GenerateProblemsResult = {
+  ok: false,
+  steps: [],
+};
 const EMPTY_TOKEN_RESULT: RealtimeTokenResult = {
   ok: false,
   value: null,
@@ -211,6 +233,27 @@ export async function generateProblem(
   const step =
     data && asRecord(data.step) !== null ? (data.step as ProblemStep) : null;
   return { ok: step !== null, step };
+}
+
+/**
+ * Batch-request verified practice problems — one step per requested kind, same
+ * order (the server's batch mode, Task 1). The results are still UNVERIFIED
+ * client-side: callers MUST pass each through `verifyGeneratedProblem` before
+ * rendering (P4). A skeleton / partial / erroring backend never throws —
+ * `postJson` returns null on failure, and any non-object entries are dropped.
+ */
+export async function generateProblems(
+  input: GenerateProblemsInput,
+): Promise<GenerateProblemsResult> {
+  if (!aiEnabled()) return EMPTY_GENERATE_PROBLEMS_RESULT;
+  const data = await postJson("/api/generate", input);
+  const rawSteps: unknown[] =
+    data && Array.isArray(data.steps) ? data.steps : [];
+  const steps = rawSteps.filter(
+    (entry): entry is ProblemStep => asRecord(entry) !== null,
+  );
+  const ok = steps.length > 0;
+  return { ok, steps };
 }
 
 /** Mint a short-lived realtime token for the browser voice session. */

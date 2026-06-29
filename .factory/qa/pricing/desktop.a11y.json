@@ -1,0 +1,12 @@
+{
+  "skipped": false,
+  "violations": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "count": 1,
+      "sample": ".bg-accent"
+    }
+  ]
+}

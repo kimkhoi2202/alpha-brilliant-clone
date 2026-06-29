@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import type { GenerationDifficulty } from "../../lib/ai/client";
 import { cn } from "../../lib/cn";
+import { LessonCalculator } from "../lesson/lesson-calculator";
 
 /** Header info shown across loading / problem / error states of a session. */
 export interface PracticeSessionStats {
@@ -9,8 +9,6 @@ export interface PracticeSessionStats {
   solved: number;
   /** Current run of consecutive correct answers. */
   streak: number;
-  /** Difficulty the next problem will target. */
-  difficulty: GenerationDifficulty;
 }
 
 export interface PracticeShellProps {
@@ -25,18 +23,6 @@ export interface PracticeShellProps {
   children: ReactNode;
 }
 
-const DIFFICULTY_LABEL: Record<GenerationDifficulty, string> = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
-};
-
-const DIFFICULTY_CLASS: Record<GenerationDifficulty, string> = {
-  easy: "bg-success/15 text-success",
-  medium: "bg-accent/15 text-accent-soft-foreground",
-  hard: "bg-warning/15 text-warning",
-};
-
 function CloseIcon() {
   return (
     <svg
@@ -50,19 +36,6 @@ function CloseIcon() {
     >
       <path d="M6 6l12 12M18 6L6 18" />
     </svg>
-  );
-}
-
-function DifficultyPill({ difficulty }: { difficulty: GenerationDifficulty }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide",
-        DIFFICULTY_CLASS[difficulty],
-      )}
-    >
-      {DIFFICULTY_LABEL[difficulty]}
-    </span>
   );
 }
 
@@ -82,7 +55,8 @@ function SessionStats({ solved, streak }: { solved: number; streak: number }) {
 /**
  * The Infinite Practice frame: a slim header (exit, title, adaptive difficulty,
  * session stats) above a bordered stage, mirroring the lesson player's canvas so
- * practice feels native — without coupling to the lesson runner's Koji/calculator.
+ * practice feels native. It mounts the same pop-up calculator as the lesson (so
+ * learners can compute during practice); it does not mount Koji.
  */
 export function PracticeShell({
   stats,
@@ -108,7 +82,6 @@ export function PracticeShell({
             <span className="text-sm font-bold tracking-tight text-foreground sm:text-base">
               Infinite Practice
             </span>
-            <DifficultyPill difficulty={stats.difficulty} />
           </div>
           <div className="hidden sm:block">
             <SessionStats solved={stats.solved} streak={stats.streak} />
@@ -153,6 +126,10 @@ export function PracticeShell({
             ) : null}
             {footer}
           </div>
+
+          {/* Pop-up calculator, pinned bottom-right inside the stage (mirrors the
+              lesson player) so learners can compute during practice. */}
+          <LessonCalculator />
         </div>
       </main>
     </div>

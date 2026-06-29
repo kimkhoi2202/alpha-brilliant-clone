@@ -381,6 +381,7 @@ function InteractionView({
             onBankPress={placeFirstEmpty}
             onBlankPress={clear}
             onDropToBlank={(id, blankIndex) => place(id, blankIndex)}
+            correct={phase === "correct" || phase === "revealed"}
           />
         </div>
       );

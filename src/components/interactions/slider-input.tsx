@@ -280,7 +280,7 @@ export function SliderInput({
         onPointerCancel={releaseThumb}
         onLostPointerCapture={releaseThumb}
         onBlur={releaseThumb}
-        className="alpha-slider h-2 w-full cursor-pointer appearance-none rounded-full bg-default disabled:opacity-60"
+        className="alpha-slider h-[18px] w-full cursor-pointer appearance-none bg-transparent disabled:opacity-60"
         style={{ accentColor: "var(--accent)" }}
         aria-label={label ?? "Adjust value"}
         aria-valuetext={`${value}${unit ? ` ${unit}` : ""}`}

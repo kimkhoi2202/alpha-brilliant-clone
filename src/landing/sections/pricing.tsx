@@ -1,10 +1,21 @@
 import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Switch } from "@heroui/react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { PaywallComparison, TrialTimeline } from "../../components/premium";
 import type { PaywallRow, TrialNode } from "../../components/premium";
 import { Button, Chip } from "../../components/ui";
+import { GlowingEffect } from "../../components/ui/glowing-effect";
+import {
+  Reveal,
+  duration,
+  easing,
+  staggerContainer,
+  staggerItem,
+  useMotionEnabled,
+  viewportOnce,
+} from "../motion";
 import { LandingSection, SectionHeading } from "../ui/section";
 
 const FREE_BENEFITS: string[] = [
@@ -59,113 +70,177 @@ export function Pricing() {
 
   const [yearly, setYearly] = useState(false);
   const premiumPrice = yearly ? PREMIUM_PRICE.yearly : PREMIUM_PRICE.monthly;
+  const enabled = useMotionEnabled();
 
   return (
     <LandingSection id="pricing">
       <SectionHeading
-        eyebrow="Pricing"
         title="Start free. Add Koji when you want a tutor."
         description="The full course is free, forever. Premium adds your AI tutor and unlimited practice."
       />
 
       <BillingToggle yearly={yearly} onYearlyChange={setYearly} />
 
-      <div className="mt-10 grid items-stretch gap-6 md:grid-cols-2">
-        {/* Free: flat hairline surface, secondary CTA. */}
-        <article
+      {/* Plan cards rise/fade in as a small two-item stagger (Free, then
+          Premium). Each card follows the same rhythm — name + blurb, price, a
+          full-width CTA, then a divided "what's included" check-list. Reduced
+          motion renders them at rest, fully visible. */}
+      <motion.div
+        className="mt-12 grid items-stretch gap-6 md:grid-cols-2"
+        initial={enabled ? "hidden" : false}
+        whileInView={enabled ? "shown" : undefined}
+        viewport={viewportOnce}
+        variants={enabled ? staggerContainer : undefined}
+      >
+        {/* Free: a framed card — a lighter surface-tertiary frame wraps a darker
+            surface header panel (name + blurb), then the padded body. */}
+        <motion.article
           aria-labelledby="plan-free"
-          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface)] p-6 sm:p-7"
+          variants={enabled ? staggerItem : undefined}
+          className="flex h-full flex-col rounded-2xl border border-border bg-[var(--surface-tertiary)] p-2"
         >
-          <h3 id="plan-free" className="text-lg font-bold text-foreground">
-            Free
-          </h3>
-          <p className="mt-1 text-sm text-muted">The whole course, free</p>
-
-          <div className="mt-5 flex items-baseline gap-1.5">
-            <span className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl">
-              $0
-            </span>
-            <span className="text-sm font-medium text-muted">forever</span>
+          <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] sm:px-7">
+            <h3 id="plan-free" className="text-xl font-bold text-foreground">
+              Free
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              The whole course, free.
+            </p>
           </div>
 
-          <ul className="mt-6 flex flex-col gap-3">
-            {FREE_BENEFITS.map((benefit) => (
-              <Benefit key={benefit}>{benefit}</Benefit>
-            ))}
-          </ul>
+          <div className="flex flex-1 flex-col px-6 pt-7 pb-6 sm:px-7">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
+                $0
+              </span>
+              <span className="text-sm font-medium text-muted">forever</span>
+            </div>
 
-          <div className="mt-auto pt-7">
-            <p className="mb-3 text-center text-xs text-muted">
-              No card required. This is the complete learn-by-doing course.
-            </p>
             <Button
               variant="secondary"
               size="lg"
-              className="w-full"
+              className="mt-6 w-full"
               onPress={goAuth}
             >
               Start learning, free
             </Button>
+
+            <div className="mt-7 border-t border-border pt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                What&rsquo;s included
+              </p>
+              <ul className="mt-4 flex flex-col gap-3">
+                {FREE_BENEFITS.map((benefit) => (
+                  <Benefit key={benefit}>{benefit}</Benefit>
+                ))}
+              </ul>
+            </div>
           </div>
-        </article>
+        </motion.article>
 
-        {/* Premium: the app's real emphasized accent card + one gold steer. */}
-        <article
+        {/* Premium: the SAME framed card as Free (identical structure/shades),
+            emphasized the on-brand way — a 2px accent border + a gold "Most
+            popular" steer + a slight lift on wider screens. No glow, so it stays
+            consistent with Free and fully in the dark system. */}
+        <motion.article
           aria-labelledby="plan-premium"
-          className="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-accent/40 bg-accent-soft/30 p-6 sm:p-7"
+          variants={enabled ? staggerItem : undefined}
+          className="relative flex h-full flex-col rounded-2xl border border-border bg-[var(--surface-tertiary)] p-2 md:z-10 md:scale-[1.05]"
         >
+          {/* Always-on glowing border (replaces the static accent border) marks
+              the recommended plan. */}
+          <GlowingEffect duration={5} />
           <div className="relative flex flex-1 flex-col">
-            <div className="flex items-center justify-between gap-3">
-              <h3 id="plan-premium" className="text-lg font-bold text-foreground">
-                Premium
-              </h3>
-              <Chip
-                intent="warning"
-                variant="solid"
-                size="sm"
-                className="uppercase tracking-wide"
-              >
-                Most popular
-              </Chip>
+            <div className="rounded-xl border border-border bg-[var(--surface)] px-6 py-8 shadow-[0_4px_12px_-6px_rgba(0,0,0,0.5)] sm:px-7">
+              <div className="flex items-center justify-between gap-3">
+                <h3 id="plan-premium" className="text-xl font-bold text-foreground">
+                  Premium
+                </h3>
+                <Chip intent="warning" variant="solid" size="sm">
+                  Most popular
+                </Chip>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Add Koji and unlimited practice.
+              </p>
             </div>
-            <p className="mt-1 text-sm text-muted">
-              Add Koji and unlimited practice
-            </p>
 
-            <div className="mt-5 flex items-baseline gap-1.5">
-              <span
-                aria-label={`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
-                className="text-4xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-5xl"
-              >
-                {premiumPrice}
-              </span>
-              <span className="text-sm font-medium text-muted">/ month</span>
-            </div>
-            <p className="mt-1.5 text-xs text-muted">
-              {yearly
-                ? "$239.88 billed yearly. After the 7-day trial."
-                : "After the 7-day trial."}
-            </p>
+            <div className="flex flex-1 flex-col px-6 pt-7 pb-6 sm:px-7">
+              <div className="flex items-baseline gap-1.5">
+                {/* Signature: the price swaps with a small slide+fade when the
+                    billing period flips. An invisible sizer holds the box width
+                    (both prices are 6 tabular chars) so "/ month" never shifts
+                    during mode="wait". An sr-only span carries the spoken price
+                    (the visible price is aria-hidden), so screen readers announce
+                    it once without an aria-label on a generic span. */}
+                <span className="relative inline-block text-5xl font-extrabold tabular-nums tracking-tight text-foreground">
+                  <span className="sr-only">
+                    {`${premiumPrice} per month${yearly ? ", billed yearly" : ""}`}
+                  </span>
+                  <span aria-hidden className="invisible">
+                    {premiumPrice}
+                  </span>
+                  {enabled ? (
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={premiumPrice}
+                        aria-hidden
+                        className="absolute inset-0"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            duration: duration.fast,
+                            ease: easing.out,
+                          },
+                        }}
+                        exit={{
+                          opacity: 0,
+                          y: -8,
+                          transition: { duration: 0.14, ease: easing.out },
+                        }}
+                      >
+                        {premiumPrice}
+                      </motion.span>
+                    </AnimatePresence>
+                  ) : (
+                    <span aria-hidden className="absolute inset-0">
+                      {premiumPrice}
+                    </span>
+                  )}
+                </span>
+                <span className="text-sm font-medium text-muted">/ month</span>
+              </div>
+              <p className="mt-1.5 text-xs text-muted">
+                {yearly
+                  ? "$239.88 billed yearly. After the 7-day trial."
+                  : "After the 7-day trial."}
+              </p>
 
-            <ul className="mt-6 flex flex-col gap-3">
-              {PREMIUM_BENEFITS.map((benefit) => (
-                <Benefit key={benefit}>{benefit}</Benefit>
-              ))}
-            </ul>
-
-            <div className="mt-auto pt-7">
               <Button
                 variant="accent"
                 size="lg"
-                className="w-full"
+                className="mt-6 w-full"
                 onPress={goAuth}
               >
                 Try Premium free for 7 days
               </Button>
+
+              <div className="mt-7 border-t border-border pt-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  What&rsquo;s included
+                </p>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {PREMIUM_BENEFITS.map((benefit) => (
+                    <Benefit key={benefit}>{benefit}</Benefit>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
-        </article>
-      </div>
+        </motion.article>
+      </motion.div>
 
       {/* Trust strip (mirrors the hero's accent-check pattern). */}
       <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
@@ -194,8 +269,10 @@ export function Pricing() {
         ))}
       </ul>
 
-      {/* Compare what's included: the REAL PaywallComparison. */}
-      <div className="mx-auto mt-16 max-w-2xl">
+      {/* Compare what's included: the REAL PaywallComparison. Block-level
+          reveal — the component owns no row-stagger API, so it reveals as a unit
+          (and we never edit it). Reduced motion renders it instantly. */}
+      <Reveal className="mx-auto mt-16 max-w-2xl">
         <h3 className="text-center text-xl font-bold tracking-tight text-foreground">
           Compare what&#39;s included
         </h3>
@@ -204,12 +281,15 @@ export function Pricing() {
           practice.
         </p>
         <PaywallComparison rows={COMPARE_ROWS} className="mt-6" />
-      </div>
+      </Reveal>
 
-      {/* How the free trial works: the REAL TrialTimeline. */}
-      <div className="mx-auto mt-16 max-w-3xl">
+      {/* How the free trial works: the REAL TrialTimeline. Block-level reveal
+          (the timeline owns no node-stagger API). Its top margin matches the
+          section break below it (py-20 → 160px, py-24 → 192px), so this closing
+          block sits with equal breathing room above and below. */}
+      <Reveal className="mx-auto mt-40 max-w-3xl sm:mt-48">
         <h3 className="text-center text-xl font-bold tracking-tight text-foreground">
-          How the free trial works
+          How your free trial works
         </h3>
         <p className="mt-2 text-center text-sm text-muted">
           Seven days of Premium, free. Cancel anytime before it ends.
@@ -220,19 +300,7 @@ export function Pricing() {
         <p className="mt-3 text-center text-xs text-muted">
           No charge until day 7. Cancel before then and you pay nothing.
         </p>
-      </div>
-
-      {/* Honest "why premium" note: a human reason, not a sales line. */}
-      <div className="mx-auto mt-16 max-w-2xl text-center">
-        <h3 className="text-xl font-bold tracking-tight text-foreground">
-          Why is the tutor paid?
-        </h3>
-        <p className="mt-3 text-pretty leading-relaxed text-muted">
-          Koji&#39;s realtime voice runs on advanced AI that costs real money per
-          minute. Keeping it on a paid tier is how we keep the whole course free
-          for everyone.
-        </p>
-      </div>
+      </Reveal>
     </LandingSection>
   );
 }

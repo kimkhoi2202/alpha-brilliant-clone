@@ -1,45 +1,12 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Input } from "@heroui/react";
-import { FirebaseError } from "firebase/app";
 
 import { cn } from "../lib/cn";
+import { friendlyAuthError as friendlyError } from "../lib/authErrors";
 import { useAuth } from "../lib/AuthContext";
 import { AppLogo } from "../components/chrome/app-logo";
 
 type Mode = "social" | "email";
-
-function friendlyError(err: unknown): string {
-  if (err instanceof FirebaseError) {
-    switch (err.code) {
-      case "auth/invalid-email":
-        return "That email doesn't look right.";
-      case "auth/missing-password":
-        return "Enter your password.";
-      case "auth/invalid-credential":
-      case "auth/wrong-password":
-      case "auth/user-not-found":
-        return "Email or password is incorrect.";
-      case "auth/email-already-in-use":
-        return "That email is already registered. Try signing in.";
-      case "auth/weak-password":
-        return "Password should be at least 6 characters.";
-      case "auth/popup-closed-by-user":
-        return "Google sign-in was cancelled.";
-      case "auth/operation-not-allowed":
-      case "auth/admin-restricted-operation":
-        return "This sign-in method isn't enabled yet (Firebase console → Authentication).";
-      case "auth/unauthorized-domain":
-        return "This domain isn't authorized for sign-in (Firebase console → Authentication → Settings → Authorized domains).";
-      case "auth/popup-blocked":
-        return "Your browser blocked the sign-in popup. Allow popups and try again.";
-      case "auth/network-request-failed":
-        return "Network error. Check your connection and try again.";
-      default:
-        return "Something went wrong. Please try again.";
-    }
-  }
-  return "Something went wrong. Please try again.";
-}
 
 // --- Brilliant's social-provider marks (from their DOM) ---
 function GoogleIcon() {

@@ -16,7 +16,14 @@ import {
   problemCount,
 } from "../../content/engine";
 import { getQuiz } from "../../content/quizzes";
-import type { AnswerValue, Lesson, LessonId, Step } from "../../content/types";
+import { buildCumulativeLevelReview, course, levelForLesson } from "../../content";
+import type {
+  AnswerValue,
+  Lesson,
+  LessonId,
+  SkillId,
+  Step,
+} from "../../content/types";
 import { aiEnabled } from "../../lib/ai/flag";
 import {
   describeAnswer,
@@ -49,6 +56,8 @@ import { StepView, type StepPhase } from "./step-view";
 
 export interface StepResult {
   stepId: string;
+  /** The skill this problem step exercises (drives per-skill mastery accrual). */
+  skill: SkillId;
   correct: boolean;
   firstTry: boolean;
   hintsUsed: boolean;
@@ -134,12 +143,26 @@ export function LessonRunner({
   // A required, scored quiz gates the lesson-complete celebration. When the last
   // step finishes we stash the lesson result and hand off to the quiz; only a
   // passing score fires `onComplete`. Lessons with no quiz complete directly.
-  const quiz = getQuiz(lesson.id);
+  //
+  // The level review is *cumulative* (Phase 3, SPOV 8): rather than a fixed set,
+  // it's assembled by interleaving every skill in the level (not just the last
+  // lesson). Memoized per lesson so it composes once (the runner is keyed by
+  // lesson id upstream, so this is stable for the life of the screen).
+  const isLevelReview = lesson.id === LEVEL_REVIEW_LESSON_ID;
+  const quiz = useMemo(
+    () =>
+      isLevelReview
+        ? buildCumulativeLevelReview(
+            levelForLesson(lesson.id)?.id ?? course.levels[0].id,
+          )
+        : getQuiz(lesson.id),
+    [lesson.id, isLevelReview],
+  );
   const hasQuiz = !!quiz && quiz.length > 0;
   // The level review is quiz-only: it has no teaching steps, so it opens
   // straight into the quiz and is graded at the higher 8/10 bar. Every other
   // lesson runs its steps first, then a 5-question recap at the default 4/5.
-  const quizOnly = hasQuiz && lesson.id === LEVEL_REVIEW_LESSON_ID;
+  const quizOnly = hasQuiz && isLevelReview;
   const quizPassThreshold = quizOnly ? LEVEL_REVIEW_QUIZ_PASS : undefined;
   const [phase, setPhase] = useState<"lesson" | "quiz">(
     quizOnly ? "quiz" : "lesson",
@@ -228,6 +251,7 @@ export function LessonRunner({
         passThreshold={quizPassThreshold}
         introTitle={quizOnly ? lesson.title : undefined}
         isFinalLesson={isFinalLesson}
+        preserveOrder={isLevelReview}
         onExit={onExit}
         onPassed={(score) => {
           if (lessonResult) {
@@ -685,6 +709,7 @@ function StepScreen({
     const correct = phase === "correct";
     onAdvance({
       stepId: step.id,
+      skill: step.skill,
       correct,
       firstTry: correct && attempts === 0,
       hintsUsed,
@@ -906,12 +931,29 @@ function StepScreen({
   // "That's incorrect" box would be redundant noise. The CORRECT callout — and
   // its `panelOpen` reposition — stays, and the revealed callout (worked answer)
   // is unaffected.
-  const toast =
-    phase !== "answering" && phase !== "wrong" && message ? (
-      <FeedbackToast status={phase === "correct" ? "correct" : "revealed"}>
-        {renderMathText(message)}
-      </FeedbackToast>
-    ) : undefined;
+  // With AI ON, a wrong answer is handled by Koji (auto-open + proactive coach),
+  // so the static callout stays suppressed. With AI OFF there is no Koji, so the
+  // wrong-answer callout shows the hand-authored / named-misconception feedback —
+  // this is the AI-off teaching path (Phase 3, SPOV 9). Correct + revealed
+  // callouts are unchanged.
+  const showsFeedback =
+    !!message &&
+    (phase === "correct" ||
+      phase === "revealed" ||
+      (phase === "wrong" && !ai));
+  const toast = showsFeedback ? (
+    <FeedbackToast
+      status={
+        phase === "correct"
+          ? "correct"
+          : phase === "wrong"
+            ? "retryable"
+            : "revealed"
+      }
+    >
+      {renderMathText(message)}
+    </FeedbackToast>
+  ) : undefined;
 
   return (
     <LessonShell

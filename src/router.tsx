@@ -10,11 +10,13 @@ import { AnimationsScreen } from "./routes/AnimationsScreen";
 import { AuthScreen } from "./routes/AuthScreen";
 import { ComponentsScreen } from "./routes/ComponentsScreen";
 import { CourseMapScreen } from "./routes/CourseMapScreen";
+import { HomeScreen } from "./routes/HomeScreen";
 import { InfinitePractice } from "./routes/InfinitePractice";
 import { Landing } from "./routes/Landing";
 import { LessonPlayer } from "./routes/LessonPlayer";
 import { MedallionScaleScreen } from "./routes/MedallionScaleScreen";
-import { ProfileScreen } from "./routes/ProfileScreen";
+import { ReviewSession } from "./routes/ReviewSession";
+import { SettingsScreen } from "./routes/SettingsScreen";
 import { Root } from "./routes/Root";
 
 export type RouterContext = { auth: AuthContextValue };
@@ -30,7 +32,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
  * The first beforeLoad pass runs before the provider injects auth (default
  * context), and auth may still be resolving on a hard refresh. In both cases we
  * must wait rather than redirect, otherwise refreshing a guarded URL (e.g.
- * mid-lesson) bounces to /auth, which then sends a logged-in user to "/",
+ * mid-lesson) bounces to /auth, which then sends a logged-in user to "/home",
  * losing the page. The guard re-runs with real auth once it's known.
  */
 function requireAuth(context: RouterContext): void {
@@ -44,24 +46,43 @@ const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/auth",
   beforeLoad: ({ context }) => {
-    if (context.auth?.user) throw redirect({ to: "/" });
+    if (context.auth?.user) throw redirect({ to: "/home" });
   },
   component: AuthScreen,
 });
 
+// The signed-in Home (daily cockpit) lives at /home; "/" is the public landing.
+const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/home",
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: HomeScreen,
+});
+
+// The course map (lesson path) lives at /courses.
 const courseMapRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
+  path: "/courses",
   beforeLoad: ({ context }) => requireAuth(context),
   component: CourseMapScreen,
 });
 
-// Public marketing landing. Lives at /landing while it's built and reviewed;
-// once it's signed off it takes over "/" and the app moves to /home.
+// Public marketing landing — the app's "/". No auth guard: it's visible to
+// everyone, and we deliberately don't bounce signed-in visitors off it.
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/landing",
+  path: "/",
   component: Landing,
+});
+
+// Legacy /landing URL (the marketing page lived here while in review). Keep old
+// links and bookmarks working by redirecting to its new home at "/".
+const landingRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/landing",
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
 });
 
 const lessonRoute = createRoute({
@@ -71,11 +92,20 @@ const lessonRoute = createRoute({
   component: LessonPlayer,
 });
 
+// Account settings (profile, password, security, notifications, delete account).
+// Kept reachable at the legacy /profile path as well as the canonical /settings.
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: SettingsScreen,
+});
+
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
   beforeLoad: ({ context }) => requireAuth(context),
-  component: ProfileScreen,
+  component: SettingsScreen,
 });
 
 // "Infinite Practice" (Pillar B): verified, adaptive generation, reached after
@@ -86,6 +116,19 @@ const practiceRoute = createRoute({
   path: "/practice",
   beforeLoad: ({ context }) => requireAuth(context),
   component: InfinitePractice,
+});
+
+// Spaced-review session (Phase 3): due-skill reviews, or a single-skill
+// corrective set via `?skill=<id>`. Auth-guarded; AI-off-safe (hand-authored
+// content), so it works with the model off.
+const reviewsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reviews",
+  validateSearch: (search: Record<string, unknown>): { skill?: string } => ({
+    skill: typeof search.skill === "string" ? search.skill : undefined,
+  }),
+  beforeLoad: ({ context }) => requireAuth(context),
+  component: ReviewSession,
 });
 
 const componentsRoute = createRoute({
@@ -110,10 +153,14 @@ const medallionsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   authRoute,
   landingRoute,
+  landingRedirectRoute,
+  homeRoute,
   courseMapRoute,
   lessonRoute,
+  settingsRoute,
   profileRoute,
   practiceRoute,
+  reviewsRoute,
   componentsRoute,
   devRoute,
   medallionsRoute,
